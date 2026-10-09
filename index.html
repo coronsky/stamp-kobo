@@ -1,0 +1,2710 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#eef1f4">
+<title>Mon Chein スタンプ工房</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* レイアウト: スマホは1カラム(プレビュー → 犬の一覧 → 文字の一覧 → シート切り出し → 動きと配置 → 全体設定 → 規格チェック → 書き出し)。広い画面ではプレビューを左に固定し、操作を右に置く。 */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --ink: #18212b;
+  --muted: #5d6b7a;
+  --line: #d5dce3;
+  --accent: #1c7c8c;
+  --accent-ink: #ffffff;
+  --accent-soft: #d8eef2;
+  --ok: #1f7a45;
+  --ok-soft: #dff3e6;
+  --ng: #b3321f;
+  --ng-soft: #fbe3df;
+  --check-a: #e1e6eb;
+  --check-b: #f5f7f9;
+  --font-display: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --font-body: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif;
+  --font-num: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #12181e;
+    --surface: #1a222a;
+    --ink: #e8edf2;
+    --muted: #93a1b0;
+    --line: #2b3641;
+    --accent: #4cc0d1;
+    --accent-ink: #07242a;
+    --accent-soft: #17363c;
+    --ok: #6fd39a;
+    --ok-soft: #17301f;
+    --ng: #ff9a8c;
+    --ng-soft: #3a1d19;
+    --check-a: #232c35;
+    --check-b: #1b232b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #12181e;
+  --surface: #1a222a;
+  --ink: #e8edf2;
+  --muted: #93a1b0;
+  --line: #2b3641;
+  --accent: #4cc0d1;
+  --accent-ink: #07242a;
+  --accent-soft: #17363c;
+  --ok: #6fd39a;
+  --ok-soft: #17301f;
+  --ng: #ff9a8c;
+  --ng-soft: #3a1d19;
+  --check-a: #232c35;
+  --check-b: #1b232b;
+  color-scheme: dark;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font: 400 15px/1.6 var(--font-body);
+  padding-inline: 16px;
+  padding-block: 20px 40px;
+}
+.wrap { max-width: 1000px; margin-inline: auto; }
+h1 { font: 700 24px/1.3 var(--font-display); margin: 0; text-wrap: balance; }
+.lead { color: var(--muted); font-size: 14px; margin: 6px 0 20px; }
+h2, summary {
+  font: 700 13px/1.4 var(--font-display);
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+.app { display: grid; gap: 20px; grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 860px) {
+  .app { grid-template-columns: minmax(0, 400px) minmax(0, 1fr); align-items: start; gap: 28px; }
+  .stage { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+}
+
+.board {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  background: conic-gradient(var(--check-a) 25%, var(--check-b) 0 50%, var(--check-a) 0 75%, var(--check-b) 0) 0 0 / 20px 20px;
+}
+.board canvas, .board img { display: block; width: 100%; height: auto; max-width: 100%; }
+.board.drag { outline: 2px dashed var(--accent); outline-offset: 3px; }
+.stage-bar { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+.note { color: var(--muted); font-size: 13px; margin: 10px 0 0; overflow-wrap: anywhere; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 18px 16px;
+  display: grid;
+  gap: 24px;
+  min-width: 0;
+}
+
+.btn {
+  font: 500 15px/1 var(--font-body);
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn:focus-visible, .chip input:focus-visible + span, input[type=range]:focus-visible, select:focus-visible, summary:focus-visible, .thumb:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); font-weight: 500; width: 100%; }
+.btn.primary:disabled { opacity: .6; cursor: progress; }
+.mt { margin-top: 14px; }
+
+.chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; }
+.chip { position: relative; display: block; }
+.chip input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
+.chip span {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 6px 8px;
+  border: 1px solid var(--line); border-radius: 10px;
+  font: 500 14px/1.3 var(--font-display);
+  text-align: center;
+  background: var(--surface);
+}
+.chip input:checked + span { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); font-weight: 700; }
+.chip small { display: block; font: 400 11px/1.2 var(--font-body); color: var(--muted); }
+
+.field { display: grid; gap: 4px; }
+.field + .field { margin-top: 14px; }
+.field-head { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.field-head output { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--muted); }
+input[type=range] { width: 100%; accent-color: var(--accent); min-height: 28px; }
+select {
+  font: 400 15px/1 var(--font-body);
+  min-height: 44px; padding: 0 10px; width: 100%;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink);
+}
+.sub { font: 500 13px/1.4 var(--font-display); color: var(--muted); margin: 18px 0 8px; }
+input[type=number] {
+  font: 400 16px/1 var(--font-body);
+  min-height: 44px; padding: 0 10px; width: 100%;
+  border: 1px solid var(--line); border-radius: 10px;
+  background: var(--surface); color: var(--ink); box-sizing: border-box;
+}
+input[type=number]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.pair > div { display: grid; gap: 4px; min-width: 0; }
+.check { display: flex; gap: 10px; align-items: flex-start; font-size: 14px; margin-top: 14px; }
+.check input { width: 20px; height: 20px; flex: 0 0 auto; margin: 2px 0 0; accent-color: var(--accent); }
+.nudge { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
+.nudge .btn { padding: 0; min-width: 0; font-size: 18px; }
+
+details > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; }
+details > summary::-webkit-details-marker { display: none; }
+details > summary::before { content: '▸'; font-size: 12px; }
+details[open] > summary::before { content: '▾'; }
+details[open] > summary { margin-bottom: 6px; }
+
+.textrow { display: flex; gap: 12px; align-items: center; margin-bottom: 12px; }
+.textrow .board { width: 112px; flex: 0 0 auto; }
+.textrow .note { margin: 0; }
+
+.strip-head { display: flex; align-items: center; gap: 10px; }
+.strip-head h2 { margin: 0; }
+.strip-head .count { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--muted); font-size: 14px; }
+.strip-head .pill { margin-left: auto; padding-inline: 12px; }
+.strip { position: relative; display: flex; flex-wrap: wrap; gap: 8px; max-height: 292px; overflow-y: auto; padding: 10px 2px 8px; min-height: 86px; }
+.strip.drag { outline: 2px dashed var(--accent); outline-offset: 2px; border-radius: 10px; }
+.strip:empty::before { content: attr(data-empty); color: var(--muted); font-size: 13px; align-self: center; }
+.thumb {
+  position: relative; flex: 0 0 auto; width: 68px; height: 68px; padding: 4px;
+  border: 1px solid var(--line); border-radius: 10px; cursor: pointer; box-sizing: border-box;
+  background: conic-gradient(var(--check-a) 25%, var(--check-b) 0 50%, var(--check-a) 0 75%, var(--check-b) 0) 0 0 / 12px 12px;
+}
+.thumb img { width: 100%; height: 100%; object-fit: contain; display: block; pointer-events: none; }
+.thumb img.mini {
+  position: absolute; right: 3px; bottom: 3px; width: 28px; height: 18px; padding: 1px; box-sizing: border-box;
+  border: 1px solid var(--line); border-radius: 4px; background: var(--surface);
+}
+.thumb i {
+  position: absolute; left: 3px; bottom: 3px; min-width: 18px; height: 18px; padding: 0 4px; box-sizing: border-box;
+  border-radius: 9px; border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font: 500 11px/16px var(--font-num); font-style: normal; text-align: center;
+}
+.thumb.on { border-color: var(--accent); outline: 2px solid var(--accent); }
+.thumb.on i { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.thumb .bd {
+  font-style: normal;
+  position: absolute; top: 3px; padding: 2px 4px; border-radius: 6px; background: var(--accent); color: var(--accent-ink);
+  font: 700 9px/1 var(--font-display); font-style: normal; pointer-events: none;
+}
+.thumb .bd.m { left: 3px; }
+.thumb .bd.t { right: 3px; }
+.mtrow { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; margin-top: 12px; }
+.mtrow figure { margin: 0; display: grid; gap: 6px; }
+.mtrow canvas { display: block; border: 1px solid var(--line); border-radius: 10px;
+  background: conic-gradient(var(--check-a) 25%, var(--check-b) 0 50%, var(--check-a) 0 75%, var(--check-b) 0) 0 0 / 12px 12px; }
+.mtrow figcaption { font-size: 12px; color: var(--muted); }
+.mtwrap { display: flex; gap: 14px; align-items: flex-start; flex-wrap: wrap; margin-top: 12px; }
+.mtwrap .stage-bar { margin-top: 0; flex: 1 1 160px; }
+.mini { display: block; width: 112px; height: auto; border: 1px solid var(--line); border-radius: 10px; flex: 0 0 auto;
+  background: conic-gradient(var(--check-a) 25%, var(--check-b) 0 50%, var(--check-a) 0 75%, var(--check-b) 0) 0 0 / 12px 12px; }
+.mtwrap figcaption { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
+.mtwrap figure { margin: 0; }
+.topnav { margin-top: 12px; }
+.tgtchips { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; }
+.win { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 20, 0.6); }
+.win[hidden] { display: none; }
+.win-card { background: var(--surface); color: var(--ink); border-radius: 16px; width: 100%; max-width: 440px; max-height: 94vh; overflow: auto; padding: 16px; box-sizing: border-box; }
+.win-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.win-head h2 { margin: 0; }
+.win-stage { margin-top: 12px; border-radius: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 18px 12px; min-height: 240px; cursor: pointer; box-sizing: border-box; }
+.win-stage canvas { display: block; max-width: 100%; height: auto; }
+.bg-white { background: #ffffff; }
+.bg-talk { background: #7f9fcf; }
+.bg-dark { background: #1c1c1e; }
+.win-bubble { display: flex; align-items: center; gap: 8px; align-self: flex-start; background: #ffffff; color: #1c1c1e; border-radius: 16px; padding: 8px 14px; font-size: 16px; }
+.win-bubble[hidden] { display: none; }
+.win-bubble canvas { width: 36px; height: 36px; }
+.win .strip { max-height: 160px; }
+.jump { display: none; }
+@media (max-width: 859px) { .jump { display: flex; } }
+.thumb.dropok { outline: 2px dashed var(--accent); }
+.thumb[draggable="true"] { cursor: grab; }
+
+.checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+.checks li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center;
+  padding: 10px 0; border-top: 1px solid var(--line); font-size: 14px;
+}
+.checks li:first-child { border-top: 0; }
+.checks .val { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
+.pill { font: 700 12px/1 var(--font-display); padding: 5px 9px; border-radius: 999px; min-width: 56px; text-align: center; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.ng { background: var(--ng-soft); color: var(--ng); }
+.pill.wait { background: var(--check-a); color: var(--muted); }
+.fine { color: var(--muted); font-size: 12px; margin: 10px 0 0; }
+
+.export { display: grid; gap: 12px; }
+#msg { margin: 0; font-size: 14px; color: var(--muted); min-height: 1.6em; overflow-wrap: anywhere; }
+.result { max-width: 320px; }
+
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <h1>Mon Chein スタンプ工房</h1>
+    <p class="lead">犬の画像と文字の画像を別々に切り出して重ね、動かして、LINEアニメスタンプ用のAPNGを書き出します。</p>
+    <div class="stage-bar topnav">
+      <button type="button" class="btn" id="goFx">↓ エフェクトへ</button>
+      <button type="button" class="btn" id="goExport">↓ 書き出し・保存へ</button>
+    </div>
+  </header>
+
+  <main class="app">
+    <section class="stage" aria-label="プレビュー">
+      <div class="board" id="board"><canvas id="cv" width="320" height="270" role="img" aria-label="アニメーションのプレビュー"></canvas></div>
+      <div class="stage-bar">
+        <button type="button" class="btn" id="playBtn">一時停止</button>
+        <button type="button" class="btn" id="rotL" aria-label="左に回す">↺ 回す</button>
+        <button type="button" class="btn" id="rotR" aria-label="右に回す">↻ 回す</button>
+        <button type="button" class="btn primary openWin">LINE風の動作確認</button>
+      </div>
+      <div class="chips tgtchips" role="radiogroup" aria-label="操作する対象">
+        <label class="chip"><input type="radio" name="tgt" id="tgtDog" value="dog" checked><span>犬</span></label>
+        <label class="chip"><input type="radio" name="tgt" id="tgtText" value="text"><span>文字</span></label>
+        <label class="chip"><input type="radio" name="tgt" id="tgtFx" value="fx"><span>エフェクト</span></label>
+      </div>
+      <p class="note" id="srcNote"></p>
+      <p class="note">プレビューを直接さわれます。文字の上をドラッグすると文字、それ以外は犬の画像が動きます。「エフェクト」を選ぶと、エフェクトだけが動きます。2本指(パソコンではマウスのホイール)で、さわっているほうの大きさを変えられます。2本指をひねると回転します(パソコンではShiftを押しながらホイール、または「↺ 回す」「↻ 回す」。「犬」「文字」で対象を切り替えます)。操作中は動きが止まります。</p>
+    </section>
+
+    <section class="panel" aria-label="設定">
+      <div>
+        <div class="strip-head">
+          <h2>犬の画像(スタンプ一覧)</h2>
+          <span class="count" id="countText"></span>
+          <span class="pill wait" id="countPill">あと24個</span>
+        </div>
+        <div class="strip" id="strip" role="listbox" aria-label="犬の画像(スタンプ一覧)" data-empty="シートを切り出すか、画像を追加すると、ここに並びます。画像ファイルはここにドロップしても追加できます。"></div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="dogAdd">画像を追加</button>
+          <input type="file" id="dogAddFile" accept="image/*" multiple hidden>
+          <label class="check" for="dogAuto"><input type="checkbox" id="dogAuto" checked><span>複数のコマが並んだ画像は、追加したときに自動で切り出す</span></label>
+          <button type="button" class="btn" id="mvL">← 前へ</button>
+          <button type="button" class="btn" id="mvR">後ろへ →</button>
+          <button type="button" class="btn" id="delBtn">削除</button>
+          <button type="button" class="btn" id="undoBtn">削除を戻す</button>
+        </div>
+      </div>
+
+      <div>
+        <div class="strip-head">
+          <h2>文字の画像</h2>
+          <span class="count" id="tCountText"></span>
+        </div>
+        <div class="strip" id="tstrip" role="listbox" aria-label="文字の画像" data-empty="文字のシートを切り出すか、画像を追加すると、ここに並びます。画像ファイルはここにドロップしても追加できます。"></div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="textAdd">画像を追加</button>
+          <input type="file" id="textAddFile" accept="image/*" multiple hidden>
+          <label class="check" for="textAuto"><input type="checkbox" id="textAuto" checked><span>複数の文字が並んだ画像は、追加したときに自動で切り出す</span></label>
+          <button type="button" class="btn" id="tDelBtn">削除</button>
+          <button type="button" class="btn" id="tUndoBtn">削除を戻す</button>
+        </div>
+        <p class="note">文字の画像をタップすると、選んでいるスタンプに重なります。パソコンでは、文字の画像をプレビューにドラッグ&ドロップしても重ねられます(犬の画像の上にドロップすると、そのスタンプに重なります)。</p>
+      </div>
+
+      <div>
+        <h2>犬の画像の位置と動き</h2>
+        <button type="button" class="btn" id="dogBtn">この画像を差し替える</button>
+        <input type="file" id="dogFile" accept="image/*" hidden>
+        <p class="note">文字の画像と位置・動きはそのままで、犬の画像だけが入れ替わります。</p>
+        <button type="button" class="btn mt" id="dogReset">犬の位置・大きさ・回転をもとに戻す</button>
+        <p class="sub">動き</p>
+        <p class="note">いくつか選ぶと、動きが組み合わさります。「とめる」を押すと全部はずれます。</p>
+        <div class="chips" id="chips" role="group" aria-label="犬の画像の動き"></div>
+        <div class="field">
+          <div class="field-head"><label for="power">動きの強さ</label><output id="powerOut" for="power"></output></div>
+          <input type="range" id="power" min="30" max="150" step="5" value="100">
+        </div>
+        <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
+      </div>
+
+      <div>
+        <h2>文字の画像の位置と動き</h2>
+        <div class="textrow">
+          <div class="board" id="textThumbWrap" hidden><img id="textThumb" alt="重ねている文字の画像"></div>
+          <p class="note" id="textNone">文字の画像は重ねていません。上の文字の一覧からタップしてください。</p>
+        </div>
+        <button type="button" class="btn" id="textRemove">文字を外す</button>
+        <p class="sub">動き</p>
+        <p class="note">いくつか選ぶと、動きが組み合わさります。</p>
+        <div class="chips" id="tchips" role="group" aria-label="文字の画像の動き"></div>
+        <div class="field">
+          <div class="field-head"><label for="tpower">動きの強さ</label><output id="tpowerOut" for="tpower"></output></div>
+          <input type="range" id="tpower" min="30" max="150" step="5" value="100">
+        </div>
+        <button type="button" class="btn mt" id="textReset">文字の位置・大きさ・回転をもとに戻す</button>
+        <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
+      </div>
+
+      <div id="fxSection">
+        <h2>エフェクト</h2>
+        <p class="note">スタンプの手前に重なる飾りです。いくつか選ぶと組み合わさります。犬や文字の動きとは別に動きます。</p>
+        <div class="chips" id="fxchips" role="group" aria-label="エフェクト"></div>
+        <div class="field">
+          <div class="field-head"><label for="fxpower">エフェクトの強さ</label><output id="fxpowerOut" for="fxpower"></output></div>
+          <input type="range" id="fxpower" min="30" max="150" step="5" value="100">
+        </div>
+        <button type="button" class="btn mt" id="fxReset">エフェクトの位置・大きさ・回転をもとに戻す</button>
+        <p class="note">エフェクトの位置と大きさは、プレビュー上の「エフェクト」を選んで、ドラッグ・2本指で変えます(パソコンでは枠の角をつまんで大きさを変えられます)。</p>
+        <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
+      </div>
+
+      <div>
+        <h2>メイン画像・タブ画像</h2>
+        <p class="note">LINEのスタンプ一覧などに表示される画像です。選んでいるスタンプの止まった姿を使います。</p>
+        <div class="mtwrap">
+          <div class="stage-bar">
+            <button type="button" class="btn" id="setMain">メイン画像にする</button>
+            <button type="button" class="btn" id="setTab">タブ画像にする</button>
+            <button type="button" class="btn openWin">LINE風の動作確認</button>
+          </div>
+          <figure><canvas id="miniCv" class="mini" width="320" height="270" role="img" aria-label="小さなプレビュー"></canvas><figcaption>プレビュー(小)</figcaption></figure>
+        </div>
+        <div class="mtrow">
+          <figure><canvas id="mainCv" width="240" height="240" style="width:120px;height:120px" role="img" aria-label="メイン画像"></canvas><figcaption id="mainCap">メイン 240×240: 未設定</figcaption></figure>
+          <figure><canvas id="tabCv" width="96" height="74" style="width:96px;height:74px" role="img" aria-label="タブ画像"></canvas><figcaption id="tabCap">タブ 96×74: 未設定</figcaption></figure>
+        </div>
+        <p class="fine">サイズは目安です。申請の前に、LINE Creators Marketで最新の規定を確認してください。</p>
+      </div>
+
+      <div>
+        <h2>重なり順</h2>
+        <div class="chips" role="radiogroup" aria-label="重なり順">
+          <label class="chip"><input type="radio" name="order" id="ordFront" value="front" checked><span>文字が手前</span></label>
+          <label class="chip"><input type="radio" name="order" id="ordBack" value="back"><span>文字が奥</span></label>
+        </div>
+      </div>
+
+      <div>
+        <h2>全体の設定</h2>
+        <div class="field">
+          <label for="size">キャンバスサイズ</label>
+          <select id="size">
+            <option value="320x270" selected>320 × 270 px(最大サイズ)</option>
+            <option value="270x270">270 × 270 px</option>
+            <option value="240x240">240 × 240 px</option>
+          </select>
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="frames">コマ数</label><output id="framesOut" for="frames"></output></div>
+          <input type="range" id="frames" min="5" max="20" step="1" value="12">
+        </div>
+        <div class="field">
+          <p class="sub" id="durLbl">再生時間(1回ぶん)</p>
+          <div class="chips" role="radiogroup" aria-labelledby="durLbl">
+            <label class="chip"><input type="radio" name="dur" value="1" checked><span>1秒</span></label>
+            <label class="chip"><input type="radio" name="dur" value="2"><span>2秒</span></label>
+            <label class="chip"><input type="radio" name="dur" value="3"><span>3秒</span></label>
+            <label class="chip"><input type="radio" name="dur" value="4"><span>4秒</span></label>
+          </div>
+          <p class="fine" id="delayNote"></p>
+        </div>
+        <div class="field">
+          <div class="field-head"><label for="loops">ループ回数</label><output id="loopsOut" for="loops"></output></div>
+          <input type="range" id="loops" min="1" max="4" step="1" value="2">
+        </div>
+        <label class="check" for="autoLight"><input type="checkbox" id="autoLight" checked><span>容量が300KBを超えるときは、自動で軽くする(まず色数を減らし、それでも大きければコマ数を減らします)</span></label>
+      </div>
+
+      <div>
+        <h2>規格チェック</h2>
+        <ul class="checks" id="checks"></ul>
+        <p class="fine">数値は目安です。申請前にLINE Creators Marketのガイドラインで最新の規格を確認してください。</p>
+      </div>
+
+      <div class="export" id="exportSection">
+        <h2>書き出し・保存</h2>
+        <p class="sub">LINEに出す用(ZIP)</p>
+        <button type="button" class="btn primary" id="zipBtn">アニメーションスタンプ用ZIPにする</button>
+        <p class="fine">スタンプ(01.png〜)、メイン画像(main.png、240×240)、タブ画像(tab.png、96×74)を入れます。メイン・タブは「メイン画像・タブ画像」で設定したスタンプを使います(未設定なら1番目)。大きさは「キャンバスサイズ」の設定です。</p>
+        <button type="button" class="btn primary" id="emojiZipBtn">アニメーション絵文字用ZIPにする</button>
+        <p class="fine">絵文字(001.png〜、180×180)とタブ画像(tab.png、96×74)を入れます。一覧の先頭から最大40個までです。再生時間・コマ数・ループはスタンプと共通です。</p>
+        <p id="zipMsg" role="status" aria-live="polite"></p>
+        <a class="btn" id="zipLink" href="#" download="mon-chein-stickers.zip" hidden>ZIPを保存する</a>
+        <button type="button" class="btn" id="exportBtn">選んでいるスタンプだけ書き出す</button>
+        <p class="sub">作業の保存(あとで続きから作れます)</p>
+        <div class="stage-bar">
+          <button type="button" class="btn primary" id="projSave">作業を保存する</button>
+          <button type="button" class="btn" id="projOpen">保存した作業を開く</button>
+          <input type="file" id="projFile" accept="application/json,.json" hidden>
+        </div>
+        <p class="fine">画像・文字・位置・動き・エフェクト・各種の設定を、ひとつのファイル(.json)に保存します。「開く」と、今の作業は保存したものに置き換わります。</p>
+        <p id="projMsg" role="status" aria-live="polite"></p>
+        <a class="btn" id="projLink" href="#" download="mon-chein-project.json" hidden>保存ファイルをダウンロード</a>
+        <p class="sub">素材ごとの書き出し・読み込み</p>
+        <p class="fine">犬の画像・文字の画像・エフェクトを、それぞれ別のファイル(.json)にして持ち運べます。読み込みは「追加」になり、今ある分は消えません(画像は上限の60個まで)。</p>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="dogOut">犬の画像をすべて書き出す</button>
+          <button type="button" class="btn" id="dogIn">犬の画像を読み込む</button>
+        </div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="textOut">文字の画像をすべて書き出す</button>
+          <button type="button" class="btn" id="textIn">文字の画像を読み込む</button>
+        </div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="fxOut">エフェクトを書き出す</button>
+          <button type="button" class="btn" id="fxIn">エフェクトを読み込む</button>
+        </div>
+        <input type="file" id="partFile" accept="application/json,.json" hidden>
+        <p class="fine">エフェクトは、スタンプごとの種類・位置・大きさ・回転・強さを書き出します。読み込むと、1番目から順に同じ番号のスタンプへ当てはめます(ファイルに1個分しかないときは、すべてのスタンプに同じ設定を当てはめます)。</p>
+        <p id="partMsg" role="status" aria-live="polite"></p>
+        <a class="btn" id="partLink" href="#" download="mon-chein-part.json" hidden>書き出したファイルをダウンロード</a>
+        <p id="msg" role="status" aria-live="polite"></p>
+        <div class="board result" id="resultBoard" hidden><img id="result" alt="書き出したAPNGの確認用表示"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="win" id="checkWin" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
+  <div class="win-card">
+    <div class="win-head">
+      <h2 id="winTitle">動作確認</h2>
+      <button type="button" class="btn" id="winClose">閉じる</button>
+    </div>
+    <div class="win-stage bg-white" id="winStage" title="タップでもう一度">
+      <canvas id="winCv" width="320" height="270" role="img" aria-label="LINEでタップしたときの動き"></canvas>
+      <div class="win-bubble" id="winBubble" hidden><span>おはよう</span><canvas id="winCvSm" width="180" height="180" aria-hidden="true"></canvas></div>
+    </div>
+    <p class="note" id="winInfo" role="status" aria-live="polite"></p>
+    <div class="stage-bar"><button type="button" class="btn primary" id="winReplay">↻ もう一度</button></div>
+    <p class="sub">背景</p>
+    <div class="chips tgtchips" role="radiogroup" aria-label="背景">
+      <label class="chip"><input type="radio" name="winbg" value="bg-white" checked><span>白</span></label>
+      <label class="chip"><input type="radio" name="winbg" value="bg-talk"><span>トーク風</span></label>
+      <label class="chip"><input type="radio" name="winbg" value="bg-dark"><span>暗い</span></label>
+    </div>
+    <p class="sub">表示</p>
+    <div class="chips tgtchips" role="radiogroup" aria-label="表示の種類">
+      <label class="chip"><input type="radio" name="winkind" value="sticker" checked><span>スタンプ</span></label>
+      <label class="chip"><input type="radio" name="winkind" value="emoji"><span>絵文字</span></label>
+    </div>
+    <p class="sub">ほかのスタンプ(タップで切り替え)</p>
+    <div class="strip" id="winStrip" role="listbox" aria-label="スタンプ"></div>
+    <p class="fine">書き出すAPNGと同じコマ数・再生時間・ループ回数で動きます。LINEの実際の見え方とは細かい違いがあるかもしれません。</p>
+  </div>
+</div>
+
+<script>
+// ==ENCODER START==
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function concatBytes(arrs) {
+  let n = 0;
+  for (const a of arrs) n += a.length;
+  const out = new Uint8Array(n);
+  let p = 0;
+  for (const a of arrs) { out.set(a, p); p += a.length; }
+  return out;
+}
+function makeChunk(type, data) {
+  const out = new Uint8Array(12 + data.length);
+  const dv = new DataView(out.buffer);
+  dv.setUint32(0, data.length);
+  for (let i = 0; i < 4; i++) out[4 + i] = type.charCodeAt(i);
+  out.set(data, 8);
+  dv.setUint32(8 + data.length, crc32(out.subarray(4, 8 + data.length)));
+  return out;
+}
+function readPng(u8) {
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let p = 8, ihdr = null, plte = null, trns = null;
+  const idats = [];
+  while (p + 12 <= u8.length) {
+    const len = dv.getUint32(p);
+    const type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+    const data = u8.subarray(p + 8, p + 8 + len);
+    if (type === 'IHDR') ihdr = data.slice();
+    else if (type === 'PLTE') plte = data.slice();
+    else if (type === 'tRNS') trns = data.slice();
+    else if (type === 'IDAT') idats.push(data);
+    p += 12 + len;
+  }
+  return { ihdr, plte, trns, idat: concatBytes(idats) };
+}
+// pngs: 同じサイズのPNG(Uint8Array)の配列。delayMs: 1コマの長さ。loops: 再生回数(0で無限)。
+function encodeApng(pngs, delays, loops) {
+  const frames = pngs.map(readPng);
+  const ihdr = frames[0].ihdr;
+  const hv = new DataView(ihdr.buffer, ihdr.byteOffset, ihdr.byteLength);
+  const W = hv.getUint32(0), H = hv.getUint32(4);
+  const parts = [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), makeChunk('IHDR', ihdr)];
+  if (frames[0].plte) parts.push(makeChunk('PLTE', frames[0].plte));
+  if (frames[0].trns) parts.push(makeChunk('tRNS', frames[0].trns));
+  const actl = new Uint8Array(8);
+  const av = new DataView(actl.buffer);
+  av.setUint32(0, frames.length);
+  av.setUint32(4, loops);
+  parts.push(makeChunk('acTL', actl));
+  let seq = 0;
+  frames.forEach((f, i) => {
+    const fc = new Uint8Array(26);
+    const v = new DataView(fc.buffer);
+    v.setUint32(0, seq++);
+    v.setUint32(4, W);
+    v.setUint32(8, H);
+    v.setUint32(12, 0);
+    v.setUint32(16, 0);
+    v.setUint16(20, Array.isArray(delays) ? delays[i] : delays);
+    v.setUint16(22, 1000);
+    fc[24] = 0; // dispose: none
+    fc[25] = 0; // blend: source (全面を上書き)
+    parts.push(makeChunk('fcTL', fc));
+    if (i === 0) {
+      parts.push(makeChunk('IDAT', f.idat));
+    } else {
+      const fd = new Uint8Array(4 + f.idat.length);
+      new DataView(fd.buffer).setUint32(0, seq++);
+      fd.set(f.idat, 4);
+      parts.push(makeChunk('fdAT', fd));
+    }
+  });
+  parts.push(makeChunk('IEND', new Uint8Array(0)));
+  return concatBytes(parts);
+}
+// ==ENCODER END==
+// ==LIGHT START==
+// 色数を減らして、パレット形式(インデックスカラー)のPNGにする。容量を小さくするための処理。
+async function zlibBytes(u8) {
+  const cs = new CompressionStream('deflate');
+  const w = cs.writable.getWriter();
+  w.write(u8);
+  w.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+function quantKey(r, g, b, a) {
+  if (a < 8) return 0;
+  return ((r >> 3) << 14) | ((g >> 3) << 9) | ((b >> 3) << 4) | Math.max(1, a >> 4);
+}
+// frames: RGBAのバイト列(Uint8ClampedArray)の配列。全コマの色をまとめて数える。
+function buildHistogram(frames) {
+  const N = 1 << 19;
+  const cnt = new Uint32Array(N), sr = new Uint32Array(N), sg = new Uint32Array(N), sb = new Uint32Array(N), sa = new Uint32Array(N);
+  frames.forEach((d) => {
+    for (let i = 0; i < d.length; i += 4) {
+      const k = quantKey(d[i], d[i + 1], d[i + 2], d[i + 3]);
+      cnt[k]++;
+      if (k) { sr[k] += d[i]; sg[k] += d[i + 1]; sb[k] += d[i + 2]; sa[k] += d[i + 3]; }
+    }
+  });
+  const keys = [];
+  for (let k = 1; k < N; k++) if (cnt[k]) keys.push(k);
+  return { cnt, sr, sg, sb, sa, keys, hasTrans: cnt[0] > 0 };
+}
+// 中央分割(メディアンカット)で、色数をK色以内にまとめる。パレットの0番は、透明があれば透明にする。
+function quantizeHistogram(h, K) {
+  const room = Math.max(1, K - (h.hasTrans ? 1 : 0));
+  const items = h.keys.map((k) => {
+    const c = h.cnt[k];
+    return { k, c, v: [h.sr[k] / c, h.sg[k] / c, h.sb[k] / c, h.sa[k] / c] };
+  });
+  const W = [1, 1, 1, 1.2];
+  const stat = (box) => {
+    let c = 0;
+    const lo = [255, 255, 255, 255], hi = [0, 0, 0, 0];
+    box.items.forEach((it) => {
+      c += it.c;
+      for (let j = 0; j < 4; j++) { if (it.v[j] < lo[j]) lo[j] = it.v[j]; if (it.v[j] > hi[j]) hi[j] = it.v[j]; }
+    });
+    let ch = 0, best = -1;
+    for (let j = 0; j < 4; j++) { const r = (hi[j] - lo[j]) * W[j]; if (r > best) { best = r; ch = j; } }
+    box.c = c; box.ch = ch; box.range = best; box.score = box.items.length > 1 ? best * Math.sqrt(c) : -1;
+    return box;
+  };
+  const boxes = [stat({ items })];
+  while (boxes.length < room) {
+    let bi = -1, bs = 0;
+    boxes.forEach((b, i) => { if (b.score > bs) { bs = b.score; bi = i; } });
+    if (bi < 0) break;
+    const b = boxes[bi], ch = b.ch;
+    b.items.sort((x, y) => x.v[ch] - y.v[ch]);
+    let acc = 0, cut = 1;
+    for (let i = 0; i < b.items.length - 1; i++) { acc += b.items[i].c; if (acc >= b.c / 2) { cut = i + 1; break; } cut = i + 1; }
+    boxes.splice(bi, 1, stat({ items: b.items.slice(0, cut) }), stat({ items: b.items.slice(cut) }));
+  }
+  const lut = new Int16Array(1 << 19).fill(-1);
+  const plte = [], alpha = [];
+  if (h.hasTrans) { plte.push(0, 0, 0); alpha.push(0); }
+  boxes.forEach((b) => {
+    let c = 0;
+    const s = [0, 0, 0, 0];
+    b.items.forEach((it) => { c += it.c; for (let j = 0; j < 4; j++) s[j] += it.v[j] * it.c; });
+    const idx = alpha.length;
+    plte.push(Math.round(s[0] / c), Math.round(s[1] / c), Math.round(s[2] / c));
+    alpha.push(Math.round(s[3] / c));
+    b.items.forEach((it) => { lut[it.k] = idx; });
+  });
+  if (h.hasTrans) lut[0] = 0;
+  return { plte: Uint8Array.from(plte), alpha: Uint8Array.from(alpha), lut, n: alpha.length };
+}
+async function encodeIndexedPng(rgba, W, H, q) {
+  const bd = q.n <= 2 ? 1 : q.n <= 4 ? 2 : q.n <= 16 ? 4 : 8;
+  const rb = Math.ceil((W * bd) / 8);
+  const rows = new Uint8Array(H * rb);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = (y * W + x) * 4;
+      let v = q.lut[quantKey(rgba[i], rgba[i + 1], rgba[i + 2], rgba[i + 3])];
+      if (v < 0) v = 0;
+      if (bd === 8) rows[y * rb + x] = v;
+      else rows[y * rb + ((x * bd) >> 3)] |= v << (8 - bd - ((x * bd) & 7));
+    }
+  }
+  const mk = (filter) => {
+    const raw = new Uint8Array(H * (1 + rb));
+    for (let y = 0; y < H; y++) {
+      raw[y * (1 + rb)] = filter;
+      for (let i = 0; i < rb; i++) raw[y * (1 + rb) + 1 + i] = filter === 2 ? (rows[y * rb + i] - (y ? rows[(y - 1) * rb + i] : 0)) & 255 : rows[y * rb + i];
+    }
+    return raw;
+  };
+  const [a, b] = await Promise.all([zlibBytes(mk(0)), zlibBytes(mk(2))]);
+  const idat = a.length <= b.length ? a : b;
+  const ihdr = new Uint8Array(13);
+  const dv = new DataView(ihdr.buffer);
+  dv.setUint32(0, W); dv.setUint32(4, H);
+  ihdr[8] = bd; ihdr[9] = 3;
+  let tn = q.alpha.length;
+  while (tn > 0 && q.alpha[tn - 1] === 255) tn--;
+  const parts = [new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]), makeChunk('IHDR', ihdr), makeChunk('PLTE', q.plte)];
+  if (tn > 0) parts.push(makeChunk('tRNS', q.alpha.subarray(0, tn)));
+  parts.push(makeChunk('IDAT', idat), makeChunk('IEND', new Uint8Array(0)));
+  return concatBytes(parts);
+}
+// ==LIGHT END==
+// ==ZIP START==
+// 「無圧縮(store)」方式のZIPを作る。ファイル名は半角英数字だけを想定。
+function makeZip(files) {
+  const d = new Date();
+  const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  const parts = [], central = [];
+  let offset = 0;
+  files.forEach((f) => {
+    const name = new Uint8Array(f.name.length);
+    for (let i = 0; i < f.name.length; i++) name[i] = f.name.charCodeAt(i) & 127;
+    const crc = crc32(f.data);
+    const lh = new Uint8Array(30 + name.length);
+    const lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0, true); lv.setUint16(8, 0, true);
+    lv.setUint16(10, dosTime, true); lv.setUint16(12, dosDate, true); lv.setUint32(14, crc, true);
+    lv.setUint32(18, f.data.length, true); lv.setUint32(22, f.data.length, true); lv.setUint16(26, name.length, true); lv.setUint16(28, 0, true);
+    lh.set(name, 30);
+    const ch = new Uint8Array(46 + name.length);
+    const cv2 = new DataView(ch.buffer);
+    cv2.setUint32(0, 0x02014b50, true); cv2.setUint16(4, 20, true); cv2.setUint16(6, 20, true); cv2.setUint16(8, 0, true); cv2.setUint16(10, 0, true);
+    cv2.setUint16(12, dosTime, true); cv2.setUint16(14, dosDate, true); cv2.setUint32(16, crc, true);
+    cv2.setUint32(20, f.data.length, true); cv2.setUint32(24, f.data.length, true); cv2.setUint16(28, name.length, true);
+    cv2.setUint32(42, offset, true);
+    ch.set(name, 46);
+    parts.push(lh, f.data);
+    central.push(ch);
+    offset += lh.length + f.data.length;
+  });
+  const cd = concatBytes(central);
+  const end = new Uint8Array(22);
+  const ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cd.length, true); ev.setUint32(16, offset, true);
+  return concatBytes(parts.concat([cd, end]));
+}
+// ==ZIP END==
+</script>
+
+<script>
+// ==SHEET START==
+// 背景(透明にする部分)を調べる。透過PNGならアルファで判定、そうでなければ四隅の色を背景色として外側から塗りつぶす。
+function analyzeSheet(data, W, H, tol, inner) {
+  const total = W * H;
+  const bg = new Uint8Array(total);
+  let semi = 0;
+  for (let p = 3; p < data.length; p += 4) if (data[p] < 250) semi++;
+  if (semi > total * 0.02) {
+    for (let i = 0; i < total; i++) if (data[i * 4 + 3] < 20) bg[i] = 1;
+    return { bg, hasAlpha: true, color: null };
+  }
+  const idxs = [0, W - 1, (H - 1) * W, H * W - 1];
+  const corners = idxs.map((i) => [data[i * 4], data[i * 4 + 1], data[i * 4 + 2]]);
+  const close = (a, b) => Math.abs(a[0] - b[0]) <= tol && Math.abs(a[1] - b[1]) <= tol && Math.abs(a[2] - b[2]) <= tol;
+  let best = corners[0], bestN = 0;
+  for (const c of corners) {
+    let n = 0;
+    for (const d of corners) if (close(c, d)) n++;
+    if (n > bestN) { bestN = n; best = c; }
+  }
+  const near = (i) => {
+    const q = i * 4;
+    return Math.abs(data[q] - best[0]) <= tol && Math.abs(data[q + 1] - best[1]) <= tol && Math.abs(data[q + 2] - best[2]) <= tol;
+  };
+  if (inner) {
+    for (let i = 0; i < total; i++) if (near(i)) bg[i] = 1;
+    return { bg, hasAlpha: false, color: best };
+  }
+  const stack = new Int32Array(total);
+  let sp = 0;
+  const push = (i) => { if (!bg[i] && near(i)) { bg[i] = 1; stack[sp++] = i; } };
+  for (let x = 0; x < W; x++) { push(x); push((H - 1) * W + x); }
+  for (let y = 0; y < H; y++) { push(y * W); push(y * W + W - 1); }
+  while (sp) {
+    const i = stack[--sp];
+    const x = i % W, y = (i - x) / W;
+    if (x > 0) push(i - 1);
+    if (x < W - 1) push(i + 1);
+    if (y > 0) push(i - W);
+    if (y < H - 1) push(i + W);
+  }
+  return { bg, hasAlpha: false, color: best };
+}
+// 絵がある範囲(連続)を [開始, 終了) の配列で返す。minGap 以上の空きで区切る。
+function bandsOf(has, n, minGap) {
+  const out = [];
+  let start = -1, last = -1;
+  for (let i = 0; i < n; i++) {
+    if (has[i]) { if (start < 0) start = i; last = i; }
+    else if (start >= 0 && i - last >= minGap) { out.push([start, last + 1]); start = -1; }
+  }
+  if (start >= 0) out.push([start, last + 1]);
+  return out;
+}
+function tightBox(bg, W, x0, y0, x1, y1) {
+  let minX = x1, minY = y1, maxX = -1, maxY = -1;
+  for (let y = y0; y < y1; y++) {
+    const row = y * W;
+    for (let x = x0; x < x1; x++) {
+      if (!bg[row + x]) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+      }
+    }
+  }
+  return maxX < 0 ? null : { x: minX, y: minY, w: maxX - minX + 1, h: maxY - minY + 1 };
+}
+// opt: {mode:'auto'|'grid', cols, rows, minGap}
+function findCells(bg, W, H, opt) {
+  const rects = [];
+  const keep = (b) => { if (b && b.w * b.h >= 64) rects.push(b); };
+  if (opt.mode === 'grid') {
+    const cw = W / opt.cols, ch = H / opt.rows;
+    for (let r = 0; r < opt.rows; r++) {
+      for (let c = 0; c < opt.cols; c++) {
+        keep(tightBox(bg, W, Math.round(c * cw), Math.round(r * ch), Math.round((c + 1) * cw), Math.round((r + 1) * ch)));
+      }
+    }
+    return rects;
+  }
+  const rowHas = new Uint8Array(H);
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    for (let x = 0; x < W; x++) if (!bg[row + x]) { rowHas[y] = 1; break; }
+  }
+  for (const [y0, y1] of bandsOf(rowHas, H, opt.minGap)) {
+    const colHas = new Uint8Array(W);
+    for (let y = y0; y < y1; y++) {
+      const row = y * W;
+      for (let x = 0; x < W; x++) if (!bg[row + x]) colHas[x] = 1;
+    }
+    for (const [x0, x1] of bandsOf(colHas, W, opt.minGap)) keep(tightBox(bg, W, x0, y0, x1, y1));
+  }
+  return rects;
+}
+// ==SHEET END==
+</script>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const LIMIT_BYTES = 300 * 1024;
+  const MAX_ITEMS = 60, TARGET = 24;
+  const TAU = Math.PI * 2;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+  const easeOutBack = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+  const easeOutBounce = (t) => {
+    const n = 7.5625, d = 2.75;
+    if (t < 1 / d) return n * t * t;
+    if (t < 2 / d) { t -= 1.5 / d; return n * t * t + 0.75; }
+    if (t < 2.5 / d) { t -= 2.25 / d; return n * t * t + 0.9375; }
+    t -= 2.625 / d; return n * t * t + 0.984375;
+  };
+  const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+  // t は 0〜1。once=true の動きは最終コマで止まる登場アニメ。
+  const MOTIONS = {
+    bounce: { label: 'ぴょんぴょん', anchor: 'bottom', once: false, f: (t, k, W, H) => {
+      const h = Math.abs(Math.sin(Math.PI * 2 * t));
+      const squash = Math.pow(1 - h, 6) * 0.12 * k;
+      return { dy: -h * H * 0.09 * k, sx: 1 + squash, sy: 1 - squash };
+    } },
+    sway: { label: 'ゆらゆら', anchor: 'bottom', once: false, f: (t, k) => ({ rot: Math.sin(TAU * t) * 0.22 * k }) },
+    pulse: { label: 'ふくらむ', anchor: 'center', once: false, f: (t, k) => {
+      const s = 1 + 0.12 * k * Math.sin(TAU * t);
+      return { sx: s, sy: s };
+    } },
+    jelly: { label: 'ぷるぷる', anchor: 'bottom', once: false, f: (t, k) => {
+      const w = 0.1 * k * Math.sin(TAU * t * 2);
+      return { sx: 1 + w, sy: 1 - w };
+    } },
+    shake: { label: 'ぶるぶる', anchor: 'center', once: false, f: (t, k, W) => ({
+      dx: Math.sin(TAU * t * 4) * W * 0.025 * k,
+      rot: Math.sin(TAU * t * 4 + 1) * 0.04 * k
+    }) },
+    spin: { label: 'くるん', anchor: 'center', once: false, f: (t) => ({ rot: TAU * easeInOut(t) }) },
+    pop: { label: 'ぽんっ', note: '登場', anchor: 'center', once: true, f: (t) => {
+      const tt = Math.min(1, t / 0.65);
+      const s = Math.max(0, easeOutBack(tt));
+      return { sx: s, sy: s, alpha: Math.min(1, t / 0.15) };
+    } },
+    fade: { label: 'ふわっ', note: '登場', anchor: 'center', once: true, f: (t, k, W, H) => {
+      const tt = Math.min(1, t / 0.75);
+      return { alpha: easeInOut(tt), dy: (1 - tt) * H * 0.06 * k };
+    } },
+    swing: { label: 'ふりこ', anchor: 'top', once: false, f: (t, k) => ({ rot: Math.sin(TAU * t) * 0.35 * k }) },
+    heartbeat: { label: 'ドキドキ', anchor: 'center', once: false, f: (t, k) => {
+      const p = Math.pow(Math.max(0, Math.sin(TAU * t * 2)), 6);
+      const s = 1 + 0.16 * k * p;
+      return { sx: s, sy: s };
+    } },
+    float: { label: 'ふわふわ', anchor: 'center', once: false, f: (t, k, W, H) => ({
+      dy: Math.sin(TAU * t) * H * 0.035 * k,
+      rot: Math.sin(TAU * t) * 0.04 * k
+    }) },
+    flip: { label: 'くるっと', note: '横回転', anchor: 'center', once: false, f: (t) => ({ sx: Math.cos(TAU * t) }) },
+    zoom: { label: 'ずーん', note: '登場', anchor: 'center', once: true, f: (t, k) => {
+      const e = easeOutBack(Math.min(1, t / 0.7));
+      const s = Math.max(0, 1 + 1.2 * k * (1 - e));
+      return { sx: s, sy: s, alpha: Math.min(1, t / 0.2) };
+    } },
+    drop: { label: 'ストン', note: '登場', anchor: 'bottom', once: true, f: (t, k, W, H) => {
+      const e = easeOutBounce(Math.min(1, t / 0.7));
+      return { dy: -(1 - e) * H * 0.6 * k, alpha: Math.min(1, t / 0.1) };
+    } },
+    slidein: { label: 'スライドイン', note: '登場', anchor: 'center', once: true, f: (t, k, W) => {
+      const e = easeOutBack(Math.min(1, t / 0.7));
+      return { dx: -(1 - e) * W * 0.7 * k };
+    } },
+    zigzag: { label: 'ぴょこぴょこ', note: '横に跳ねる', anchor: 'bottom', once: false, f: (t, k, W, H) => ({
+      dx: Math.sin(TAU * t) * W * 0.06 * k,
+      dy: -Math.abs(Math.sin(TAU * t * 2)) * H * 0.05 * k
+    }) },
+    tada: { label: 'じゃーん', anchor: 'center', once: false, f: (t, k) => {
+      const s = 1 + 0.1 * k * Math.sin(TAU * t * 2);
+      return { sx: s, sy: s, rot: Math.sin(TAU * t * 2 + 1.2) * 0.1 * k };
+    } },
+    blink: { label: 'ぴかぴか', note: '点滅', anchor: 'center', once: false, f: (t, k) => ({
+      alpha: 1 - 0.65 * Math.min(1, k) * (0.5 - 0.5 * Math.cos(TAU * t * 2))
+    }) },
+    stretch: { label: 'びよーん', anchor: 'bottom', once: false, f: (t, k) => {
+      const w = Math.sin(TAU * t);
+      return { sx: 1 - 0.1 * k * w, sy: 1 + 0.18 * k * w };
+    } },
+    none: { label: 'とめる', anchor: 'center', once: false, f: () => ({}) }
+  };
+
+  // 犬の画像1枚が、そのままスタンプ1個になる。文字の画像は文字の一覧から重ねる(位置・大きさ・動きはスタンプごと)。
+  const DEF = { drot: 0, trot: 0, dscale: 100, dx: 50, dy: 50, fx: [], fxpower: 100, fxscale: 100, fxx: 50, fxy: 50, fxrot: 0, motion: ['bounce'], power: 100, tmotion: ['jelly'], tpower: 100, textFront: true, tscale: 100, tx: 50, ty: 80 };
+  const state = {
+    items: [], texts: [], sel: -1, tsel: -1,
+    autoLight: true, frames: 12, duration: 1, delay: 1000 / 12, loops: 2, size: '320x270', playing: true,
+    cfg: {
+      dog: { mode: 'auto', cols: 3, rows: 4, tol: 30, gap: 8, inner: false, sheet: null },
+      text: { mode: 'auto', cols: 2, rows: 2, tol: 30, gap: 8, inner: false, sheet: null }
+    },
+    ver: 0, editing: false, hover: false, editTarget: 'dog', mainId: null, tabId: null
+  };
+  const syncDelay = () => { state.delay = (state.duration * 1000) / state.frames; };
+  // 合計がちょうど指定のミリ秒になるように、コマごとの長さを割り振る
+  function frameDelays(n, totalMs) {
+    const base = Math.floor(totalMs / n), extra = totalMs - base * n;
+    return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
+  }
+  let uid = 0, sheetSeq = 0, lastDeleted = null, lastDeletedText = null;
+
+  const cv = $('cv');
+  const ctx = cv.getContext('2d');
+  const cur = () => state.items[state.sel] || null;
+  const note = (t) => { $('srcNote').textContent = t; };
+
+  function dims() {
+    const [w, h] = state.size.split('x').map(Number);
+    return { W: w, H: h };
+  }
+  function makeThumb(src, max) {
+    const k = Math.min(1, max / Math.max(src.width, src.height));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(src.width * k));
+    c.height = Math.max(1, Math.round(src.height * k));
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(src, 0, 0, c.width, c.height);
+    return c.toDataURL('image/png');
+  }
+  function newDog(canvas, extra) {
+    return Object.assign({ id: ++uid, canvas, thumb: makeThumb(canvas, 128), text: null, sample: false, from: -1 }, DEF, { motion: DEF.motion.slice(), tmotion: DEF.tmotion.slice(), fx: [] }, extra);
+  }
+  function newPiece(canvas, extra) {
+    return Object.assign({ id: ++uid, canvas, thumb: makeThumb(canvas, 160), sample: false, from: -1 }, extra);
+  }
+
+  // ---- サンプル(白い背景の肉球タグ12個のシートと、文字4つのシート) ----
+  function drawTag(g, cx, cy, s, rot, hue) {
+    g.save();
+    g.translate(cx, cy); g.rotate(rot); g.scale(s, s); g.translate(-200, -200);
+    g.lineWidth = 14; g.strokeStyle = 'hsl(' + hue + ',14%,58%)';
+    g.beginPath(); g.arc(200, 46, 30, 0, TAU); g.stroke();
+    const grad = g.createLinearGradient(60, 70, 340, 390);
+    grad.addColorStop(0, 'hsl(' + hue + ',30%,95%)'); grad.addColorStop(1, 'hsl(' + hue + ',26%,70%)');
+    g.beginPath(); g.arc(200, 228, 160, 0, TAU);
+    g.fillStyle = grad; g.fill();
+    g.lineWidth = 8; g.strokeStyle = 'hsl(' + hue + ',14%,50%)'; g.stroke();
+    g.beginPath(); g.arc(200, 228, 138, 0, TAU);
+    g.lineWidth = 3; g.strokeStyle = 'rgba(60,80,100,.35)'; g.stroke();
+    g.fillStyle = 'hsl(' + hue + ',40%,27%)';
+    const el = (x, y, rx, ry, r) => { g.beginPath(); g.ellipse(x, y, rx, ry, r, 0, TAU); g.fill(); };
+    el(200, 268, 54, 42, 0);
+    el(138, 214, 18, 25, -0.4);
+    el(177, 174, 18, 27, -0.12);
+    el(223, 174, 18, 27, 0.12);
+    el(262, 214, 18, 25, 0.4);
+    g.restore();
+  }
+  function makeSampleSheet() {
+    const cols = 3, rows = 4, cell = 300;
+    const c = document.createElement('canvas');
+    c.width = cols * cell; c.height = rows * cell;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, c.width, c.height);
+    for (let n = 0; n < cols * rows; n++) {
+      const col = n % cols, row = Math.floor(n / cols);
+      const jx = Math.sin(n * 12.9898) * 14, jy = Math.cos(n * 78.233) * 14;
+      drawTag(g, col * cell + cell / 2 + jx, row * cell + cell / 2 + jy, 0.52, Math.sin(n * 3.1) * 0.2, (n * 30 + 200) % 360);
+    }
+    return c;
+  }
+  function makeSampleTextSheet() {
+    const words = ['ワン!', 'おはよう', 'ありがとう', 'おやすみ'];
+    const cw = 420, ch = 200;
+    const c = document.createElement('canvas');
+    c.width = cw * 2; c.height = ch * 2;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.fillStyle = '#ffffff';
+    g.fillRect(0, 0, c.width, c.height);
+    g.font = '700 64px "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.lineWidth = 14; g.strokeStyle = '#ffd966';
+    words.forEach((w, n) => {
+      const x = (n % 2) * cw + cw / 2, y = Math.floor(n / 2) * ch + ch / 2;
+      g.strokeText(w, x, y);
+      g.fillStyle = '#24405a';
+      g.fillText(w, x, y);
+    });
+    return c;
+  }
+
+  // ---- 描画: 1コマの中の2枚(犬・文字)をそれぞれの動きで重ねる ----
+  // 動きは複数を組み合わせられる(位置・回転は足し算、拡大・透明度は掛け算)
+  const keysOf = (v) => (Array.isArray(v) ? v : v && v !== 'none' ? [v] : []).filter((k) => MOTIONS[k] && k !== 'none');
+  function drawLayer(g, W, H, i, N, src, motionKeys, power, pl) {
+    const k = power / 100;
+    const o = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 };
+    const keys = keysOf(motionKeys);
+    keys.forEach((mk) => {
+      const m = MOTIONS[mk];
+      const t = m.once ? (N > 1 ? i / (N - 1) : 1) : i / N;
+      const r = Object.assign({ dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }, m.f(t, k, W, H));
+      o.dx += r.dx; o.dy += r.dy; o.rot += r.rot; o.sx *= r.sx; o.sy *= r.sy; o.alpha *= r.alpha;
+    });
+    const anchors = keys.map((mk) => MOTIONS[mk].anchor);
+    const top = anchors.indexOf('top') >= 0;
+    const bottom = !top && anchors.indexOf('bottom') >= 0;
+    const ax = pl.cx, ay = bottom ? pl.cy + pl.dh / 2 : top ? pl.cy - pl.dh / 2 : pl.cy;
+    g.save();
+    g.globalAlpha = Math.max(0, Math.min(1, o.alpha));
+    g.translate(pl.cx, pl.cy);
+    g.rotate(pl.rot || 0);
+    g.translate(ax - pl.cx + o.dx, ay - pl.cy + o.dy);
+    g.rotate(o.rot);
+    g.scale(o.sx, o.sy);
+    g.imageSmoothingEnabled = true;
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(src, -pl.dw / 2, bottom ? -pl.dh : top ? 0 : -pl.dh / 2, pl.dw, pl.dh);
+    g.restore();
+  }
+  // 文字の画像を置く場所(動きを付ける前の、止まった状態)
+  function textPl(W, H, item) {
+    const tc = item && item.text && item.text.canvas;
+    if (!tc) return null;
+    const tb = Math.min((W * 0.9) / tc.width, (H * 0.5) / tc.height) * (item.tscale / 100);
+    let dw = tc.width * tb, dh = tc.height * tb;
+    const s = Math.min(1, (W * 0.98) / dw, (H * 0.98) / dh);
+    dw *= s; dh *= s;
+    return { cx: clamp((W * item.tx) / 100, dw / 2, W - dw / 2), cy: clamp((H * item.ty) / 100, dh / 2, H - dh / 2), dw, dh, rot: (item.trot * Math.PI) / 180 };
+  }
+  // 犬の画像を置く場所(動きを付ける前の、止まった状態)
+  function dogPl(W, H, item) {
+    const dog = item.canvas;
+    const base = Math.min((W * 0.72) / dog.width, (H * 0.72) / dog.height) * (item.dscale / 100);
+    return { cx: (W * item.dx) / 100, cy: (H * item.dy) / 100, dw: dog.width * base, dh: dog.height * base, rot: (item.drot * Math.PI) / 180 };
+  }
+  // ---- エフェクト(手前に重ねる飾り。全部コードで描くので、画像は要らない) ----
+  const frac = (v) => v - Math.floor(v);
+  const rnd = (n) => frac(Math.sin(n * 127.1 + 311.7) * 43758.5453);
+  function starPath(g, x, y, r) {
+    g.beginPath();
+    g.moveTo(x, y - r);
+    g.quadraticCurveTo(x + r * 0.15, y - r * 0.15, x + r, y);
+    g.quadraticCurveTo(x + r * 0.15, y + r * 0.15, x, y + r);
+    g.quadraticCurveTo(x - r * 0.15, y + r * 0.15, x - r, y);
+    g.quadraticCurveTo(x - r * 0.15, y - r * 0.15, x, y - r);
+    g.closePath();
+  }
+  function heartPath(g, x, y, s) {
+    g.beginPath();
+    g.moveTo(x, y + s * 0.4);
+    g.bezierCurveTo(x - s * 1.1, y - s * 0.2, x - s * 0.6, y - s * 0.95, x, y - s * 0.4);
+    g.bezierCurveTo(x + s * 0.6, y - s * 0.95, x + s * 1.1, y - s * 0.2, x, y + s * 0.4);
+    g.closePath();
+  }
+  function paint(g, fill, stroke, lw) {
+    g.fillStyle = fill; g.fill();
+    g.lineWidth = lw; g.strokeStyle = stroke; g.lineJoin = 'round'; g.stroke();
+  }
+  // c: { W, H, t(0〜1でひと回り), k(強さ), u(大きさの基準), pl(犬の置き場所) }
+  const FX = {
+    sparkle: { label: 'キラキラ', f: (g, c) => {
+      for (let n = 0; n < 6; n++) {
+        const ang = (n / 6) * TAU + rnd(n) * 0.8, rr = 0.55 + rnd(n + 9) * 0.3;
+        const x = c.pl.cx + Math.cos(ang) * c.pl.dw * rr * 0.62, y = c.pl.cy + Math.sin(ang) * c.pl.dh * rr * 0.62;
+        const tw = Math.max(0, Math.sin(Math.PI * frac(c.t * 2 + rnd(n + 3))));
+        if (tw <= 0.02) continue;
+        starPath(g, clamp(x, 10, c.W - 10), clamp(y, 10, c.H - 10), (9 + rnd(n + 5) * 9) * c.u * tw * c.k);
+        paint(g, '#ffe066', 'rgba(255,255,255,0.9)', 1.5 * c.u);
+      }
+    } },
+    hearts: { label: 'ハート', f: (g, c) => {
+      for (let n = 0; n < 4; n++) {
+        const p = frac(c.t + n / 4);
+        const x = c.pl.cx + (rnd(n + 1) - 0.5) * c.pl.dw * 0.7 + Math.sin(TAU * p) * 8 * c.u;
+        const y = c.pl.cy - c.pl.dh * 0.25 - p * c.pl.dh * 0.45;
+        g.save(); g.globalAlpha = Math.min(1, (1 - p) * 2.2) * Math.min(1, c.k);
+        heartPath(g, clamp(x, 12, c.W - 12), clamp(y, 12, c.H - 12), (11 + rnd(n + 7) * 6) * c.u * c.k);
+        paint(g, '#ff6f91', 'rgba(255,255,255,0.9)', 1.5 * c.u);
+        g.restore();
+      }
+    } },
+    notes: { label: 'おんぷ', f: (g, c) => {
+      for (let n = 0; n < 3; n++) {
+        const p = frac(c.t + n / 3);
+        const x = clamp(c.pl.cx + (n - 1) * c.pl.dw * 0.38 + Math.sin(TAU * p) * 7 * c.u, 14, c.W - 14);
+        const y = clamp(c.pl.cy - c.pl.dh * 0.2 - p * c.pl.dh * 0.4, 16, c.H - 10);
+        const s = (10 + n * 2) * c.u * c.k;
+        g.save(); g.globalAlpha = Math.min(1, (1 - p) * 2.2) * Math.min(1, c.k);
+        g.fillStyle = '#4a6fa5'; g.strokeStyle = '#4a6fa5'; g.lineWidth = 2.2 * c.u; g.lineCap = 'round';
+        g.beginPath(); g.ellipse(x, y, s * 0.55, s * 0.4, -0.4, 0, TAU); g.fill();
+        g.beginPath(); g.moveTo(x + s * 0.5, y - s * 0.1); g.lineTo(x + s * 0.5, y - s * 1.4);
+        g.quadraticCurveTo(x + s * 1.1, y - s * 1.1, x + s * 0.9, y - s * 0.6); g.stroke();
+        g.restore();
+      }
+    } },
+    sweat: { label: 'あせ', f: (g, c) => {
+      const p = frac(c.t);
+      const x = clamp(c.pl.cx + c.pl.dw * 0.34, 12, c.W - 12), y = clamp(c.pl.cy - c.pl.dh * 0.32 + p * c.pl.dh * 0.22, 12, c.H - 12);
+      const s = 11 * c.u * c.k;
+      g.save(); g.globalAlpha = Math.min(1, (1 - p) * 2.5, p * 6 + 0.2);
+      g.beginPath(); g.moveTo(x, y - s);
+      g.quadraticCurveTo(x + s * 0.95, y + s * 0.2, x, y + s * 0.85);
+      g.quadraticCurveTo(x - s * 0.95, y + s * 0.2, x, y - s);
+      paint(g, '#8fd3ff', '#ffffff', 1.5 * c.u);
+      g.restore();
+    } },
+    anger: { label: 'イライラ', f: (g, c) => {
+      const x = clamp(c.pl.cx + c.pl.dw * 0.3, 20, c.W - 20), y = clamp(c.pl.cy - c.pl.dh * 0.3, 20, c.H - 20);
+      const r = 15 * c.u * c.k * (1 + 0.18 * Math.sin(TAU * c.t * 2));
+      g.save(); g.strokeStyle = '#e8403a'; g.lineWidth = 4 * c.u; g.lineCap = 'round';
+      [[1, 1], [-1, 1], [1, -1], [-1, -1]].forEach(([sx, sy]) => {
+        g.beginPath(); g.moveTo(x + sx * r * 0.25, y + sy * r);
+        g.quadraticCurveTo(x + sx * r * 0.25, y + sy * r * 0.25, x + sx * r, y + sy * r * 0.25); g.stroke();
+      });
+      g.restore();
+    } },
+    zzz: { label: 'ぐーぐー', note: 'Zzz', f: (g, c) => {
+      g.save(); g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      for (let n = 0; n < 3; n++) {
+        const p = frac(c.t + n / 3);
+        const x = clamp(c.pl.cx + c.pl.dw * 0.3 + p * 18 * c.u, 12, c.W - 12), y = clamp(c.pl.cy - c.pl.dh * 0.3 - p * c.pl.dh * 0.3, 12, c.H - 12);
+        const size = (13 + p * 10) * c.u * c.k;
+        g.globalAlpha = Math.min(1, (1 - p) * 2.2) * Math.min(1, c.k);
+        g.font = '700 ' + size + 'px "Zen Maru Gothic", sans-serif';
+        g.lineWidth = 3 * c.u; g.strokeStyle = '#ffffff'; g.strokeText('Z', x, y);
+        g.fillStyle = '#6a7fc0'; g.fillText('Z', x, y);
+      }
+      g.restore();
+    } },
+    snow: { label: 'ゆき', f: (g, c) => {
+      g.save();
+      for (let n = 0; n < 16; n++) {
+        const p = frac(c.t + rnd(n));
+        const x = c.pl.cx - c.sw / 2 + frac(rnd(n + 20) + Math.sin(TAU * (c.t + rnd(n + 40))) * 0.03) * c.sw, y = c.pl.cy - c.sh / 2 + p * (c.sh + 10) - 5;
+        g.beginPath(); g.arc(x, y, (2 + rnd(n + 60) * 2.5) * c.u * Math.min(1.4, c.k), 0, TAU);
+        g.fillStyle = '#ffffff'; g.fill();
+        g.lineWidth = 1 * c.u; g.strokeStyle = 'rgba(120,150,190,0.6)'; g.stroke();
+      }
+      g.restore();
+    } },
+    bubbles: { label: 'シャボン玉', f: (g, c) => {
+      for (let n = 0; n < 5; n++) {
+        const p = frac(c.t + n / 5);
+        const x = c.pl.cx + (rnd(n + 2) - 0.5) * c.pl.dw + Math.sin(TAU * p) * 6 * c.u;
+        const y = c.pl.cy + c.pl.dh * 0.45 - p * c.pl.dh * 0.95;
+        const r = (8 + rnd(n + 8) * 9) * c.u * c.k;
+        g.save(); g.globalAlpha = Math.min(1, (1 - p) * 3, p * 5 + 0.2);
+        g.beginPath(); g.arc(x, y, r, 0, TAU);
+        g.fillStyle = 'rgba(200,235,255,0.28)'; g.fill();
+        g.lineWidth = 1.6 * c.u; g.strokeStyle = 'rgba(100,180,235,0.95)'; g.stroke();
+        g.beginPath(); g.arc(x - r * 0.35, y - r * 0.35, r * 0.22, 0, TAU); g.fillStyle = '#ffffff'; g.fill();
+        g.restore();
+      }
+    } },
+    petals: { label: 'さくら', f: (g, c) => {
+      for (let n = 0; n < 10; n++) {
+        const p = frac(c.t + rnd(n));
+        const x = c.pl.cx - c.sw / 2 + rnd(n + 20) * c.sw + Math.sin(TAU * (p + rnd(n + 3))) * 0.04 * c.sw;
+        const y = c.pl.cy - c.sh / 2 + p * (c.sh + 14) - 7;
+        g.save(); g.translate(x, y); g.rotate(TAU * (p + rnd(n + 5)));
+        g.beginPath(); g.ellipse(0, 0, 6 * c.u * Math.min(1.4, c.k), 3.6 * c.u * Math.min(1.4, c.k), 0, 0, TAU);
+        paint(g, '#ffb7c9', '#ff8fab', 1.2 * c.u);
+        g.restore();
+      }
+    } },
+    dizzy: { label: 'くらくら', note: '星がまわる', f: (g, c) => {
+      for (let n = 0; n < 3; n++) {
+        const a = TAU * (c.t + n / 3);
+        const x = c.pl.cx + Math.cos(a) * c.pl.dw * 0.32, y = c.pl.cy - c.pl.dh * 0.42 + Math.sin(a) * c.pl.dh * 0.07;
+        starPath(g, clamp(x, 10, c.W - 10), clamp(y, 10, c.H - 10), (9 + 4 * Math.sin(a)) * c.u * c.k);
+        paint(g, '#ffd23f', '#ffffff', 1.4 * c.u);
+      }
+    } },
+    question: { label: 'ハテナ', note: '?', f: (g, c) => {
+      const x = clamp(c.pl.cx + c.pl.dw * 0.3, 16, c.W - 16), y = clamp(c.pl.cy - c.pl.dh * 0.38 - Math.abs(Math.sin(TAU * c.t * 2)) * 8 * c.u, 18, c.H - 18);
+      g.save(); g.translate(x, y); g.rotate(0.22);
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.font = '800 ' + 36 * c.u * c.k + 'px "Zen Maru Gothic", sans-serif';
+      g.lineWidth = 5 * c.u; g.strokeStyle = '#ffffff'; g.strokeText('?', 0, 0);
+      g.fillStyle = '#3f7fd0'; g.fillText('?', 0, 0);
+      g.restore();
+    } },
+    exclaim: { label: 'ビックリ', note: '!', f: (g, c) => {
+      const pulse = 1 + 0.25 * Math.max(0, Math.sin(TAU * c.t * 2));
+      const x = clamp(c.pl.cx, 16, c.W - 16), y = clamp(c.pl.cy - c.pl.dh * 0.44, 18, c.H - 18);
+      g.save(); g.translate(x, y); g.scale(pulse, pulse);
+      g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+      g.font = '800 ' + 40 * c.u * c.k + 'px "Zen Maru Gothic", sans-serif';
+      g.lineWidth = 5 * c.u; g.strokeStyle = '#ffffff'; g.strokeText('!', 0, 0);
+      g.fillStyle = '#e8403a'; g.fillText('!', 0, 0);
+      g.restore();
+    } },
+    confetti: { label: '紙ふぶき', f: (g, c) => {
+      const cols = ['#ff6f91', '#ffd23f', '#4ecdc4', '#6a8cff', '#ff9f5a'];
+      for (let n = 0; n < 18; n++) {
+        const p = frac(c.t + rnd(n));
+        const x = c.pl.cx - c.sw / 2 + rnd(n + 30) * c.sw + Math.sin(TAU * (p * 2 + rnd(n + 2))) * 8 * c.u;
+        const y = c.pl.cy - c.sh / 2 + p * (c.sh + 12) - 6;
+        g.save(); g.translate(x, y); g.rotate(TAU * (p * 2 + rnd(n + 5)));
+        g.scale(1, Math.cos(TAU * p * 3 + n));
+        g.fillStyle = cols[n % cols.length];
+        g.fillRect(-3.5 * c.u * c.k, -2 * c.u * c.k, 7 * c.u * c.k, 4 * c.u * c.k);
+        g.restore();
+      }
+    } },
+    rain: { label: 'あめ', f: (g, c) => {
+      g.save(); g.lineCap = 'round'; g.strokeStyle = 'rgba(90,140,220,0.85)'; g.lineWidth = Math.min(2.4, 1.6 * c.k) * c.u;
+      for (let n = 0; n < 16; n++) {
+        const p = frac(c.t * 2 + rnd(n));
+        const x = c.pl.cx - c.sw / 2 + rnd(n + 10) * c.sw, y = c.pl.cy - c.sh / 2 + p * (c.sh + 20) - 10;
+        g.beginPath(); g.moveTo(x, y); g.lineTo(x - 4 * c.u, y + 13 * c.u); g.stroke();
+      }
+      g.restore();
+    } },
+    ripple: { label: 'はもん', note: 'ひろがる輪', f: (g, c) => {
+      g.save();
+      for (let n = 0; n < 3; n++) {
+        const p = frac(c.t + n / 3);
+        g.globalAlpha = (1 - p) * Math.min(1, c.k);
+        g.beginPath(); g.arc(c.pl.cx, c.pl.cy, p * Math.max(c.pl.dw, c.pl.dh) * 0.8, 0, TAU);
+        g.lineWidth = (1.5 + 3 * (1 - p)) * c.u; g.strokeStyle = '#46a8c8'; g.stroke();
+      }
+      g.restore();
+    } },
+    impact: { label: 'ばーん', note: '集中線', f: (g, c) => {
+      g.save(); g.fillStyle = 'rgba(40,40,60,0.55)';
+      const cx = c.pl.cx, cy = c.pl.cy, R = Math.hypot(c.W, c.H), n = 22, off = (Math.floor(c.t * 4) % 2) * 0.5;
+      for (let i = 0; i < n; i++) {
+        const a = ((i + off) / n) * TAU, w = (0.035 + rnd(i) * 0.03) * c.k;
+        g.beginPath();
+        g.moveTo(cx + Math.cos(a) * Math.max(c.pl.dw, c.pl.dh) * 0.75, cy + Math.sin(a) * Math.max(c.pl.dw, c.pl.dh) * 0.75);
+        g.lineTo(cx + Math.cos(a - w) * R, cy + Math.sin(a - w) * R);
+        g.lineTo(cx + Math.cos(a + w) * R, cy + Math.sin(a + w) * R);
+        g.closePath(); g.fill();
+      }
+      g.restore();
+    } }
+  };
+  // エフェクトを置く場所(犬・文字とは別。正方形の枠の中心と大きさ)
+  function fxPl(W, H, item) {
+    const base = Math.min(W, H) * 0.72 * (item.fxscale / 100);
+    return { cx: (W * item.fxx) / 100, cy: (H * item.fxy) / 100, dw: base, dh: base, rot: (item.fxrot * Math.PI) / 180 };
+  }
+  function renderFrame(g, W, H, i, N, item, still) {
+    g.clearRect(0, 0, W, H);
+    if (!item) return;
+    const mk = (k) => (still ? [] : k);
+    const layers = [];
+    layers.push({ src: item.canvas, motion: mk(item.motion), power: item.power, pl: dogPl(W, H, item) });
+    const pl = textPl(W, H, item);
+    if (pl) layers.push({ src: item.text.canvas, motion: mk(item.tmotion), power: item.tpower, pl });
+    if (!item.textFront) layers.reverse();
+    layers.forEach((L) => drawLayer(g, W, H, i, N, L.src, L.motion, L.power, L.pl));
+    const fxKeys = (item.fx || []).filter((k) => FX[k]);
+    if (fxKeys.length) {
+      const pl = fxPl(W, H, item), sc = item.fxscale / 100;
+      const c = { W, H, t: N > 0 ? i / N : 0, k: item.fxpower / 100, u: (Math.min(W, H) / 270) * 1.3 * sc, pl, sw: W * sc, sh: H * sc };
+      g.save();
+      g.translate(pl.cx, pl.cy); g.rotate(pl.rot); g.translate(-pl.cx, -pl.cy);
+      fxKeys.forEach((k) => { g.save(); FX[k].f(g, c); g.restore(); });
+      g.restore();
+    }
+  }
+
+  // ---- プレビュー再生 ----
+  let idx = 0, last = 0;
+  function draw() {
+    const { W, H } = dims();
+    const it = cur();
+    renderFrame(ctx, W, H, state.editing ? 0 : idx % state.frames, state.frames, it, state.editing);
+    const mc = $('miniCv');
+    if (mc) {
+      if (mc.width !== W) mc.width = W;
+      if (mc.height !== H) mc.height = H;
+      renderFrame(mc.getContext('2d'), W, H, state.editing ? 0 : idx % state.frames, state.frames, it, state.editing);
+    }
+    if (it && (state.editing || state.hover)) {
+      const pl = state.editing
+        ? ((state.editTarget !== 'text' || it.text) ? (state.editTarget === 'dog' ? dogPl(W, H, it) : state.editTarget === 'fx' ? fxPl(W, H, it) : textPl(W, H, it)) : null)
+        : targetPl(it);
+      if (pl) {
+        ctx.save();
+        ctx.translate(pl.cx, pl.cy);
+        ctx.rotate(pl.rot);
+        ctx.strokeStyle = '#1c7c8c';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 4]);
+        ctx.strokeRect(-pl.dw / 2, -pl.dh / 2, pl.dw, pl.dh);
+        if (!state.editing) {
+          // パソコン用: 角の「つまみ」。ドラッグで大きさを変える
+          const hs = 5 * canvasPerCss();
+          ctx.setLineDash([]);
+          [[-1, -1], [1, -1], [1, 1], [-1, 1]].forEach(([sx, sy]) => {
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(sx * pl.dw / 2 - hs, sy * pl.dh / 2 - hs, hs * 2, hs * 2);
+            ctx.strokeRect(sx * pl.dw / 2 - hs, sy * pl.dh / 2 - hs, hs * 2, hs * 2);
+          });
+        }
+        ctx.restore();
+      }
+    }
+  }
+  function canvasPerCss() {
+    const r = cv.getBoundingClientRect();
+    return r && r.width ? dims().W / r.width : 1;
+  }
+  function tick(ts) {
+    requestAnimationFrame(tick);
+    if (!state.playing || state.editing) return;
+    if (ts - last >= state.delay) {
+      last = ts;
+      idx = (idx + 1) % state.frames;
+      draw();
+    }
+  }
+
+  // ---- 規格チェック ----
+  let sizeBytes = null, lightInfo = null;
+  function row(name, val, status, label) {
+    return '<li><span>' + name + '</span><span class="val">' + val + '</span><span class="pill ' + status + '">' + label + '</span></li>';
+  }
+  function updateChecks() {
+    const { W, H } = dims();
+    const dur = state.duration * 1000;
+    const rows = [];
+    rows.push(row('画像サイズ', W + '×' + H + 'px', (W <= 320 && H <= 270) ? 'ok' : 'ng', (W <= 320 && H <= 270) ? 'OK' : '要調整'));
+    rows.push(row('コマ数(5〜20)', state.frames + 'コマ', (state.frames >= 5 && state.frames <= 20) ? 'ok' : 'ng', (state.frames >= 5 && state.frames <= 20) ? 'OK' : '要調整'));
+    rows.push(row('再生時間(1〜4秒の整数)', state.duration + '秒', 'ok', 'OK'));
+    const total = dur * state.loops;
+    rows.push(row('ループ込みの合計(4秒以内)', (total / 1000) + '秒(' + state.loops + '回)', total <= 4000 ? 'ok' : 'ng', total <= 4000 ? 'OK' : '要調整'));
+    if (!cur()) rows.push(row('容量(300KB以内)', '—', 'wait', '—'));
+    else if (sizeBytes === null) rows.push(row('容量(300KB以内)', '計算中', 'wait', '…'));
+    else rows.push(row('容量(300KB以内)', Math.round(sizeBytes / 1024) + ' KB', sizeBytes <= LIMIT_BYTES ? 'ok' : 'ng', sizeBytes <= LIMIT_BYTES ? 'OK' : '要調整'));
+    if (lightInfo) rows.push(row('自動で軽くした内容', lightInfo.colors + '色' + (lightInfo.frames !== state.frames ? '・' + lightInfo.frames + 'コマ' : ''), lightInfo.ok ? 'ok' : 'ng', lightInfo.ok ? '自動' : 'まだ大きい'));
+    $('checks').innerHTML = rows.join('');
+  }
+
+  // ---- APNG生成 ----
+  let buildToken = 0, cache = null, timer = 0;
+  function cacheKey(it) {
+    return [it.id, state.ver, state.frames, state.delay, state.loops, state.size, state.autoLight ? 1 : 0].join('|');
+  }
+  const sameBytes = (a, b) => { if (a.length !== b.length) return false; for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false; return true; };
+  async function renderRgba(it, W, H, N) {
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const g = off.getContext('2d', { willReadFrequently: true });
+    const out = [];
+    for (let i = 0; i < N; i++) {
+      renderFrame(g, W, H, i, N, it, false);
+      out.push(g.getImageData(0, 0, W, H).data);
+    }
+    return out;
+  }
+  // 容量を小さくする: まず色数を減らし、それでも大きければコマ数を減らす(再生時間は変えない)
+  async function lightenLadder(it, W, H) {
+    const dur = state.duration * 1000;
+    const Ns = [state.frames];
+    [Math.ceil(state.frames * 0.75), Math.ceil(state.frames * 0.55), 5].forEach((n) => { n = Math.max(5, n); if (n < Ns[Ns.length - 1]) Ns.push(n); });
+    let best = null;
+    for (const N of Ns) {
+      const rgba = await renderRgba(it, W, H, N);
+      const h = buildHistogram(rgba);
+      for (const K of (N === state.frames ? [256, 128, 64, 32, 16] : [128, 64, 32, 16])) {
+        const q = quantizeHistogram(h, K);
+        const pngs = [];
+        for (const d of rgba) pngs.push(await encodeIndexedPng(d, W, H, q));
+        const bytes = encodeApng(pngs, frameDelays(N, dur), state.loops);
+        if (!best || bytes.length < best.bytes.length) best = { bytes, colors: K, frames: N, ok: false };
+        if (bytes.length <= LIMIT_BYTES) return { bytes, colors: K, frames: N, ok: true };
+      }
+    }
+    return best;
+  }
+  // 戻り値: bytes=APNG、same=全コマが同じ絵(LINEで登録できない)、blank0=1コマ目が空(静止画になる)、light=自動で軽くした内容
+  async function buildApngFor(it, W0, H0) {
+    const d = dims();
+    const W = W0 || d.W, H = H0 || d.H;
+    const N = state.frames;
+    const off = document.createElement('canvas');
+    off.width = W; off.height = H;
+    const g = off.getContext('2d', { willReadFrequently: true });
+    const pngs = [];
+    let blank0 = false;
+    for (let i = 0; i < N; i++) {
+      renderFrame(g, W, H, i, N, it, false);
+      if (i === 0) {
+        const px = g.getImageData(0, 0, W, H).data;
+        blank0 = true;
+        for (let q = 3; q < px.length; q += 4) if (px[q] > 8) { blank0 = false; break; }
+      }
+      const blob = await new Promise((res) => off.toBlob(res, 'image/png'));
+      pngs.push(new Uint8Array(await blob.arrayBuffer()));
+    }
+    const same = pngs.every((p) => sameBytes(p, pngs[0]));
+    const bytes = encodeApng(pngs, frameDelays(N, state.duration * 1000), state.loops);
+    if (bytes.length > LIMIT_BYTES && state.autoLight && typeof CompressionStream !== 'undefined') {
+      try {
+        const r = await lightenLadder(it, W, H);
+        if (r && r.bytes.length < bytes.length) return { bytes: r.bytes, same, blank0, light: { colors: r.colors, frames: r.frames, ok: r.ok } };
+      } catch (e) { /* 軽くできなかったときは、そのまま */ }
+    }
+    return { bytes, same, blank0, light: null };
+  }
+  async function buildApng() {
+    const it = cur();
+    if (!it) throw new Error('no item');
+    const key = cacheKey(it);
+    if (cache && cache.key === key) return cache;
+    const r = await buildApngFor(it);
+    return { key, bytes: r.bytes, same: r.same, blank0: r.blank0, light: r.light };
+  }
+  function scheduleEstimate() {
+    sizeBytes = null; lightInfo = null;
+    updateChecks();
+    clearTimeout(timer);
+    if (!cur()) return;
+    timer = setTimeout(async () => {
+      const my = ++buildToken;
+      try {
+        const res = await buildApng();
+        if (my !== buildToken) return;
+        cache = res;
+        sizeBytes = res.bytes.length;
+        lightInfo = res.light;
+      } catch (e) {
+        if (my !== buildToken) return;
+        sizeBytes = null;
+      }
+      updateChecks();
+    }, 350);
+  }
+
+  // ---- 画面への反映 ----
+  function fmtOutputs() {
+    const d = cur() || DEF;
+    $('framesOut').textContent = state.frames + 'コマ';
+    $('delayNote').textContent = '1コマあたり約' + Math.round(state.delay) + 'ms(コマ数' + state.frames + ' × 長さ)';
+    $('loopsOut').textContent = state.loops + '回';
+    $('powerOut').textContent = d.power + '%';
+    $('tpowerOut').textContent = d.tpower + '%';
+    $('fxpowerOut').textContent = d.fxpower + '%';
+  }
+  function applyChange(resetFrame) {
+    const { W, H } = dims();
+    if (cv.width !== W) cv.width = W;
+    if (cv.height !== H) cv.height = H;
+    if (resetFrame) idx = 0;
+    fmtOutputs();
+    draw();
+    renderMainTab();
+    scheduleEstimate();
+  }
+  // メイン画像(240×240)とタブ画像(96×74): 選んだスタンプの止まった姿
+  function renderMainTab() {
+    [['main', 240, 240, 'メイン'], ['tab', 96, 74, 'タブ']].forEach(([k, W, H, label]) => {
+      const c = $(k + 'Cv'), g = c.getContext('2d');
+      const idx0 = state.items.findIndex((it) => it.id === state[k + 'Id']);
+      g.clearRect(0, 0, W, H);
+      if (idx0 < 0) { state[k + 'Id'] = null; $(k + 'Cap').textContent = label + ' ' + W + '×' + H + ': 未設定'; return; }
+      renderFrame(g, W, H, 0, 1, state.items[idx0], true);
+      $(k + 'Cap').textContent = label + ' ' + W + '×' + H + ': スタンプ' + (idx0 + 1);
+    });
+  }
+  const radios = { motion: [], tmotion: [], fx: [] };
+  function syncPanel() {
+    const it = cur();
+    const d = it || DEF;
+    radios.fx.forEach((r) => { r.checked = r.value === 'none' ? !(d.fx || []).length : (d.fx || []).indexOf(r.value) >= 0; });
+    $('fxpower').value = d.fxpower;
+    ['motion', 'tmotion'].forEach((key) => radios[key].forEach((r) => { const ks = keysOf(d[key]); r.checked = r.value === 'none' ? ks.length === 0 : ks.indexOf(r.value) >= 0; }));
+    $('power').value = d.power;
+    $('tpower').value = d.tpower;
+    $('ordFront').checked = d.textFront;
+    $('ordBack').checked = !d.textFront;
+    const has = !!(it && it.text);
+    $('textThumbWrap').hidden = !has;
+    $('textNone').hidden = has;
+    if (has) $('textThumb').src = it.text.thumb;
+    $('textRemove').disabled = !has;
+    cv.style.cursor = it ? 'grab' : 'default';
+    cv.style.touchAction = it ? 'none' : 'auto';
+    $('dogReset').disabled = !it;
+    $('textReset').disabled = !has;
+    $('fxReset').disabled = !it;
+    $('setMain').disabled = !it;
+    $('setTab').disabled = !it;
+    $('rotL').disabled = !it;
+    $('rotR').disabled = !it;
+  }
+  // 選んでいるスタンプの設定を変える
+  function setItem(props, resetFrame) {
+    const it = cur();
+    if (!it) return;
+    Object.assign(it, props);
+    state.ver++;
+    renderStrip();
+    applyChange(!!resetFrame);
+  }
+
+  // ---- 犬の画像(スタンプ一覧) ----
+  function keyClick(el) {
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
+  }
+  function scrollIntoTray(strip, child) {
+    if (!child) return;
+    const t = child.offsetTop, b = t + child.offsetHeight;
+    if (t < strip.scrollTop) strip.scrollTop = Math.max(0, t - 8);
+    else if (b > strip.scrollTop + strip.clientHeight) strip.scrollTop = b - strip.clientHeight + 8;
+  }
+  function renderStrip() {
+    const strip = $('strip');
+    strip.innerHTML = '';
+    state.items.forEach((it, i) => {
+      const b = document.createElement('div');
+      b.className = 'thumb' + (i === state.sel ? ' on' : '');
+      b.tabIndex = 0;
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', i === state.sel ? 'true' : 'false');
+      b.setAttribute('aria-label', 'スタンプ' + (i + 1) + (it.text ? '(文字あり)' : ''));
+      b.innerHTML = '<img alt="" draggable="false" src="' + it.thumb + '">' + (it.text ? '<img class="mini" alt="" draggable="false" src="' + it.text.thumb + '">' : '') + (it.id === state.mainId ? '<em class="bd m">メイン</em>' : '') + (it.id === state.tabId ? '<em class="bd t">タブ</em>' : '') + '<i>' + (i + 1) + '</i>';
+      b.addEventListener('click', () => useItem(i));
+      keyClick(b);
+      // 文字の画像をこのスタンプにドロップして重ねる
+      b.addEventListener('dragover', (e) => { if (hasInternal(e)) { e.preventDefault(); b.classList.add('dropok'); } });
+      b.addEventListener('dragleave', () => b.classList.remove('dropok'));
+      b.addEventListener('drop', (e) => {
+        b.classList.remove('dropok');
+        const piece = pieceFromDrop(e);
+        if (!piece) return;
+        e.preventDefault();
+        e.stopPropagation();
+        useItem(i);
+        assignText(piece, null, null);
+      });
+      strip.appendChild(b);
+    });
+    const n = state.items.length;
+    $('countText').textContent = n + '個(最大' + MAX_ITEMS + '個)';
+    const pill = $('countPill');
+    if (n === TARGET) { pill.className = 'pill ok'; pill.textContent = '24個ちょうど'; }
+    else if (n > TARGET) { pill.className = 'pill ng'; pill.textContent = (n - TARGET) + '個多い'; }
+    else { pill.className = 'pill wait'; pill.textContent = 'あと' + (TARGET - n) + '個'; }
+    $('mvL').disabled = state.sel <= 0;
+    $('mvR').disabled = state.sel < 0 || state.sel >= n - 1;
+    $('delBtn').disabled = state.sel < 0;
+    $('undoBtn').disabled = !lastDeleted;
+    scrollIntoTray(strip, strip.children[state.sel]);
+  }
+  function useItem(i) {
+    state.sel = i;
+    state.ver++;
+    note('スタンプ ' + (i + 1) + ' を表示中(全' + state.items.length + '個)');
+    $('resultBoard').hidden = true;
+    $('msg').textContent = '';
+    syncPanel();
+    renderStrip();
+    applyChange(true);
+  }
+  function showNone() {
+    state.sel = -1;
+    state.ver++;
+    note('スタンプがありません。シートを切り出すか、画像を追加してください。');
+    syncPanel();
+    renderStrip();
+    applyChange(true);
+  }
+  function moveItem(d) {
+    const i = state.sel, j = i + d;
+    if (i < 0 || j < 0 || j >= state.items.length) return;
+    const t = state.items[i]; state.items[i] = state.items[j]; state.items[j] = t;
+    state.sel = j;
+    note('スタンプ ' + (j + 1) + ' を表示中(全' + state.items.length + '個)');
+    renderStrip();
+  }
+  function deleteItem() {
+    const i = state.sel;
+    if (i < 0) return;
+    lastDeleted = { item: state.items[i], index: i };
+    state.items.splice(i, 1);
+    if (!state.items.length) { showNone(); return; }
+    useItem(Math.min(i, state.items.length - 1));
+  }
+  function undoDelete() {
+    if (!lastDeleted || state.items.length >= MAX_ITEMS) return;
+    const { item, index } = lastDeleted;
+    lastDeleted = null;
+    const pos = Math.min(index, state.items.length);
+    state.items.splice(pos, 0, item);
+    useItem(pos);
+  }
+
+  // ---- 文字の画像 ----
+  function renderTexts() {
+    const strip = $('tstrip');
+    strip.innerHTML = '';
+    state.texts.forEach((p, i) => {
+      const b = document.createElement('div');
+      b.className = 'thumb' + (i === state.tsel ? ' on' : '');
+      b.tabIndex = 0;
+      b.draggable = true;
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', i === state.tsel ? 'true' : 'false');
+      b.setAttribute('aria-label', '文字の画像' + (i + 1));
+      b.innerHTML = '<img alt="" draggable="false" src="' + p.thumb + '"><i>' + (i + 1) + '</i>';
+      b.addEventListener('click', () => tapText(i));
+      keyClick(b);
+      b.addEventListener('dragstart', (e) => {
+        if (!e.dataTransfer) return;
+        e.dataTransfer.setData('text/plain', 'stamp-text:' + p.id);
+        e.dataTransfer.effectAllowed = 'copy';
+      });
+      strip.appendChild(b);
+    });
+    const n = state.texts.length;
+    $('tCountText').textContent = n + '個(最大' + MAX_ITEMS + '個)';
+    $('tDelBtn').disabled = state.tsel < 0;
+    $('tUndoBtn').disabled = !lastDeletedText;
+    scrollIntoTray(strip, strip.children[state.tsel]);
+  }
+  function tapText(i) {
+    state.tsel = i;
+    renderTexts();
+    if (!cur()) { note('先に犬の画像(スタンプ)を選んでください。'); return; }
+    assignText(state.texts[i], null, null);
+  }
+  // 選んでいるスタンプに文字の画像を重ねる。位置を渡したときだけ、その位置に置く(中心の位置、0〜100%)。
+  function assignText(piece, px, py) {
+    const it = cur();
+    if (!it) { note('先に犬の画像(スタンプ)を選んでください。'); return; }
+    it.text = piece;
+    it.sample = false;
+    if (px !== null && py !== null) { it.tx = clamp(px, 0, 100); it.ty = clamp(py, 0, 100); }
+    state.ver++;
+    note('スタンプ ' + (state.items.indexOf(it) + 1) + ' に文字を重ねました。プレビューの文字をドラッグして位置を調整できます。');
+    syncPanel();
+    renderStrip();
+    applyChange(false);
+  }
+  function deleteText() {
+    const i = state.tsel;
+    if (i < 0) return;
+    lastDeletedText = { item: state.texts[i], index: i };
+    state.texts.splice(i, 1);
+    state.tsel = state.texts.length ? Math.min(i, state.texts.length - 1) : -1;
+    note('文字の画像を一覧から削除しました。すでに重ねたスタンプの文字は、そのまま残ります。');
+    renderTexts();
+  }
+  function undoDeleteText() {
+    if (!lastDeletedText || state.texts.length >= MAX_ITEMS) return;
+    const { item, index } = lastDeletedText;
+    lastDeletedText = null;
+    const pos = Math.min(index, state.texts.length);
+    state.texts.splice(pos, 0, item);
+    state.tsel = pos;
+    renderTexts();
+  }
+  function hasInternal(e) {
+    const t = e.dataTransfer && e.dataTransfer.types;
+    return !!t && Array.from(t).indexOf('text/plain') >= 0;
+  }
+  function hasFiles(e) {
+    const t = e.dataTransfer && e.dataTransfer.types;
+    return !!t && Array.from(t).indexOf('Files') >= 0;
+  }
+  function pieceFromDrop(e) {
+    const raw = e.dataTransfer && e.dataTransfer.getData('text/plain');
+    if (!raw || raw.indexOf('stamp-text:') !== 0) return null;
+    const id = Number(raw.slice(11));
+    return state.texts.find((p) => p.id === id) || null;
+  }
+
+  // ---- 画像の読み込み(縮小してキャンバスにする) ----
+  function isImage(file) { return !!(file && file.type && file.type.indexOf('image/') === 0); }
+  function loadImageCanvas(file, maxSide) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const im = new Image();
+      im.onload = () => {
+        const iw = im.naturalWidth || 300, ih = im.naturalHeight || 300;
+        const k = Math.min(1, maxSide / Math.max(iw, ih));
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, Math.round(iw * k));
+        c.height = Math.max(1, Math.round(ih * k));
+        const g = c.getContext('2d', { willReadFrequently: true });
+        g.imageSmoothingQuality = 'high';
+        g.drawImage(im, 0, 0, c.width, c.height);
+        URL.revokeObjectURL(url);
+        resolve(c);
+      };
+      im.onerror = () => { URL.revokeObjectURL(url); reject(new Error('load')); };
+      im.src = url;
+    });
+  }
+  // サンプルは、本物の画像が入ったら消す
+  function dropSamples(kind) {
+    if (kind === 'dog') { if (state.items.some((it) => it.sample)) state.items = state.items.filter((it) => !it.sample); }
+    else if (state.texts.some((p) => p.sample)) { state.texts = state.texts.filter((p) => !p.sample); state.tsel = -1; }
+  }
+  function shrink(c, maxSide) {
+    const k = Math.min(1, maxSide / Math.max(c.width, c.height));
+    if (k >= 1) return c;
+    const o = document.createElement('canvas');
+    o.width = Math.max(1, Math.round(c.width * k));
+    o.height = Math.max(1, Math.round(c.height * k));
+    const g = o.getContext('2d', { willReadFrequently: true });
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(c, 0, 0, o.width, o.height);
+    return o;
+  }
+  // 追加した画像に複数のコマが並んでいたら、コマごとの画像に分ける。見つからなければ null(そのまま使う)。
+  function autoSplit(c, kind) {
+    try {
+      const cfg = state.cfg[kind];
+      const W = c.width, H = c.height;
+      const data = c.getContext('2d').getImageData(0, 0, W, H).data;
+      const info = analyzeSheet(data, W, H, cfg.tol, cfg.inner);
+      let bgN = 0;
+      for (let i = 0; i < info.bg.length; i++) if (info.bg[i]) bgN++;
+      if (bgN < info.bg.length * 0.2) return null;
+      const gap = Math.max(cfg.gap, Math.round(Math.max(W, H) * 0.01));
+      const rects = findCells(info.bg, W, H, { mode: 'auto', minGap: gap }).filter((r) => r.w * r.h >= W * H * 0.003);
+      if (rects.length < 2) return null;
+      const out = new Uint8ClampedArray(data);
+      for (let i = 0; i < info.bg.length; i++) if (info.bg[i]) out[i * 4 + 3] = 0;
+      const clean = document.createElement('canvas');
+      clean.width = W; clean.height = H;
+      clean.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
+      return rects.map((r) => {
+        const cc = document.createElement('canvas');
+        cc.width = r.w; cc.height = r.h;
+        cc.getContext('2d').drawImage(clean, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+        return shrink(cc, 1024);
+      });
+    } catch (e) { return null; }
+  }
+  async function addOne(kind, file) {
+    if (!isImage(file)) { note('画像ファイル(PNGなど)を選んでください。'); return false; }
+    try {
+      const big = await loadImageCanvas(file, 2400);
+      dropSamples(kind);
+      const list = kind === 'dog' ? state.items : state.texts;
+      const room = MAX_ITEMS - list.length;
+      if (room <= 0) {
+        note(MAX_ITEMS + '個に達しているため追加できません。不要な画像を削除してください。');
+        if (kind === 'dog') { if (state.sel < 0 || state.sel >= state.items.length) state.sel = state.items.length - 1; renderStrip(); }
+        else renderTexts();
+        return false;
+      }
+      const auto = $(kind + 'Auto').checked;
+      const parts = auto ? autoSplit(big, kind) : null;
+      const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+      const pieces = parts ? parts.slice(0, room) : [shrink(big, 1024)];
+      const from = parts ? ++sheetSeq : -1;
+      const first = list.length;
+      pieces.forEach((pc) => list.push(kind === 'dog' ? newDog(pc, { from }) : newPiece(pc, { from })));
+      const msg = parts
+        ? parts.length + '個のコマを自動で見つけて、' + pieces.length + '個の' + label + 'に切り出しました。'
+          + (parts.length > pieces.length ? '上限の' + MAX_ITEMS + '個に収まる分だけ追加しました。' : '')
+          + '1枚のまま使いたいときは、「自動で切り出す」のチェックを外して追加し直してください。'
+        : '1枚の' + label + 'として追加しました(複数のコマは見つかりませんでした)。';
+      if (kind === 'dog') {
+        useItem(first);
+      } else {
+        state.tsel = first;
+        renderTexts();
+      }
+      note(msg);
+      return true;
+    } catch (e) {
+      note('この画像は読み込めませんでした。別のファイルを試してください。');
+      return false;
+    }
+  }
+  async function addFiles(kind, files) {
+    for (const f of Array.from(files || [])) { if (!(await addOne(kind, f))) break; }
+  }
+
+  // ---- シートの切り出し(犬用・文字用それぞれ。前の分は残して、一覧の後ろに追加する) ----
+  function cutSheet(kind) {
+    const c = state.cfg[kind], sh = c.sheet;
+    if (!sh) return;
+    const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+    const msg = { textContent: '' };
+    const info = analyzeSheet(sh.data, sh.W, sh.H, c.tol, c.inner);
+    const out = new Uint8ClampedArray(sh.data);
+    for (let i = 0; i < info.bg.length; i++) if (info.bg[i]) out[i * 4 + 3] = 0;
+    const clean = document.createElement('canvas');
+    clean.width = sh.W; clean.height = sh.H;
+    clean.getContext('2d').putImageData(new ImageData(out, sh.W, sh.H), 0, 0);
+    const rects = findCells(info.bg, sh.W, sh.H, { mode: c.mode, cols: c.cols, rows: c.rows, minGap: c.gap });
+    if (!rects.length) {
+      msg.textContent = '切り出せるコマが見つかりませんでした。「列×行を指定」にするか、背景のゆるさを変えてもう一度試してください。';
+      return;
+    }
+    if (!sh.sample) dropSamples(kind);
+    const list = kind === 'dog' ? state.items : state.texts;
+    // 同じシートの切り出し直しは、前回の分を同じ位置で置き換える。別のシートは後ろに足す。
+    const firstIdx = list.findIndex((it) => it.from === sh.id);
+    const rest = list.filter((it) => it.from !== sh.id);
+    const room = Math.max(0, MAX_ITEMS - rest.length);
+    if (!room) {
+      msg.textContent = MAX_ITEMS + '個に達しているため追加できません。不要な' + label + 'を削除してください。';
+      return;
+    }
+    const made = rects.slice(0, room).map((r) => {
+      const cc = document.createElement('canvas');
+      cc.width = r.w; cc.height = r.h;
+      cc.getContext('2d').drawImage(clean, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+      return kind === 'dog' ? newDog(cc, { from: sh.id, sample: !!sh.sample }) : newPiece(cc, { from: sh.id, sample: !!sh.sample });
+    });
+    const pos = firstIdx >= 0 ? firstIdx : rest.length;
+    rest.splice(pos, 0, ...made);
+    msg.textContent = made.length + '個の' + label + 'を追加しました(合計' + rest.length + '個)。'
+      + (firstIdx >= 0 ? '同じシートの切り出し直しなので、前回の分は置き換えました。' : '')
+      + (rects.length > made.length ? rects.length + '個見つかりましたが、上限の' + MAX_ITEMS + '個に収まる分だけ追加しました。' : '');
+    if (kind === 'dog') {
+      state.items = rest;
+      lastDeleted = null;
+      useItem(pos);
+    } else {
+      state.texts = rest;
+      lastDeletedText = null;
+      state.tsel = pos;
+      renderTexts();
+    }
+  }
+  // ---- 動きの選択・スライダーなどの配線 ----
+  function buildChips(containerId, key) {
+    const box = $(containerId);
+    Object.keys(MOTIONS).forEach((mk) => {
+      const m = MOTIONS[mk];
+      const label = document.createElement('label');
+      label.className = 'chip';
+      const inp = document.createElement('input');
+      inp.type = 'checkbox'; inp.value = mk;
+      const span = document.createElement('span');
+      span.innerHTML = '<b style="font-weight:inherit">' + m.label + (m.note ? '<small>' + m.note + '</small>' : '') + '</b>';
+      inp.addEventListener('change', () => {
+        const it = cur();
+        if (!it) { syncPanel(); return; }
+        let ks = keysOf(it[key]);
+        if (mk === 'none') ks = [];
+        else if (inp.checked) { if (ks.indexOf(mk) < 0) ks = ks.concat(mk); }
+        else ks = ks.filter((x) => x !== mk);
+        setItem({ [key]: ks }, true);
+        syncPanel();
+      });
+      label.appendChild(inp);
+      label.appendChild(span);
+      box.appendChild(label);
+      radios[key].push(inp);
+    });
+  }
+  (function buildFxChips() {
+    const box = $('fxchips');
+    Object.keys(FX).concat('none').forEach((fk) => {
+      const label = document.createElement('label');
+      label.className = 'chip';
+      const inp = document.createElement('input');
+      inp.type = 'checkbox'; inp.value = fk;
+      const span = document.createElement('span');
+      const lb = fk === 'none' ? 'なし' : FX[fk].label, nt = fk === 'none' ? '' : FX[fk].note;
+      span.innerHTML = '<b style="font-weight:inherit">' + lb + (nt ? '<small>' + nt + '</small>' : '') + '</b>';
+      inp.addEventListener('change', () => {
+        const it = cur();
+        if (!it) { syncPanel(); return; }
+        let ks = (it.fx || []).slice();
+        if (fk === 'none') ks = [];
+        else if (inp.checked) { if (ks.indexOf(fk) < 0) ks.push(fk); }
+        else ks = ks.filter((x) => x !== fk);
+        setItem({ fx: ks }, false);
+        syncPanel();
+      });
+      label.appendChild(inp);
+      label.appendChild(span);
+      box.appendChild(label);
+      radios.fx.push(inp);
+    });
+  })();
+  buildChips('chips', 'motion');
+  buildChips('tchips', 'tmotion');
+
+  [['power', 'power'], ['tpower', 'tpower'], ['fxpower', 'fxpower']].forEach(([id, key]) => {
+    $(id).addEventListener('input', (e) => setItem({ [key]: Number(e.target.value) }, false));
+  });
+  [['frames', 'frames'], ['loops', 'loops']].forEach(([id, key]) => {
+    $(id).addEventListener('input', (e) => { state[key] = Number(e.target.value); syncDelay(); applyChange(false); });
+  });
+  $('autoLight').addEventListener('change', (e) => { state.autoLight = e.target.checked; applyChange(false); });
+  document.querySelectorAll('input[name="dur"]').forEach((r) => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    state.duration = Number(r.value);
+    syncDelay();
+    applyChange(false);
+  }));
+  $('size').addEventListener('change', (e) => { state.size = e.target.value; applyChange(true); });
+  $('ordFront').addEventListener('change', (e) => { if (e.target.checked) setItem({ textFront: true }, false); });
+  $('ordBack').addEventListener('change', (e) => { if (e.target.checked) setItem({ textFront: false }, false); });
+  $('playBtn').addEventListener('click', () => {
+    state.playing = !state.playing;
+    $('playBtn').textContent = state.playing ? '一時停止' : '再生';
+  });
+
+  $('fxReset').addEventListener('click', () => {
+    if (!cur()) return;
+    setItem({ fxscale: 100, fxx: 50, fxy: 50, fxrot: 0 }, false);
+    syncPanel();
+  });
+  $('textReset').addEventListener('click', () => {
+    const it = cur();
+    if (!it || !it.text) return;
+    setItem({ tscale: 100, tx: 50, ty: 80, trot: 0 }, false);
+    syncPanel();
+  });
+  [['setMain', 'main', 'メイン'], ['setTab', 'tab', 'タブ']].forEach(([id, k, label]) => {
+    $(id).addEventListener('click', () => {
+      const it = cur();
+      if (!it) { note('先にスタンプを選んでください。'); return; }
+      state[k + 'Id'] = it.id;
+      note('スタンプ ' + (state.sel + 1) + ' を' + label + '画像に設定しました。');
+      renderStrip();
+      renderMainTab();
+    });
+  });
+  $('goFx').addEventListener('click', () => {
+    const t = $('fxSection');
+    if (t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  document.querySelectorAll('.jumpBtn').forEach((b) => b.addEventListener('click', () => {
+    const t = $('board');
+    if (t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }));
+  $('dogReset').addEventListener('click', () => {
+    if (!cur()) return;
+    setItem({ dscale: 100, dx: 50, dy: 50, drot: 0 }, false);
+    syncPanel();
+  });
+  $('textRemove').addEventListener('click', () => {
+    const it = cur();
+    if (!it || !it.text) return;
+    it.text = null;
+    state.ver++;
+    syncPanel();
+    renderStrip();
+    applyChange(false);
+  });
+
+  // 一覧の操作
+  $('mvL').addEventListener('click', () => moveItem(-1));
+  $('mvR').addEventListener('click', () => moveItem(1));
+  $('delBtn').addEventListener('click', deleteItem);
+  $('undoBtn').addEventListener('click', undoDelete);
+  $('tDelBtn').addEventListener('click', deleteText);
+  $('tUndoBtn').addEventListener('click', undoDeleteText);
+  $('dogAdd').addEventListener('click', () => $('dogAddFile').click());
+  $('dogAddFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('dog', fl); });
+  $('textAdd').addEventListener('click', () => $('textAddFile').click());
+  $('textAddFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('text', fl); });
+  // 画像ファイルを一覧にドロップして追加
+  [['strip', 'dog'], ['tstrip', 'text']].forEach(([id, kind]) => {
+    const el = $(id);
+    el.addEventListener('dragover', (e) => { if (hasFiles(e)) { e.preventDefault(); el.classList.add('drag'); } });
+    el.addEventListener('dragleave', () => el.classList.remove('drag'));
+    el.addEventListener('drop', (e) => {
+      el.classList.remove('drag');
+      if (hasFiles(e)) { e.preventDefault(); addFiles(kind, e.dataTransfer.files); }
+    });
+  });
+
+  // 犬の画像の差し替え(文字の画像・位置・動き・重なり順はそのまま)
+  $('dogBtn').addEventListener('click', () => {
+    if (!cur()) { note('先にスタンプを選んでください。'); return; }
+    $('dogFile').click();
+  });
+  $('dogFile').addEventListener('change', async (e) => {
+    const f = e.target.files[0];
+    e.target.value = '';
+    const it = cur();
+    if (!f || !it) return;
+    if (!isImage(f)) { note('画像ファイル(PNGなど)を選んでください。'); return; }
+    try {
+      const c = await loadImageCanvas(f, 1024);
+      it.canvas = c; it.thumb = makeThumb(c, 128); it.sample = false;
+      state.ver++;
+      note('スタンプ ' + (state.items.indexOf(it) + 1) + ' の犬の画像を差し替えました(文字はそのまま)。');
+      renderStrip();
+      applyChange(false);
+    } catch (err) {
+      note('この画像は読み込めませんでした。別のファイルを試してください。');
+    }
+  });
+
+  // ---- プレビュー上の操作: 文字をドラッグして動かす / 文字の画像をドロップして重ねる ----
+  function canvasPoint(e) {
+    const r = cv.getBoundingClientRect();
+    const { W, H } = dims();
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * H };
+  }
+  // 犬・文字のどちらを動かすか(文字の上をさわれば文字、それ以外は犬)
+  const KEYS = {
+    dog: { scale: 'dscale', x: 'dx', y: 'dy', rot: 'drot', lo: 20, hi: 250, pl: (W, H, it) => dogPl(W, H, it) },
+    text: { scale: 'tscale', x: 'tx', y: 'ty', rot: 'trot', lo: 30, hi: 300, pl: (W, H, it) => textPl(W, H, it) },
+    fx: { scale: 'fxscale', x: 'fxx', y: 'fxy', rot: 'fxrot', lo: 20, hi: 250, pl: (W, H, it) => fxPl(W, H, it) }
+  };
+  // 「エフェクト」を選んでいるときはエフェクトを、そうでなければ文字の上=文字、それ以外=犬
+  function chooseTarget(it, p) {
+    state.editTarget = $('tgtFx').checked ? 'fx' : pickTarget(it, p);
+    syncTarget();
+  }
+  const ptrs = new Map();
+  let base = null, wheelTimer = 0;
+  function pickTarget(it, p) {
+    if (it.text) {
+      const { W, H } = dims();
+      const pl = textPl(W, H, it);
+      const ux = p.x - pl.cx, uy = p.y - pl.cy, c = Math.cos(-pl.rot), sn = Math.sin(-pl.rot);
+      const lx = ux * c - uy * sn, ly = ux * sn + uy * c;
+      if (Math.abs(lx) <= pl.dw / 2 + 12 && Math.abs(ly) <= pl.dh / 2 + 12) return 'text';
+    }
+    return 'dog';
+  }
+  // 指の数が変わるたびに、動かし始めの状態を取り直す
+  function rebase() {
+    const it = cur();
+    if (!it || !ptrs.size) { base = null; return; }
+    const { W, H } = dims();
+    const K = KEYS[state.editTarget];
+    const pl = K.pl(W, H, it);
+    const pts = Array.from(ptrs.values());
+    const mx = pts.reduce((a, q) => a + q.x, 0) / pts.length, my = pts.reduce((a, q) => a + q.y, 0) / pts.length;
+    const dist = pts.length > 1 ? Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) : 0;
+    const ang = pts.length > 1 ? Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x) : 0;
+    base = { cx: pl.cx, cy: pl.cy, mx, my, dist, scale: it[K.scale], rot: it[K.rot], prev: ang, acc: 0 };
+  }
+  const normRot = (r) => { r = ((r % 360) + 540) % 360 - 180; return Math.abs(r) < 0.01 ? 0 : r; };
+  const snapRot = (r) => { const q = Math.round(r / 45) * 45; return Math.abs(r - q) < 3 ? q : r; };
+  function applyLayout(it, cx, cy, scale, rot) {
+    const { W, H } = dims();
+    const K = KEYS[state.editTarget];
+    it[K.scale] = clamp(scale, K.lo, K.hi);
+    if (rot !== undefined) it[K.rot] = normRot(snapRot(rot));
+    const pl = K.pl(W, H, it);
+    const hx = state.editTarget === 'text' ? pl.dw / 2 : 0, hy = state.editTarget === 'text' ? pl.dh / 2 : 0;
+    it[K.x] = (clamp(cx, hx, W - hx) / W) * 100;
+    it[K.y] = (clamp(cy, hy, H - hy) / H) * 100;
+    fmtOutputs();
+    draw();
+  }
+  function endEdit() {
+    if (!state.editing) return;
+    state.editing = false;
+    state.ver++;
+    cv.style.cursor = 'grab';
+    syncPanel();
+    renderStrip();
+    applyChange(false);
+  }
+  // ---- パソコン用: 角をつまんで大きさを変える ----
+  let resizing = null;
+  function targetPl(it) {
+    if (!it) return null;
+    const { W, H } = dims();
+    if (state.editTarget === 'text' && !it.text) return null;
+    if (state.editTarget === 'fx' && !(it.fx || []).length) return null;
+    return KEYS[state.editTarget].pl(W, H, it);
+  }
+  function boxCorners(pl) {
+    const c = Math.cos(pl.rot), sn = Math.sin(pl.rot);
+    return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => {
+      const x = sx * pl.dw / 2, y = sy * pl.dh / 2;
+      return { x: pl.cx + x * c - y * sn, y: pl.cy + x * sn + y * c };
+    });
+  }
+  function hitHandle(it, p) {
+    const pl = targetPl(it);
+    if (!pl) return false;
+    const r = 14 * canvasPerCss();
+    return boxCorners(pl).some((q) => Math.hypot(q.x - p.x, q.y - p.y) <= r);
+  }
+  cv.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') { state.hover = true; draw(); } });
+  cv.addEventListener('pointerleave', () => { state.hover = false; if (!state.editing) draw(); });
+  cv.addEventListener('pointerdown', (e) => {
+    const it = cur();
+    if (!it) return;
+    const p = canvasPoint(e);
+    if (!ptrs.size && !resizing && state.hover && hitHandle(it, p)) {
+      const pl = targetPl(it), K = KEYS[state.editTarget];
+      resizing = { id: e.pointerId === undefined ? 0 : e.pointerId, cx: pl.cx, cy: pl.cy, d0: Math.max(8, Math.hypot(p.x - pl.cx, p.y - pl.cy)), s0: it[K.scale] };
+      if (cv.setPointerCapture && e.pointerId !== undefined) { try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 対応していない環境 */ } }
+      state.editing = true;
+      draw();
+      if (e.preventDefault) e.preventDefault();
+      return;
+    }
+    if (!ptrs.size) chooseTarget(it, p);
+    ptrs.set(e.pointerId === undefined ? 0 : e.pointerId, p);
+    if (cv.setPointerCapture && e.pointerId !== undefined) { try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 対応していない環境 */ } }
+    state.editing = true;
+    cv.style.cursor = 'grabbing';
+    rebase();
+    draw();
+    if (e.preventDefault) e.preventDefault();
+  });
+  cv.addEventListener('pointermove', (e) => {
+    const id = e.pointerId === undefined ? 0 : e.pointerId;
+    if (resizing) {
+      if (id !== resizing.id) return;
+      const it0 = cur();
+      if (!it0) return;
+      const p = canvasPoint(e);
+      applyLayout(it0, resizing.cx, resizing.cy, resizing.s0 * (Math.hypot(p.x - resizing.cx, p.y - resizing.cy) / resizing.d0));
+      return;
+    }
+    if (!ptrs.size && e.pointerType !== 'touch' && e.pointerType !== 'pen') {
+      // マウスを乗せているだけ: つまみを見せる(エフェクト選択中はエフェクト、それ以外は文字の上=文字・他=犬)
+      const it1 = cur();
+      if (!it1) return;
+      state.hover = true;
+      const p = canvasPoint(e);
+      if (!hitHandle(it1, p)) chooseTarget(it1, p);
+      cv.style.cursor = hitHandle(it1, p) ? 'nwse-resize' : 'grab';
+      draw();
+      return;
+    }
+    if (!ptrs.has(id) || !base) return;
+    const it = cur();
+    if (!it) return;
+    ptrs.set(id, canvasPoint(e));
+    const pts = Array.from(ptrs.values());
+    const mx = pts.reduce((a, q) => a + q.x, 0) / pts.length, my = pts.reduce((a, q) => a + q.y, 0) / pts.length;
+    let scale = base.scale;
+    if (pts.length > 1 && base.dist > 8) scale = base.scale * (Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) / base.dist);
+    let rot = base.rot;
+    if (pts.length > 1) {
+      const a = Math.atan2(pts[1].y - pts[0].y, pts[1].x - pts[0].x);
+      let d = a - base.prev;
+      while (d > Math.PI) d -= TAU;
+      while (d < -Math.PI) d += TAU;
+      base.acc += d; base.prev = a;
+      rot = base.rot + (base.acc * 180) / Math.PI;
+    }
+    applyLayout(it, base.cx + (mx - base.mx), base.cy + (my - base.my), scale, rot);
+  });
+  const endPtr = (e) => {
+    const id = e.pointerId === undefined ? 0 : e.pointerId;
+    if (resizing && id === resizing.id) { resizing = null; endEdit(); return; }
+    if (!ptrs.delete(id)) return;
+    if (ptrs.size) rebase(); else { base = null; endEdit(); }
+  };
+  cv.addEventListener('pointerup', endPtr);
+  cv.addEventListener('pointercancel', endPtr);
+  // マウスのホイール(トラックパッドのピンチ操作も含む)で大きさを変える
+  cv.addEventListener('wheel', (e) => {
+    const it = cur();
+    if (!it) return;
+    if (e.preventDefault) e.preventDefault();
+    const p = canvasPoint(e);
+    if (!ptrs.size) {
+      chooseTarget(it, p);
+      state.editing = true;
+      const { W, H } = dims();
+      const pl = KEYS[state.editTarget].pl(W, H, it);
+      base = { cx: pl.cx, cy: pl.cy, mx: 0, my: 0, dist: 0, scale: it[KEYS[state.editTarget].scale] };
+    }
+    const K = KEYS[state.editTarget];
+    const { W, H } = dims();
+    const pl = K.pl(W, H, it);
+    const dy = e.deltaY || e.deltaX || 0;
+    if (e.shiftKey) applyLayout(it, pl.cx, pl.cy, it[K.scale], it[K.rot] - dy * 0.15);
+    else applyLayout(it, pl.cx, pl.cy, it[K.scale] * Math.exp(-dy * (e.ctrlKey ? 0.01 : 0.0015)));
+    clearTimeout(wheelTimer);
+    if (!ptrs.size) wheelTimer = setTimeout(() => { base = null; endEdit(); }, 300);
+  }, { passive: false });
+
+  function syncTarget() {
+    $('tgtDog').checked = state.editTarget === 'dog';
+    $('tgtText').checked = state.editTarget === 'text';
+    $('tgtFx').checked = state.editTarget === 'fx';
+  }
+  $('tgtDog').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'dog'; });
+  $('tgtText').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'text'; });
+  $('tgtFx').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'fx'; });
+  function rotBy(deg) {
+    const it = cur();
+    if (!it) return;
+    const K = KEYS[state.editTarget];
+    if (state.editTarget === 'text' && !it.text) { note('文字の画像を重ねてから回してください。'); return; }
+    if (state.editTarget === 'fx' && !(it.fx || []).length) { note('先にエフェクトを選んでください。'); return; }
+    setItem({ [K.rot]: normRot(it[K.rot] + deg) }, false);
+  }
+  $('rotL').addEventListener('click', () => rotBy(-5));
+  $('rotR').addEventListener('click', () => rotBy(5));
+  const board = $('board');
+  board.addEventListener('dragover', (e) => { if (hasInternal(e) || hasFiles(e)) { e.preventDefault(); board.classList.add('drag'); } });
+  board.addEventListener('dragleave', () => board.classList.remove('drag'));
+  board.addEventListener('drop', (e) => {
+    e.preventDefault();
+    board.classList.remove('drag');
+    const piece = pieceFromDrop(e);
+    if (piece) {
+      const p = canvasPoint(e);
+      const { W, H } = dims();
+      assignText(piece, (p.x / W) * 100, (p.y / H) * 100);
+      return;
+    }
+    if (hasFiles(e)) addFiles('dog', e.dataTransfer.files);
+  });
+
+  // ---- 書き出し ----
+  let downloads = null;
+  (async () => {
+    try { downloads = (window.claude && window.claude.use) ? await window.claude.use('downloads') : null; }
+    catch (e) { downloads = null; }
+  })();
+
+  async function stillPng(item, W, H) {
+    const c = document.createElement('canvas');
+    c.width = W; c.height = H;
+    renderFrame(c.getContext('2d'), W, H, 0, 1, item, true);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+  // kind: 'sticker'(アニメーションスタンプ用) / 'emoji'(アニメーション絵文字用)
+  const ZIPS = {
+    sticker: { btn: 'zipBtn', file: 'mon-chein-stickers.zip', digits: 2, size: null, counts: [8, 16, 24], max: 60, main: true, label: 'スタンプ' },
+    emoji: { btn: 'emojiZipBtn', file: 'mon-chein-emoji.zip', digits: 3, size: [180, 180], counts: null, min: 8, max: 40, main: false, label: '絵文字' }
+  };
+  async function runZip(kind) {
+    const Z = ZIPS[kind];
+    const msg = $('zipMsg');
+    if (!state.items.length) { msg.textContent = 'スタンプがありません。画像を追加してください。'; return; }
+    const items = state.items.slice(0, Z.max);
+    const btns = [$('zipBtn'), $('emojiZipBtn')];
+    btns.forEach((b) => { b.disabled = true; });
+    $('zipLink').hidden = true;
+    try {
+      const files = [], big = [], same = [], blank = [], light = [];
+      for (let i = 0; i < items.length; i++) {
+        msg.textContent = Z.label + 'を作成中… ' + (i + 1) + ' / ' + items.length;
+        const r = Z.size ? await buildApngFor(items[i], Z.size[0], Z.size[1]) : await buildApngFor(items[i]);
+        if (r.bytes.length > LIMIT_BYTES) big.push(i + 1);
+        if (r.light) light.push((i + 1) + '番(' + r.light.colors + '色' + (r.light.frames !== state.frames ? '・' + r.light.frames + 'コマ' : '') + ')');
+        if (r.same) same.push(i + 1);
+        if (r.blank0) blank.push(i + 1);
+        files.push({ name: String(i + 1).padStart(Z.digits, '0') + '.png', data: r.bytes });
+      }
+      msg.textContent = 'タブ画像を作成中…';
+      const notes = [];
+      const mainItem = items.find((it) => it.id === state.mainId), tabItem = items.find((it) => it.id === state.tabId);
+      if (Z.main) files.push({ name: 'main.png', data: await stillPng(mainItem || items[0], 240, 240) });
+      files.push({ name: 'tab.png', data: await stillPng(tabItem || items[0], 96, 74) });
+      if ((Z.main && !mainItem) || !tabItem) notes.push((Z.main ? 'メイン/タブ画像' : 'タブ画像') + 'が未設定のため、1番目を使いました。');
+      const blob = new Blob([makeZip(files)], { type: 'application/zip' });
+      if (Z.counts && Z.counts.indexOf(items.length) < 0) notes.push(Z.label + 'は' + items.length + '個です(LINEの1セットは' + Z.counts.join('・') + '個)。');
+      if (Z.min && items.length < Z.min) notes.push(Z.label + 'は' + items.length + '個です(LINEの1セットは' + Z.min + '〜' + Z.max + '個)。');
+      if (state.items.length > Z.max) notes.push('上限の' + Z.max + '個までを入れました。');
+      if (light.length) notes.push('自動で軽くしたもの: ' + light.join('・') + '。');
+      if (big.length) notes.push((state.autoLight ? '軽くしても' : '') + '300KBを超えているもの: ' + big.join('・') + '番(' + (state.autoLight ? 'キャンバスサイズを小さくするか、動き・エフェクトを減らしてください' : '「自動で軽くする」をオンにするか、コマ数を減らしてください') + ')。');
+      if (same.length) notes.push('全コマが同じ絵のもの: ' + same.join('・') + '番(動きを付けないと登録できません)。');
+      if (blank.length) notes.push('1コマ目が空のもの: ' + blank.join('・') + '番(「ぽんっ」などの登場の動きは、1コマ目が静止画になるため注意)。');
+      const kb = Math.round(blob.size / 1024);
+      let head;
+      if (downloads) {
+        try {
+          await downloads.save({ filename: Z.file, data: blob });
+          head = Z.label + '用のZIPを保存しました(' + items.length + '個、' + kb + ' KB)。';
+        } catch (e) {
+          head = (e && e.code === 'declined') ? '保存をキャンセルしました。もう一度押すと保存できます。' : 'この画面からは保存できませんでした。';
+        }
+      } else {
+        const link = $('zipLink');
+        if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+        link.dataset.url = URL.createObjectURL(blob);
+        link.href = link.dataset.url;
+        link.download = Z.file;
+        link.hidden = false;
+        head = Z.label + '用のZIPができました(' + kb + ' KB)。下のボタンから保存してください。';
+      }
+      msg.textContent = [head].concat(notes).join(' ');
+    } catch (e) {
+      msg.textContent = 'ZIPの作成に失敗しました。もう一度お試しください。';
+    } finally {
+      btns.forEach((b) => { b.disabled = false; });
+    }
+  }
+  $('zipBtn').addEventListener('click', () => runZip('sticker'));
+  $('emojiZipBtn').addEventListener('click', () => runZip('emoji'));
+  $('exportBtn').addEventListener('click', async () => {
+    const it = cur();
+    if (!it) { $('msg').textContent = '書き出すスタンプを選んでください。'; return; }
+    const btn = $('exportBtn');
+    btn.disabled = true;
+    $('msg').textContent = '書き出し中…';
+    try {
+      const res = await buildApng();
+      cache = res;
+      sizeBytes = res.bytes.length;
+      lightInfo = res.light;
+      updateChecks();
+      const blob = new Blob([res.bytes], { type: 'image/png' });
+      const img = $('result');
+      if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
+      const url = URL.createObjectURL(blob);
+      img.dataset.url = url;
+      img.src = url;
+      $('resultBoard').hidden = false;
+      const fname = 'sticker_' + String(state.items.indexOf(it) + 1).padStart(2, '0') + '.png';
+      if (downloads) {
+        try {
+          await downloads.save({ filename: fname, data: blob });
+          $('msg').textContent = '保存しました(' + Math.round(blob.size / 1024) + ' KB)。下の画像でも動きを確認できます。';
+        } catch (e) {
+          $('msg').textContent = (e && e.code === 'declined')
+            ? '保存をキャンセルしました。もう一度押すと保存できます。'
+            : 'この画面からは保存できませんでした。下の画像を長押し(右クリック)で保存してください。';
+        }
+      } else {
+        $('msg').textContent = '下の画像を長押し(右クリック)で保存してください。';
+      }
+    } catch (e) {
+      $('msg').textContent = '書き出しに失敗しました。画像を選び直してもう一度お試しください。';
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
+  // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
+  const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
+  function projectData() {
+    const textIdx = (p) => (p ? state.texts.indexOf(p) : -1);
+    return {
+      app: 'mon-chein-stamp', version: 1,
+      settings: { frames: state.frames, duration: state.duration, loops: state.loops, size: state.size, autoLight: state.autoLight },
+      texts: state.texts.map((p) => ({ img: p.canvas.toDataURL('image/png'), sample: !!p.sample })),
+      items: state.items.map((it) => {
+        const o = { img: it.canvas.toDataURL('image/png'), text: textIdx(it.text), sample: !!it.sample };
+        ITEM_KEYS.forEach((k) => { o[k] = it[k]; });
+        return o;
+      }),
+      mainIndex: state.items.findIndex((it) => it.id === state.mainId),
+      tabIndex: state.items.findIndex((it) => it.id === state.tabId),
+      sel: state.sel
+    };
+  }
+  async function saveProject() {
+    const msg = $('projMsg');
+    if (!state.items.length && !state.texts.length) { msg.textContent = '保存するものがありません。'; return; }
+    try {
+      const blob = new Blob([JSON.stringify(projectData())], { type: 'application/json' });
+      const kb = Math.round(blob.size / 1024);
+      if (downloads) {
+        try {
+          await downloads.save({ filename: 'mon-chein-project.json', data: blob });
+          msg.textContent = '作業を保存しました(' + kb + ' KB)。「保存した作業を開く」で続きから作れます。';
+        } catch (e) {
+          msg.textContent = (e && e.code === 'declined') ? '保存をキャンセルしました。' : 'この画面からは保存できませんでした。';
+        }
+      } else {
+        const link = $('projLink');
+        if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+        link.dataset.url = URL.createObjectURL(blob);
+        link.href = link.dataset.url;
+        link.hidden = false;
+        msg.textContent = '保存ファイルができました(' + kb + ' KB)。下のボタンから保存してください。';
+      }
+    } catch (e) {
+      msg.textContent = '保存に失敗しました。もう一度お試しください。';
+    }
+  }
+  function urlToCanvas(url) {
+    return new Promise((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = Math.max(1, im.naturalWidth || 1);
+        c.height = Math.max(1, im.naturalHeight || 1);
+        c.getContext('2d', { willReadFrequently: true }).drawImage(im, 0, 0);
+        resolve(c);
+      };
+      im.onerror = () => reject(new Error('img'));
+      im.src = url;
+    });
+  }
+  async function loadProject(file) {
+    const msg = $('projMsg');
+    try {
+      const data = JSON.parse(await file.text());
+      if (!data || data.app !== 'mon-chein-stamp' || !Array.isArray(data.items) || !Array.isArray(data.texts)) { msg.textContent = 'このファイルは、スタンプ工房の保存ファイルではありません。'; return; }
+      const num = (v, d, lo, hi) => (typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : d);
+      const pieces = [];
+      for (const t of data.texts.slice(0, MAX_ITEMS)) {
+        if (typeof t.img !== 'string' || t.img.indexOf('data:image/') !== 0) continue;
+        pieces.push(newPiece(await urlToCanvas(t.img), { sample: !!t.sample }));
+      }
+      const items = [];
+      for (const o of data.items.slice(0, MAX_ITEMS)) {
+        if (typeof o.img !== 'string' || o.img.indexOf('data:image/') !== 0) continue;
+        const extra = {
+          sample: !!o.sample,
+          text: pieces[o.text] || null,
+          motion: keysOf(o.motion), tmotion: keysOf(o.tmotion),
+          fx: (Array.isArray(o.fx) ? o.fx : []).filter((k) => FX[k]),
+          power: num(o.power, 100, 30, 150), tpower: num(o.tpower, 100, 30, 150), fxpower: num(o.fxpower, 100, 30, 150),
+          textFront: o.textFront !== false,
+          tscale: num(o.tscale, 100, 30, 300), tx: num(o.tx, 50, 0, 100), ty: num(o.ty, 80, 0, 100), trot: num(o.trot, 0, -360, 360),
+          dscale: num(o.dscale, 100, 20, 250), dx: num(o.dx, 50, 0, 100), dy: num(o.dy, 50, 0, 100), drot: num(o.drot, 0, -360, 360),
+          fxscale: num(o.fxscale, 100, 20, 250), fxx: num(o.fxx, 50, 0, 100), fxy: num(o.fxy, 50, 0, 100), fxrot: num(o.fxrot, 0, -360, 360)
+        };
+        items.push(newDog(await urlToCanvas(o.img), extra));
+      }
+      const st = data.settings || {};
+      state.frames = Math.round(num(st.frames, 12, 5, 20));
+      state.duration = [1, 2, 3, 4].indexOf(st.duration) >= 0 ? st.duration : 1;
+      state.loops = Math.round(num(st.loops, 2, 1, 4));
+      state.size = ['320x270', '270x270', '240x240'].indexOf(st.size) >= 0 ? st.size : '320x270';
+      state.autoLight = st.autoLight !== false;
+      syncDelay();
+      $('frames').value = state.frames; $('loops').value = state.loops; $('size').value = state.size; $('autoLight').checked = state.autoLight;
+      document.querySelectorAll('input[name="dur"]').forEach((r) => { r.checked = Number(r.value) === state.duration; });
+      state.items = items; state.texts = pieces;
+      state.mainId = items[data.mainIndex] ? items[data.mainIndex].id : null;
+      state.tabId = items[data.tabIndex] ? items[data.tabIndex].id : null;
+      lastDeleted = null; lastDeletedText = null; state.tsel = -1;
+      renderTexts();
+      if (items.length) useItem(clamp(Number.isInteger(data.sel) ? data.sel : 0, 0, items.length - 1)); else showNone();
+      msg.textContent = '保存した作業を開きました(スタンプ' + items.length + '個、文字' + pieces.length + '個)。';
+    } catch (e) {
+      msg.textContent = '保存ファイルを読み込めませんでした。壊れているか、別のファイルかもしれません。';
+    }
+  }
+  // ---- 素材ごとの書き出し・読み込み(犬の画像/文字の画像/エフェクト) ----
+  const FX_KEYS = ['fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
+  async function saveJson(obj, filename, doneText) {
+    const msg = $('partMsg');
+    try {
+      const blob = new Blob([JSON.stringify(obj)], { type: 'application/json' });
+      const kb = Math.max(1, Math.round(blob.size / 1024));
+      if (downloads) {
+        try {
+          await downloads.save({ filename, data: blob });
+          msg.textContent = doneText + '(' + kb + ' KB)';
+        } catch (e) {
+          msg.textContent = (e && e.code === 'declined') ? '保存をキャンセルしました。' : 'この画面からは保存できませんでした。';
+        }
+      } else {
+        const link = $('partLink');
+        if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+        link.dataset.url = URL.createObjectURL(blob);
+        link.href = link.dataset.url;
+        link.download = filename;
+        link.hidden = false;
+        msg.textContent = doneText + '(' + kb + ' KB)。下のボタンから保存してください。';
+      }
+    } catch (e) {
+      msg.textContent = '書き出しに失敗しました。もう一度お試しください。';
+    }
+  }
+  function outImages(kind) {
+    const list = kind === 'dog' ? state.items : state.texts;
+    const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+    if (!list.length) { $('partMsg').textContent = label + 'がありません。'; return; }
+    saveJson({ app: 'mon-chein-stamp', kind: kind === 'dog' ? 'dogs' : 'texts', version: 1, images: list.map((p) => ({ img: p.canvas.toDataURL('image/png'), sample: !!p.sample })) },
+      kind === 'dog' ? 'mon-chein-dogs.json' : 'mon-chein-texts.json', label + list.length + '個を書き出しました');
+  }
+  function outFx() {
+    if (!state.items.length) { $('partMsg').textContent = 'スタンプがありません。'; return; }
+    const arr = state.items.map((it) => { const o = {}; FX_KEYS.forEach((k) => { o[k] = it[k]; }); o.fx = (it.fx || []).slice(); return o; });
+    const used = arr.filter((o) => o.fx.length).length;
+    saveJson({ app: 'mon-chein-stamp', kind: 'effects', version: 1, effects: arr }, 'mon-chein-effects.json', 'エフェクトを書き出しました(' + arr.length + '個中' + used + '個にエフェクトあり)');
+  }
+  async function inImages(kind, data) {
+    const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+    if (!Array.isArray(data.images)) throw new Error('bad');
+    dropSamples(kind);
+    const list = kind === 'dog' ? state.items : state.texts;
+    const room = MAX_ITEMS - list.length;
+    const src = data.images.filter((o) => o && typeof o.img === 'string' && o.img.indexOf('data:image/') === 0);
+    if (room <= 0) { $('partMsg').textContent = MAX_ITEMS + '個に達しているため読み込めません。不要な画像を削除してください。'; return; }
+    const first = list.length;
+    let added = 0;
+    for (const o of src.slice(0, room)) {
+      const c = await urlToCanvas(o.img);
+      list.push(kind === 'dog' ? newDog(c) : newPiece(c));
+      added++;
+    }
+    if (kind === 'dog') { if (added) useItem(first); else renderStrip(); } else renderTexts();
+    $('partMsg').textContent = label + 'を' + added + '個読み込みました。' + (src.length > added ? '上限の' + MAX_ITEMS + '個に収まる分だけ追加しました。' : '');
+  }
+  function inFx(data) {
+    if (!Array.isArray(data.effects) || !data.effects.length) throw new Error('bad');
+    if (!state.items.length) { $('partMsg').textContent = '先にスタンプを用意してください。エフェクトを当てはめる先がありません。'; return; }
+    const num = (v, d, lo, hi) => (typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : d);
+    const one = data.effects.length === 1;
+    let n = 0;
+    state.items.forEach((it, i) => {
+      const o = one ? data.effects[0] : data.effects[i];
+      if (!o || typeof o !== 'object') return;
+      it.fx = (Array.isArray(o.fx) ? o.fx : []).filter((k) => FX[k]);
+      it.fxpower = num(o.fxpower, 100, 30, 150);
+      it.fxscale = num(o.fxscale, 100, 20, 250);
+      it.fxx = num(o.fxx, 50, 0, 100);
+      it.fxy = num(o.fxy, 50, 0, 100);
+      it.fxrot = num(o.fxrot, 0, -360, 360);
+      n++;
+    });
+    state.ver++;
+    useItem(clamp(state.sel, 0, state.items.length - 1));
+    $('partMsg').textContent = 'エフェクトを' + n + '個のスタンプに当てはめました。' + (!one && data.effects.length > state.items.length ? '(ファイルの方が多いため、余った分は使っていません)' : '');
+  }
+  let partMode = '';
+  async function loadPart(file) {
+    const msg = $('partMsg');
+    try {
+      const data = JSON.parse(await file.text());
+      const want = { dog: 'dogs', text: 'texts', fx: 'effects' }[partMode];
+      if (!data || data.app !== 'mon-chein-stamp' || data.kind !== want) {
+        const names = { dogs: '犬の画像', texts: '文字の画像', effects: 'エフェクト' };
+        msg.textContent = data && names[data.kind] ? 'これは「' + names[data.kind] + '」のファイルです。' + names[want] + 'のファイルを選んでください。' : 'このファイルは、' + names[want] + 'の書き出しファイルではありません。';
+        return;
+      }
+      if (partMode === 'fx') inFx(data); else await inImages(partMode, data);
+    } catch (e) {
+      msg.textContent = '読み込めませんでした。壊れているか、別のファイルかもしれません。';
+    }
+  }
+  $('dogOut').addEventListener('click', () => outImages('dog'));
+  $('textOut').addEventListener('click', () => outImages('text'));
+  $('fxOut').addEventListener('click', outFx);
+  [['dogIn', 'dog'], ['textIn', 'text'], ['fxIn', 'fx']].forEach(([id, m]) => $(id).addEventListener('click', () => { partMode = m; $('partFile').click(); }));
+  $('partFile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) loadPart(f); });
+  $('projSave').addEventListener('click', saveProject);
+  $('projOpen').addEventListener('click', () => $('projFile').click());
+  $('projFile').addEventListener('change', (e) => { const f = e.target.files[0]; e.target.value = ''; if (f) loadProject(f); });
+  $('goExport').addEventListener('click', () => {
+    const t = $('exportSection');
+    if (t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  // ---- 動作確認ウィンドウ(LINEでスタンプをタップしたときのような表示) ----
+  const win = { open: false, item: null, start: 0, last: -1, raf: 0, opener: null, kind: 'sticker', done: false };
+  function winSize() { return win.kind === 'emoji' ? { W: 180, H: 180 } : dims(); }
+  function winRender(idx) {
+    const { W, H } = winSize();
+    const targets = win.kind === 'emoji' ? [$('winCv'), $('winCvSm')] : [$('winCv')];
+    targets.forEach((c) => {
+      if (c.width !== W) c.width = W;
+      if (c.height !== H) c.height = H;
+      renderFrame(c.getContext('2d'), W, H, idx, state.frames, win.item, false);
+    });
+  }
+  function winTick(ts) {
+    if (!win.open) return;
+    win.raf = requestAnimationFrame(winTick);
+    if (!win.start) win.start = ts;
+    const dur = state.duration * 1000, total = dur * state.loops;
+    const el = ts - win.start;
+    let idx = 0;
+    if (el < total) {
+      const t = el % dur;
+      let acc = 0;
+      const ds = frameDelays(state.frames, dur);
+      idx = ds.length - 1;
+      for (let i = 0; i < ds.length; i++) { acc += ds[i]; if (t < acc) { idx = i; break; } }
+      if (win.done) { win.done = false; }
+    } else if (!win.done) {
+      win.done = true;
+      $('winInfo').textContent = '再生が終わりました。1コマ目の絵で止まっています(タップでもう一度)。';
+    }
+    if (idx !== win.last) { win.last = idx; winRender(idx); }
+  }
+  function winReplay() {
+    win.start = 0; win.last = -1; win.done = false;
+    $('winInfo').textContent = state.duration + '秒 × ' + state.loops + '回 / ' + state.frames + 'コマで再生中(終わったら1コマ目で止まります)。';
+  }
+  function winStrip() {
+    const strip = $('winStrip');
+    strip.innerHTML = '';
+    state.items.forEach((it, i) => {
+      const b = document.createElement('div');
+      b.className = 'thumb' + (it === win.item ? ' on' : '');
+      b.tabIndex = 0;
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', it === win.item ? 'true' : 'false');
+      b.setAttribute('aria-label', 'スタンプ' + (i + 1));
+      b.innerHTML = '<img alt="" draggable="false" src="' + it.thumb + '"><i>' + (i + 1) + '</i>';
+      b.addEventListener('click', () => { win.item = it; winStrip(); winReplay(); });
+      keyClick(b);
+      strip.appendChild(b);
+    });
+  }
+  function openWin(opener) {
+    const it = cur();
+    if (!it) { note('先にスタンプを選んでください。'); return; }
+    win.item = it; win.opener = opener || null; win.open = true;
+    $('checkWin').hidden = false;
+    winStrip();
+    $('winBubble').hidden = win.kind !== 'emoji';
+    winReplay();
+    cancelAnimationFrame(win.raf);
+    win.raf = requestAnimationFrame(winTick);
+    $('winClose').focus();
+  }
+  function closeWin() {
+    win.open = false;
+    cancelAnimationFrame(win.raf);
+    $('checkWin').hidden = true;
+    if (win.opener && win.opener.focus) win.opener.focus();
+  }
+  document.querySelectorAll('.openWin').forEach((b) => b.addEventListener('click', () => openWin(b)));
+  $('winClose').addEventListener('click', closeWin);
+  $('winReplay').addEventListener('click', winReplay);
+  $('winStage').addEventListener('click', winReplay);
+  $('checkWin').addEventListener('click', (e) => { if (e.target === $('checkWin')) closeWin(); });
+  document.addEventListener('keydown', (e) => { if (win.open && e.key === 'Escape') closeWin(); });
+  document.querySelectorAll('input[name="winbg"]').forEach((r) => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    $('winStage').className = 'win-stage ' + r.value;
+  }));
+  document.querySelectorAll('input[name="winkind"]').forEach((r) => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    win.kind = r.value;
+    $('winBubble').hidden = win.kind !== 'emoji';
+    winReplay();
+  }));
+
+  // ---- 起動 ----
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    state.playing = false;
+    $('playBtn').textContent = '再生';
+  }
+  const sc = makeSampleSheet();
+  state.cfg.dog.sheet = { id: 0, W: sc.width, H: sc.height, data: sc.getContext('2d').getImageData(0, 0, sc.width, sc.height).data, name: 'サンプル', sample: true };
+  cutSheet('dog');
+  renderTexts();
+  // 文字のサンプルシートは、フォントの読み込み後に作る。1つ目のスタンプには文字を重ねて見本にする。
+  const bootText = () => {
+    const tc = makeSampleTextSheet();
+    state.cfg.text.sheet = { id: 0, W: tc.width, H: tc.height, data: tc.getContext('2d').getImageData(0, 0, tc.width, tc.height).data, name: 'サンプル', sample: true };
+    cutSheet('text');
+    const d0 = state.items[0];
+    if (d0 && d0.sample && !d0.text && state.texts[0]) {
+      d0.text = state.texts[0];
+      state.ver++;
+      renderStrip();
+      if (cur() === d0) { syncPanel(); applyChange(false); }
+    }
+  };
+  if (document.fonts && document.fonts.load) document.fonts.load('700 64px "Zen Maru Gothic"', 'ワン!おはようありがとうおやすみ').then(bootText, bootText);
+  else bootText();
+  requestAnimationFrame(tick);
+})();
+</script>
+
+</body>
+</html>
