@@ -223,6 +223,9 @@ details[open] > summary { margin-bottom: 6px; }
 .mtwrap figcaption { font-size: 11px; color: var(--muted); text-align: center; margin-top: 4px; }
 .mtwrap figure { margin: 0; }
 .topnav { margin-top: 12px; }
+.btn.danger { background: #b3261e; border-color: #b3261e; color: #fff; }
+.minisec { margin: 12px 0 0; }
+.minisec .mini { width: 150px; }
 .tgtchips { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; }
 .win { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 20, 0.6); }
 .win[hidden] { display: none; }
@@ -310,6 +313,7 @@ details[open] > summary { margin-bottom: 6px; }
           <button type="button" class="btn" id="mvR">後ろへ →</button>
           <button type="button" class="btn" id="delBtn">削除</button>
           <button type="button" class="btn" id="undoBtn">削除を戻す</button>
+          <button type="button" class="btn" id="delAllBtn">犬の画像をすべて削除</button>
         </div>
       </div>
 
@@ -325,6 +329,7 @@ details[open] > summary { margin-bottom: 6px; }
           <label class="check" for="textAuto"><input type="checkbox" id="textAuto" checked><span>複数の文字が並んだ画像は、追加したときに自動で切り出す</span></label>
           <button type="button" class="btn" id="tDelBtn">削除</button>
           <button type="button" class="btn" id="tUndoBtn">削除を戻す</button>
+          <button type="button" class="btn" id="tDelAllBtn">文字の画像をすべて削除</button>
         </div>
         <p class="note">文字の画像をタップすると、選んでいるスタンプに重なります。パソコンでは、文字の画像をプレビューにドラッグ&ドロップしても重ねられます(犬の画像の上にドロップすると、そのスタンプに重なります)。</p>
       </div>
@@ -342,6 +347,7 @@ details[open] > summary { margin-bottom: 6px; }
           <div class="field-head"><label for="power">動きの強さ</label><output id="powerOut" for="power"></output></div>
           <input type="range" id="power" min="30" max="150" step="5" value="100">
         </div>
+        <figure class="minisec"><canvas id="miniDog" class="mini" width="320" height="270" role="img" aria-label="ミニプレビュー"></canvas><figcaption>ミニプレビュー</figcaption></figure>
         <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
       </div>
 
@@ -359,6 +365,7 @@ details[open] > summary { margin-bottom: 6px; }
           <div class="field-head"><label for="tpower">動きの強さ</label><output id="tpowerOut" for="tpower"></output></div>
           <input type="range" id="tpower" min="30" max="150" step="5" value="100">
         </div>
+        <figure class="minisec"><canvas id="miniText" class="mini" width="320" height="270" role="img" aria-label="ミニプレビュー"></canvas><figcaption>ミニプレビュー</figcaption></figure>
         <button type="button" class="btn mt" id="textReset">文字の位置・大きさ・回転をもとに戻す</button>
         <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
       </div>
@@ -371,6 +378,7 @@ details[open] > summary { margin-bottom: 6px; }
           <div class="field-head"><label for="fxpower">エフェクトの強さ</label><output id="fxpowerOut" for="fxpower"></output></div>
           <input type="range" id="fxpower" min="30" max="150" step="5" value="100">
         </div>
+        <figure class="minisec"><canvas id="miniFx" class="mini" width="320" height="270" role="img" aria-label="ミニプレビュー"></canvas><figcaption>ミニプレビュー</figcaption></figure>
         <button type="button" class="btn mt" id="fxReset">エフェクトの位置・大きさ・回転をもとに戻す</button>
         <p class="note">エフェクトの位置と大きさは、プレビュー上の「エフェクト」を選んで、ドラッグ・2本指で変えます(パソコンでは枠の角をつまんで大きさを変えられます)。</p>
         <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
@@ -1322,12 +1330,13 @@ function findCells(bg, W, H, opt) {
     const { W, H } = dims();
     const it = cur();
     renderFrame(ctx, W, H, state.editing ? 0 : idx % state.frames, state.frames, it, state.editing);
-    const mc = $('miniCv');
-    if (mc) {
+    ['miniCv', 'miniDog', 'miniText', 'miniFx'].forEach((id) => {
+      const mc = $(id);
+      if (!mc) return;
       if (mc.width !== W) mc.width = W;
       if (mc.height !== H) mc.height = H;
       renderFrame(mc.getContext('2d'), W, H, state.editing ? 0 : idx % state.frames, state.frames, it, state.editing);
-    }
+    });
     if (it && (state.editing || state.hover)) {
       const pl = state.editing
         ? ((state.editTarget !== 'text' || it.text) ? (state.editTarget === 'dog' ? dogPl(W, H, it) : state.editTarget === 'fx' ? fxPl(W, H, it) : textPl(W, H, it)) : null)
@@ -1598,6 +1607,7 @@ function findCells(bg, W, H, opt) {
     $('mvL').disabled = state.sel <= 0;
     $('mvR').disabled = state.sel < 0 || state.sel >= n - 1;
     $('delBtn').disabled = state.sel < 0;
+    $('delAllBtn').disabled = !n;
     $('undoBtn').disabled = !lastDeleted;
     scrollIntoTray(strip, strip.children[state.sel]);
   }
@@ -1669,6 +1679,7 @@ function findCells(bg, W, H, opt) {
     const n = state.texts.length;
     $('tCountText').textContent = n + '個(最大' + MAX_ITEMS + '個)';
     $('tDelBtn').disabled = state.tsel < 0;
+    $('tDelAllBtn').disabled = !n;
     $('tUndoBtn').disabled = !lastDeletedText;
     scrollIntoTray(strip, strip.children[state.tsel]);
   }
@@ -2007,6 +2018,35 @@ function findCells(bg, W, H, opt) {
   $('undoBtn').addEventListener('click', undoDelete);
   $('tDelBtn').addEventListener('click', deleteText);
   $('tUndoBtn').addEventListener('click', undoDeleteText);
+  // 「すべて削除」: 1回目で確認の表示になり、4秒以内にもう一度タップすると削除する
+  function twoTap(id, normal, ask, run) {
+    const b = $(id);
+    let tm = 0;
+    const reset = () => { clearTimeout(tm); tm = 0; b.classList.remove('danger'); b.textContent = normal; };
+    b.addEventListener('click', () => {
+      if (!tm) {
+        b.classList.add('danger');
+        b.textContent = ask;
+        tm = setTimeout(reset, 4000);
+        return;
+      }
+      reset();
+      run();
+    });
+    b.addEventListener('blur', reset);
+  }
+  twoTap('delAllBtn', '犬の画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
+    if (!state.items.length) return;
+    state.items = []; state.mainId = null; state.tabId = null; lastDeleted = null;
+    showNone();
+    note('犬の画像をすべて削除しました。');
+  });
+  twoTap('tDelAllBtn', '文字の画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
+    if (!state.texts.length) return;
+    state.texts = []; state.tsel = -1; lastDeletedText = null;
+    note('文字の画像の一覧をすべて削除しました。すでにスタンプに重ねた文字は、そのまま残ります。');
+    renderTexts();
+  });
   $('dogAdd').addEventListener('click', () => $('dogAddFile').click());
   $('dogAddFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('dog', fl); });
   $('textAdd').addEventListener('click', () => $('textAddFile').click());
