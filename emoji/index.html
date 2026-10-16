@@ -1,0 +1,913 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Mon Chein 絵文字変換</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+body{margin:0}img{max-width:100%}
+/* レイアウト: 1列の作業台。上から「読み込む → 結果 → 1個ずつ確認 → 検証だけ」 */
+:root {
+  --bg: #f3f4f0; --panel: #ffffff; --ink: #20262a; --muted: #636d70; --line: #dde1db;
+  --accent: #1f7a5c; --accent-ink: #ffffff; --accent-soft: #e2f0ea;
+  --ok: #1f7a5c; --ok-soft: #e2f0ea; --warn: #9a6a05; --warn-soft: #fbf0d6; --bad: #b3362b; --bad-soft: #fbe5e2;
+  --check-a: #ffffff; --check-b: #e9ebe6;
+  --f-display: "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Noto Sans JP", sans-serif;
+  --f-body: "Noto Sans JP", "Hiragino Sans", "Yu Gothic", sans-serif;
+  --f-mono: "DM Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15191b; --panel: #1e2427; --ink: #e8ece9; --muted: #9aa5a3; --line: #323b3e;
+  --accent: #5cc39b; --accent-ink: #0f1a16; --accent-soft: #1d3a30;
+  --ok: #5cc39b; --ok-soft: #1d3a30; --warn: #e2b04a; --warn-soft: #3a2f16; --bad: #f08a7f; --bad-soft: #43221f;
+  --check-a: #2a3134; --check-b: #232a2c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #15191b; --panel: #1e2427; --ink: #e8ece9; --muted: #9aa5a3; --line: #323b3e;
+  --accent: #5cc39b; --accent-ink: #0f1a16; --accent-soft: #1d3a30;
+  --ok: #5cc39b; --ok-soft: #1d3a30; --warn: #e2b04a; --warn-soft: #3a2f16; --bad: #f08a7f; --bad-soft: #43221f;
+  --check-a: #2a3134; --check-b: #232a2c; color-scheme: dark }
+
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.65 }
+.wrap { max-width: 980px; margin: 0 auto; padding-block: 28px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: flex; flex-direction: column; gap: 22px }
+h1, h2 { font-family: var(--f-display); text-wrap: balance; margin: 0; font-weight: 700 }
+h1 { font-size: clamp(1.6rem, 4.5vw, 2.2rem); letter-spacing: .02em }
+h2 { font-size: 1.15rem }
+.lead { color: var(--muted); margin: 6px 0 0; max-width: 62ch }
+.brand { font-family: var(--f-mono); font-size: .75rem; letter-spacing: .14em; text-transform: uppercase; color: var(--accent) }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 14px }
+.drop { border: 2px dashed var(--line); border-radius: 12px; padding: 20px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; transition: border-color .15s, background .15s }
+.drop.over { border-color: var(--accent); background: var(--accent-soft) }
+.drop p { margin: 0; color: var(--muted); flex: 1 1 220px; min-width: 0 }
+.drop strong { color: var(--ink) }
+.btn { font: 600 .95rem var(--f-body); border-radius: 10px; padding: 10px 16px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 8px; min-height: 44px }
+.btn:hover { border-color: var(--accent) }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink) }
+.btn:disabled { opacity: .45; cursor: not-allowed }
+.btn:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px }
+input[type=file] { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px 18px }
+.opt { display: flex; flex-direction: column; gap: 4px; min-width: 0 }
+.opt label, .opt .lbl { font-size: .8rem; color: var(--muted); letter-spacing: .03em }
+select { font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; min-height: 42px; width: 100% }
+.check { display: flex; align-items: center; gap: 8px; min-height: 42px; color: var(--ink); font-size: .95rem }
+.check input { width: 18px; height: 18px; accent-color: var(--accent) }
+.progress { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden }
+.progress i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s }
+.status { font-size: .9rem; color: var(--muted); margin: 0 }
+
+.verdict { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px }
+.verdict .big { font-family: var(--f-display); font-size: 1.5rem; font-weight: 700 }
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: .78rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; letter-spacing: .04em; white-space: nowrap }
+.pill.ok { background: var(--ok-soft); color: var(--ok) } .pill.warn { background: var(--warn-soft); color: var(--warn) } .pill.bad { background: var(--bad-soft); color: var(--bad) }
+.pill.fix { background: var(--accent-soft); color: var(--accent) }
+.stats { display: flex; flex-wrap: wrap; gap: 6px 18px; font-family: var(--f-mono); font-size: .85rem; color: var(--muted); font-variant-numeric: tabular-nums }
+.stats b { color: var(--ink); font-weight: 500 }
+.actions { display: flex; flex-wrap: wrap; gap: 10px }
+.issues { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: .9rem }
+.issues li { padding: 8px 12px; border-radius: 8px; background: var(--bad-soft); color: var(--ink) }
+.issues li.warn { background: var(--warn-soft) }
+.issues li b { color: var(--bad) } .issues li.warn b { color: var(--warn) }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: flex; flex-direction: column; gap: 10px; min-width: 0 }
+.card.bad { border-color: var(--bad) }
+.card-top { display: flex; gap: 12px; align-items: flex-start }
+.stage { width: 108px; height: 108px; flex: none; border-radius: 8px; border: 1px solid var(--line);
+  background-color: var(--check-a); background-image: linear-gradient(45deg, var(--check-b) 25%, transparent 25%, transparent 75%, var(--check-b) 75%), linear-gradient(45deg, var(--check-b) 25%, transparent 25%, transparent 75%, var(--check-b) 75%);
+  background-size: 12px 12px; background-position: 0 0, 6px 6px; display: grid; place-items: center; overflow: hidden }
+.stage img { width: 100%; height: 100%; image-rendering: auto }
+.meta { min-width: 0; display: flex; flex-direction: column; gap: 4px }
+.num { font-family: var(--f-mono); font-size: 1.05rem; font-weight: 500 }
+.src { font-size: .8rem; color: var(--muted); overflow-wrap: anywhere }
+.facts { font-family: var(--f-mono); font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums }
+.chips { display: flex; flex-wrap: wrap; gap: 4px }
+.notes { margin: 0; padding-left: 1.1em; font-size: .82rem; color: var(--muted); display: flex; flex-direction: column; gap: 2px }
+.notes li.err { color: var(--bad) }
+details.frames summary { cursor: pointer; font-size: .85rem; color: var(--accent); font-weight: 600; min-height: 32px; display: flex; align-items: center }
+.strip { display: flex; gap: 6px; overflow-x: auto; padding: 6px 2px 4px }
+.strip button { flex: none; width: 52px; padding: 0; border: 2px solid var(--line); border-radius: 6px; background: var(--check-a); cursor: pointer; display: flex; flex-direction: column; align-items: center; color: var(--muted); font: .65rem var(--f-mono) }
+.strip button img { width: 48px; height: 48px }
+.strip button.on { border-color: var(--accent); color: var(--accent) }
+.hint { font-size: .8rem; color: var(--muted); margin: 0 }
+pre.report { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: .78rem/1.6 var(--f-mono); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 14px; max-height: 420px; overflow: auto }
+.spec { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px }
+.spec div { border-top: 2px solid var(--line); padding-top: 6px }
+.spec dt { font-size: .75rem; color: var(--muted); letter-spacing: .04em }
+.spec dd { margin: 0; font-family: var(--f-mono); font-size: .92rem }
+a { color: var(--accent) }
+[hidden] { display: none !important }
+.sample-tag { font-size: .78rem; color: var(--warn); font-weight: 700 }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important } }
+</style>
+</head><body>
+
+
+<div class="wrap">
+  <header>
+    <div class="brand">Mon Chein</div>
+    <h1>絵文字変換</h1>
+    <p class="lead">LINEアニメスタンプのZIPを読み込むと、アニメーション絵文字用のZIP(180×180・001.png〜)に作り直し、そのままLINEの規定どおりか検証します。1コマ目に絵がないものは自動で直します。</p>
+  </header>
+
+  <section class="panel" aria-labelledby="h-in">
+    <h2 id="h-in">スタンプZIPを読み込む</h2>
+    <div class="drop" id="drop">
+      <p><strong>アニメスタンプのZIP</strong>をここにドロップ、またはボタンで選んでください。選ぶとすぐ変換します。</p>
+      <label class="btn primary" for="zipInput">ZIPを選ぶ</label>
+      <input type="file" id="zipInput" accept=".zip,application/zip">
+    </div>
+    <div class="opts">
+      <div class="opt"><label for="optFirst">1コマ目に絵がないとき</label>
+        <select id="optFirst">
+          <option value="replace">いちばん絵が大きいコマを1コマ目に入れる</option>
+          <option value="rotate">絵が出てくるコマから再生を始める</option>
+        </select></div>
+      <div class="opt"><label for="optPlays">ループ回数</label>
+        <select id="optPlays">
+          <option value="0">元のスタンプに合わせる</option>
+          <option value="1">1回</option><option value="2">2回</option><option value="3">3回</option><option value="4">4回</option>
+        </select></div>
+      <div class="opt"><label for="optMargin">まわりの余白</label>
+        <select id="optMargin">
+          <option value="0">なし(LINE推奨)</option><option value="4">4px</option><option value="8">8px</option><option value="12">12px</option>
+        </select></div>
+      <div class="opt"><span class="lbl">大きさ</span>
+        <label class="check" for="optTrim"><input type="checkbox" id="optTrim" checked> 透明な部分を詰めて大きく見せる</label></div>
+    </div>
+    <div class="progress" aria-hidden="true"><i id="bar"></i></div>
+    <p class="status" id="status" role="status">準備中…</p>
+  </section>
+
+  <section class="panel" id="result" hidden aria-labelledby="h-res">
+    <div class="verdict">
+      <h2 id="h-res" class="big" aria-live="polite">—</h2>
+      <span id="verdictPill"></span>
+      <span class="sample-tag" id="sampleTag" hidden>サンプルZIPの結果です</span>
+    </div>
+    <div class="stats" id="stats"></div>
+    <ul class="issues" id="issues"></ul>
+    <div class="actions">
+      <button class="btn primary" id="saveZip" type="button">絵文字ZIPを保存</button>
+      <button class="btn" id="saveReport" type="button">検証結果を保存(.txt)</button>
+      <button class="btn" id="toggleReport" type="button" aria-expanded="false">検証結果を表示</button>
+    </div>
+    <p class="status" id="saveMsg" role="status"></p>
+    <pre class="report" id="report" hidden></pre>
+  </section>
+
+  <section id="cardsWrap" hidden aria-labelledby="h-cards" style="display:flex;flex-direction:column;gap:12px">
+    <h2 id="h-cards">1個ずつ確認</h2>
+    <p class="hint">「コマを見る」から好きなコマをタップすると、そのコマの絵を1コマ目(LINEで静止画として表示される絵)にできます。変えた1個だけ作り直し、ZIPと検証結果も更新します。</p>
+    <div class="grid" id="cards"></div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-ver">
+    <h2 id="h-ver">できた絵文字ZIPを検証だけする</h2>
+    <p class="hint">手で作った絵文字ZIPや、ほかのツールで作ったZIPも、提出前に同じ基準で確認できます。</p>
+    <div class="drop" id="drop2">
+      <p><strong>絵文字のZIP</strong>(001.png〜 と tab.png)をドロップ、または選んでください。</p>
+      <label class="btn" for="verifyInput">ZIPを選んで検証</label>
+      <input type="file" id="verifyInput" accept=".zip,application/zip">
+    </div>
+    <div id="verifyOut" hidden style="display:flex;flex-direction:column;gap:10px">
+      <div class="verdict"><span class="big" id="v2Title" style="font-family:var(--f-display);font-size:1.2rem;font-weight:700"></span><span id="v2Pill"></span></div>
+      <div class="actions"><button class="btn" id="v2Save" type="button">検証結果を保存(.txt)</button></div>
+      <pre class="report" id="v2Report"></pre>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="h-spec">
+    <h2 id="h-spec">チェックしているLINEの規定</h2>
+    <dl class="spec">
+      <div><dt>画像サイズ</dt><dd>180×180px APNG</dd></div>
+      <div><dt>個数</dt><dd>8〜40個</dd></div>
+      <div><dt>ファイル名</dt><dd>001.png〜040.png</dd></div>
+      <div><dt>コマ数</dt><dd>5〜20コマ</dd></div>
+      <div><dt>再生時間</dt><dd>1・2・3・4秒</dd></div>
+      <div><dt>ループ</dt><dd>1〜4回</dd></div>
+      <div><dt>容量</dt><dd>1個 300KB以下</dd></div>
+      <div><dt>タブ画像</dt><dd>tab.png 96×74</dd></div>
+      <div><dt>ZIP全体</dt><dd>20MB以下</dd></div>
+      <div><dt>1コマ目</dt><dd>絵が入っている</dd></div>
+      <div><dt>全コマ</dt><dd>同じ絵だけはNG</dd></div>
+      <div><dt>背景</dt><dd>透過</dd></div>
+    </dl>
+    <p class="hint">出典: <a href="https://creator.line.me/ja/guideline/animationemoji/" target="_blank" rel="noopener">LINE Creators Market アニメーション絵文字 制作ガイドライン</a>(2026年10月確認)。「1コマ目に絵がない」は、この画面では不透明な部分が0.3%未満のときNGとしています。</p>
+  </section>
+</div>
+
+<script>
+// ===== Mon Chein 絵文字変換 エンジン(依存ライブラリなし) =====
+// LINEアニメスタンプZIP → LINEアニメーション絵文字ZIP 変換と検証
+const LINE_EMOJI = {
+  SIZE: 180, TAB_W: 96, TAB_H: 74,
+  MIN_COUNT: 8, MAX_COUNT: 40,
+  MIN_FRAMES: 5, MAX_FRAMES: 20,
+  MAX_PLAYS: 4, MAX_SECONDS: 4,
+  MAX_FILE: 300 * 1024, MAX_ZIP: 20 * 1024 * 1024,
+  EMPTY_RATIO: 0.003, // 不透明ピクセルが0.3%未満なら「画像がない」とみなす
+};
+
+// ---------- CRC32 ----------
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; }
+  return t;
+})();
+function crc32(...parts) {
+  let c = 0xFFFFFFFF;
+  for (const p of parts) for (let i = 0; i < p.length; i++) c = CRC_TABLE[(c ^ p[i]) & 255] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+// ---------- ZIP 読み込み ----------
+async function inflateRaw(data) {
+  const s = new Blob([data]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return new Uint8Array(await new Response(s).arrayBuffer());
+}
+function decodeName(bytes, utf8flag) {
+  try { return new TextDecoder('utf-8', { fatal: true }).decode(bytes); }
+  catch (e) { try { return new TextDecoder('shift_jis').decode(bytes); } catch (e2) { return new TextDecoder().decode(bytes); } }
+}
+async function unzip(buf) {
+  const u8 = new Uint8Array(buf);
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  let eocd = -1;
+  for (let i = u8.length - 22; i >= Math.max(0, u8.length - 65557); i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+  }
+  if (eocd < 0) throw new Error('ZIPファイルとして読めませんでした(壊れているか、ZIPではありません)');
+  const count = dv.getUint16(eocd + 10, true);
+  let p = dv.getUint32(eocd + 16, true);
+  const out = [];
+  for (let n = 0; n < count; n++) {
+    if (dv.getUint32(p, true) !== 0x02014b50) throw new Error('ZIPの目次が壊れています');
+    const flags = dv.getUint16(p + 8, true), method = dv.getUint16(p + 10, true);
+    const csize = dv.getUint32(p + 20, true);
+    const nlen = dv.getUint16(p + 28, true), xlen = dv.getUint16(p + 30, true), clen = dv.getUint16(p + 32, true);
+    const loff = dv.getUint32(p + 42, true);
+    const name = decodeName(u8.subarray(p + 46, p + 46 + nlen), flags & 0x800);
+    p += 46 + nlen + xlen + clen;
+    if (name.endsWith('/')) continue;
+    const lnl = dv.getUint16(loff + 26, true), lxl = dv.getUint16(loff + 28, true);
+    const start = loff + 30 + lnl + lxl;
+    const raw = u8.subarray(start, start + csize);
+    let data;
+    if (method === 0) data = raw.slice();
+    else if (method === 8) data = await inflateRaw(raw);
+    else throw new Error(`${name}: 対応していない圧縮方式です(${method})`);
+    if (flags & 1) throw new Error(`${name}: パスワード付きZIPは読めません`);
+    out.push({ name, data });
+  }
+  return out;
+}
+
+// ---------- ZIP 書き出し(無圧縮・フラット) ----------
+function zipStore(files) {
+  const enc = new TextEncoder();
+  const chunks = [], central = [];
+  let offset = 0;
+  const d = new Date();
+  const dosTime = (d.getHours() << 11) | (d.getMinutes() << 5) | (d.getSeconds() >> 1);
+  const dosDate = ((d.getFullYear() - 1980) << 9) | ((d.getMonth() + 1) << 5) | d.getDate();
+  for (const f of files) {
+    const nb = enc.encode(f.name), crc = crc32(f.data), size = f.data.length;
+    const lh = new Uint8Array(30 + nb.length), lv = new DataView(lh.buffer);
+    lv.setUint32(0, 0x04034b50, true); lv.setUint16(4, 20, true); lv.setUint16(6, 0x800, true); lv.setUint16(8, 0, true);
+    lv.setUint16(10, dosTime, true); lv.setUint16(12, dosDate, true); lv.setUint32(14, crc, true);
+    lv.setUint32(18, size, true); lv.setUint32(22, size, true); lv.setUint16(26, nb.length, true); lv.setUint16(28, 0, true);
+    lh.set(nb, 30);
+    const ch = new Uint8Array(46 + nb.length), cv = new DataView(ch.buffer);
+    cv.setUint32(0, 0x02014b50, true); cv.setUint16(4, 20, true); cv.setUint16(6, 20, true); cv.setUint16(8, 0x800, true);
+    cv.setUint16(10, 0, true); cv.setUint16(12, dosTime, true); cv.setUint16(14, dosDate, true); cv.setUint32(16, crc, true);
+    cv.setUint32(20, size, true); cv.setUint32(24, size, true); cv.setUint16(28, nb.length, true);
+    cv.setUint32(42, offset, true); ch.set(nb, 46);
+    chunks.push(lh, f.data); central.push(ch);
+    offset += lh.length + size;
+  }
+  const cdSize = central.reduce((a, c) => a + c.length, 0);
+  const e = new Uint8Array(22), ev = new DataView(e.buffer);
+  ev.setUint32(0, 0x06054b50, true); ev.setUint16(8, files.length, true); ev.setUint16(10, files.length, true);
+  ev.setUint32(12, cdSize, true); ev.setUint32(16, offset, true);
+  return concatBytes([...chunks, ...central, e]);
+}
+function concatBytes(arr) {
+  const n = arr.reduce((a, c) => a + c.length, 0), out = new Uint8Array(n);
+  let o = 0; for (const a of arr) { out.set(a, o); o += a.length; }
+  return out;
+}
+
+// ---------- PNG / APNG 読み込み ----------
+const PNG_SIG = new Uint8Array([137, 80, 78, 71, 13, 10, 26, 10]);
+function readChunks(u8) {
+  for (let i = 0; i < 8; i++) if (u8[i] !== PNG_SIG[i]) throw new Error('PNG画像ではありません');
+  const dv = new DataView(u8.buffer, u8.byteOffset, u8.byteLength);
+  const chunks = [];
+  let p = 8;
+  while (p + 8 <= u8.length) {
+    const len = dv.getUint32(p);
+    const type = String.fromCharCode(u8[p + 4], u8[p + 5], u8[p + 6], u8[p + 7]);
+    const data = u8.subarray(p + 8, p + 8 + len);
+    chunks.push({ type, data });
+    p += 12 + len;
+    if (type === 'IEND') break;
+  }
+  return chunks;
+}
+function parsePNG(u8) {
+  const chunks = readChunks(u8);
+  const ih = chunks[0];
+  if (!ih || ih.type !== 'IHDR') throw new Error('PNGの先頭情報(IHDR)がありません');
+  const iv = new DataView(ih.data.buffer, ih.data.byteOffset, 13);
+  const info = {
+    width: iv.getUint32(0), height: iv.getUint32(4), bitDepth: ih.data[8], colorType: ih.data[9],
+    ihdr: ih.data, extra: [], frames: [], numPlays: null, numFrames: null, isAPNG: false, hiddenDefault: false,
+  };
+  let cur = null, defaultData = [];
+  for (const c of chunks) {
+    const dv = new DataView(c.data.buffer, c.data.byteOffset, c.data.byteLength);
+    if (c.type === 'acTL') { info.isAPNG = true; info.numFrames = dv.getUint32(0); info.numPlays = dv.getUint32(4); }
+    else if (c.type === 'fcTL') {
+      cur = {
+        w: dv.getUint32(4), h: dv.getUint32(8), x: dv.getUint32(12), y: dv.getUint32(16),
+        delayNum: dv.getUint16(20), delayDen: dv.getUint16(22), dispose: c.data[24], blend: c.data[25], data: [],
+      };
+      info.frames.push(cur);
+    }
+    else if (c.type === 'IDAT') { if (cur) cur.data.push(c.data); else defaultData.push(c.data); }
+    else if (c.type === 'fdAT') { if (cur) cur.data.push(c.data.subarray(4)); }
+    else if (['PLTE', 'tRNS', 'gAMA', 'cHRM', 'sRGB', 'iCCP', 'sBIT'].includes(c.type)) info.extra.push(c);
+  }
+  if (!info.isAPNG || info.frames.length === 0) {
+    info.isAPNG = false;
+    info.frames = [{ w: info.width, h: info.height, x: 0, y: 0, delayNum: 100, delayDen: 1000, dispose: 0, blend: 0, data: defaultData }];
+  } else if (defaultData.length) info.hiddenDefault = true; // 1枚目がアニメに含まれない「隠し画像」
+  return info;
+}
+function chunk(type, data) {
+  const t = new TextEncoder().encode(type);
+  const out = new Uint8Array(12 + data.length), dv = new DataView(out.buffer);
+  dv.setUint32(0, data.length); out.set(t, 4); out.set(data, 8);
+  dv.setUint32(8 + data.length, crc32(t, data));
+  return out;
+}
+function framePNG(info, f) {
+  const ihdr = info.ihdr.slice(); const dv = new DataView(ihdr.buffer);
+  dv.setUint32(0, f.w); dv.setUint32(4, f.h);
+  return concatBytes([PNG_SIG, chunk('IHDR', ihdr), ...info.extra.map(c => chunk(c.type, c.data)), chunk('IDAT', concatBytes(f.data)), chunk('IEND', new Uint8Array(0))]);
+}
+function makeCanvas(w, h) {
+  const c = document.createElement('canvas'); c.width = w; c.height = h; return c;
+}
+function delayMs(f) { const den = f.delayDen || 100; return f.delayNum * 1000 / den; }
+
+// APNGを「各コマの完成画像」に展開(dispose/blendを正しく合成)
+async function renderFrames(info) {
+  const W = info.width, H = info.height;
+  const cv = makeCanvas(W, H), ctx = cv.getContext('2d', { willReadFrequently: true });
+  const out = [];
+  for (let i = 0; i < info.frames.length; i++) {
+    const f = info.frames[i];
+    if (f.x + f.w > W || f.y + f.h > H) throw new Error(`${i + 1}コマ目の位置が画像の外にはみ出しています`);
+    const bmp = await createImageBitmap(new Blob([framePNG(info, f)], { type: 'image/png' }));
+    const prev = f.dispose === 2 ? ctx.getImageData(f.x, f.y, f.w, f.h) : null;
+    if (f.blend === 0) ctx.clearRect(f.x, f.y, f.w, f.h);
+    ctx.drawImage(bmp, f.x, f.y);
+    bmp.close && bmp.close();
+    out.push({ img: ctx.getImageData(0, 0, W, H), ms: delayMs(f) });
+    if (f.dispose === 1) ctx.clearRect(f.x, f.y, f.w, f.h);
+    else if (f.dispose === 2) ctx.putImageData(prev, f.x, f.y);
+  }
+  return out;
+}
+
+// ---------- 画素ヘルパー ----------
+function opaqueCount(img, thr = 16) {
+  const d = img.data; let n = 0;
+  for (let i = 3; i < d.length; i += 4) if (d[i] >= thr) n++;
+  return n;
+}
+function sameImage(a, b) {
+  const x = a.data, y = b.data;
+  if (x.length !== y.length) return false;
+  for (let i = 0; i < x.length; i += 4) {
+    if (x[i + 3] === 0 && y[i + 3] === 0) continue;
+    if (x[i] !== y[i] || x[i + 1] !== y[i + 1] || x[i + 2] !== y[i + 2] || x[i + 3] !== y[i + 3]) return false;
+  }
+  return true;
+}
+function contentBox(frames, W, H) {
+  let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (const f of frames) {
+    const d = f.img.data;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (d[(y * W + x) * 4 + 3] > 0) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+  }
+  return x1 < 0 ? null : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+function diffBox(a, b, W, H) {
+  const x = a.data, y = b.data; let x0 = W, y0 = H, x1 = -1, y1 = -1;
+  for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
+    const k = (j * W + i) * 4;
+    if (x[k] !== y[k] || x[k + 1] !== y[k + 1] || x[k + 2] !== y[k + 2] || x[k + 3] !== y[k + 3]) {
+      if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j;
+    }
+  }
+  return x1 < 0 ? { x: 0, y: 0, w: 1, h: 1 } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+}
+
+// ---------- 再生時間の調整 ----------
+// LINE: 1ループの時間×ループ回数 = 1〜4秒の整数秒、ループ1〜4回
+function planTiming(loopMs, srcPlays, wantPlays) {
+  let target = wantPlays || srcPlays;
+  if (!target) target = Math.max(1, Math.min(4, Math.floor(4000 / loopMs))); // 無限ループ → 4秒に収まる回数
+  target = Math.max(1, Math.min(4, target));
+  let best = null;
+  for (let L = 1; L <= 4; L++) for (let S = 1; S <= 4; S++) {
+    if ((S * 1000) % L) continue;
+    const per = S * 1000 / L;
+    const score = Math.abs(Math.log(per / loopMs)) * 4 + Math.abs(L - target) * (wantPlays ? 10 : 0.6);
+    if (!best || score < best.score) best = { L, S, per, score };
+  }
+  return best;
+}
+function distribute(msList, total) {
+  const sum = msList.reduce((a, b) => a + b, 0) || 1;
+  const out = []; let acc = 0, given = 0;
+  for (let i = 0; i < msList.length; i++) {
+    acc += msList[i] * total / sum;
+    const v = Math.max(1, Math.round(acc) - given);
+    out.push(v); given += v;
+  }
+  out[out.length - 1] += total - given;
+  return out;
+}
+
+// ---------- APNG 書き出し ----------
+async function canvasPNG(cv) {
+  const blob = await new Promise(r => cv.toBlob(r, 'image/png'));
+  return new Uint8Array(await blob.arrayBuffer());
+}
+async function encodeAPNG(frames, W, H, delays, plays, delta) {
+  const parts = [PNG_SIG];
+  let ihdr = null, seq = 0;
+  const bodies = [];
+  for (let i = 0; i < frames.length; i++) {
+    let box = { x: 0, y: 0, w: W, h: H };
+    if (delta && i > 0) box = diffBox(frames[i - 1], frames[i], W, H);
+    const cv = makeCanvas(box.w, box.h), ctx = cv.getContext('2d');
+    ctx.putImageData(frames[i], -box.x, -box.y, box.x, box.y, box.w, box.h);
+    const png = parsePNG(await canvasPNG(cv));
+    if (i === 0) ihdr = png.ihdr;
+    else if (png.ihdr[8] !== ihdr[8] || png.ihdr[9] !== ihdr[9]) throw new Error('コマごとの色形式が揃いませんでした');
+    bodies.push({ box, data: concatBytes(png.frames[0].data) });
+  }
+  parts.push(chunk('IHDR', ihdr));
+  const ac = new Uint8Array(8), av = new DataView(ac.buffer);
+  av.setUint32(0, frames.length); av.setUint32(4, plays);
+  parts.push(chunk('acTL', ac));
+  for (let i = 0; i < bodies.length; i++) {
+    const { box, data } = bodies[i];
+    const fc = new Uint8Array(26), fv = new DataView(fc.buffer);
+    fv.setUint32(0, seq++); fv.setUint32(4, box.w); fv.setUint32(8, box.h); fv.setUint32(12, box.x); fv.setUint32(16, box.y);
+    fv.setUint16(20, delays[i]); fv.setUint16(22, 1000); fc[24] = 0; fc[25] = 0;
+    parts.push(chunk('fcTL', fc));
+    if (i === 0) parts.push(chunk('IDAT', data));
+    else {
+      const fd = new Uint8Array(4 + data.length); new DataView(fd.buffer).setUint32(0, seq++); fd.set(data, 4);
+      parts.push(chunk('fdAT', fd));
+    }
+  }
+  parts.push(chunk('IEND', new Uint8Array(0)));
+  return concatBytes(parts);
+}
+
+// ---------- ZIP内のファイル分類 ----------
+function baseName(n) { return n.split(/[\\/]/).pop(); }
+function classify(entries) {
+  const files = entries.filter(e => !/(^|\/)__MACOSX\//.test(e.name) && !baseName(e.name).startsWith('.'));
+  const pngs = files.filter(e => /\.png$/i.test(e.name));
+  const ignored = files.filter(e => !/\.png$/i.test(e.name)).map(e => baseName(e.name));
+  let main = null, tab = null; const items = [];
+  for (const e of pngs) {
+    const b = baseName(e.name).toLowerCase();
+    if (b === 'main.png') main = e; else if (b === 'tab.png') tab = e; else items.push(e);
+  }
+  const num = n => { const m = baseName(n).match(/(\d+)/); return m ? parseInt(m[1], 10) : 1e9; };
+  items.sort((a, b) => num(a.name) - num(b.name) || a.name.localeCompare(b.name));
+  return { main, tab, items, ignored };
+}
+
+// ---------- 1個の変換 ----------
+async function convertOne(srcBytes, opts, label) {
+  const S = LINE_EMOJI.SIZE, notes = [], errors = [];
+  const info = parsePNG(srcBytes);
+  if (info.hiddenDefault) notes.push('アニメに含まれない隠しの1枚目があったため除外');
+  let frames = await renderFrames(info);
+  if (!info.isAPNG) errors.push('動かない画像(静止画PNG)です。アニメーションにできません');
+
+  // 1) 切り抜き → 180×180 に収める
+  const box = opts.trim ? contentBox(frames, info.width, info.height) : { x: 0, y: 0, w: info.width, h: info.height };
+  if (!box) { errors.push('すべてのコマが透明で、絵がありません'); }
+  const b = box || { x: 0, y: 0, w: info.width, h: info.height };
+  const inner = S - opts.margin * 2;
+  const scale = Math.min(inner / b.w, inner / b.h);
+  const dw = b.w * scale, dh = b.h * scale, dx = (S - dw) / 2, dy = (S - dh) / 2;
+  const src = makeCanvas(info.width, info.height), sctx = src.getContext('2d');
+  const dst = makeCanvas(S, S), dctx = dst.getContext('2d', { willReadFrequently: true });
+  dctx.imageSmoothingEnabled = true; dctx.imageSmoothingQuality = 'high';
+  let out = frames.map(f => {
+    sctx.putImageData(f.img, 0, 0);
+    dctx.clearRect(0, 0, S, S);
+    dctx.drawImage(src, b.x, b.y, b.w, b.h, dx, dy, dw, dh);
+    return { img: dctx.getImageData(0, 0, S, S), ms: f.ms };
+  });
+  notes.push(`${info.width}×${info.height} → 180×180(${Math.round(scale * 100)}%)`);
+
+  // 2) コマ数を5〜20に
+  if (out.length > LINE_EMOJI.MAX_FRAMES) {
+    const merged = [];
+    for (const f of out) { const l = merged[merged.length - 1]; if (l && sameImage(l.img, f.img)) l.ms += f.ms; else merged.push({ ...f }); }
+    let list = merged;
+    if (list.length > LINE_EMOJI.MAX_FRAMES) {
+      const n = list.length, M = LINE_EMOJI.MAX_FRAMES, picked = [];
+      for (let k = 0; k < M; k++) {
+        const s = Math.floor(k * n / M), e = Math.floor((k + 1) * n / M);
+        picked.push({ img: list[s].img, ms: list.slice(s, e).reduce((a, x) => a + x.ms, 0) });
+      }
+      list = picked;
+    }
+    notes.push(`コマ数 ${out.length} → ${list.length}(上限20)`);
+    out = list;
+  }
+  if (out.length > 1 && out.length < LINE_EMOJI.MIN_FRAMES) {
+    const before = out.length;
+    while (out.length < LINE_EMOJI.MIN_FRAMES) {
+      let k = 0; out.forEach((f, i) => { if (f.ms > out[k].ms) k = i; });
+      const half = out[k].ms / 2; out[k].ms = half;
+      out.splice(k + 1, 0, { img: out[k].img, ms: half });
+    }
+    notes.push(`コマ数 ${before} → ${out.length}(下限5、同じコマを分割)`);
+  }
+
+  // 選択用の小さいサムネ(1コマ目を直す前の並び)
+  const th = makeCanvas(60, 60), tctx = th.getContext('2d'), tsrc = makeCanvas(S, S), tsctx = tsrc.getContext('2d');
+  const thumbs = out.map(f => { tsctx.putImageData(f.img, 0, 0); tctx.clearRect(0, 0, 60, 60); tctx.drawImage(tsrc, 0, 0, 60, 60); return th.toDataURL('image/png'); });
+
+  // 3) 1コマ目に画像がない → 修正
+  const total = S * S, cov = out.map(f => opaqueCount(f.img) / total);
+  const firstEmpty = cov[0] < LINE_EMOJI.EMPTY_RATIO;
+  let firstFix = null;
+  const pick = opts.firstFrame?.[label];
+  if (pick != null && pick > 0 && pick < out.length) {
+    out[0] = { img: out[pick].img, ms: out[0].ms };
+    firstFix = `1コマ目を${pick + 1}コマ目の絵に差し替え(手動指定)`;
+  } else if (firstEmpty) {
+    let best = 0; cov.forEach((c, i) => { if (c >= cov[best]) best = i; }); // 同率なら後ろ(完成形)を優先
+    if (cov[best] < LINE_EMOJI.EMPTY_RATIO) errors.push('どのコマにも絵がほとんどありません');
+    else if (opts.firstMode === 'rotate') {
+      const k = cov.findIndex(c => c >= LINE_EMOJI.EMPTY_RATIO);
+      out = out.slice(k).concat(out.slice(0, k));
+      firstFix = `1コマ目が空だったため、絵のある${k + 1}コマ目から始まるように並べ替え`;
+    } else {
+      out[0] = { img: out[best].img, ms: out[0].ms };
+      firstFix = `1コマ目が空だったため、いちばん絵が大きい${best + 1}コマ目の絵を1コマ目に入れました`;
+    }
+  }
+  if (firstFix) notes.push(firstFix);
+
+  // 4) 全コマ同じ → LINEではエラー
+  if (out.length > 1 && out.every(f => sameImage(f.img, out[0].img))) errors.push('すべてのコマが同じ絵です(LINEでは動かない扱いでエラー)');
+
+  // 5) 再生時間
+  const loopMs = out.reduce((a, f) => a + f.ms, 0);
+  const plan = planTiming(loopMs, info.numPlays || 0, opts.plays);
+  const delays = distribute(out.map(f => f.ms), plan.per);
+  const srcPlays = !info.isAPNG ? '-' : info.numPlays === 0 ? '無限' : info.numPlays;
+  notes.push(`再生 ${(loopMs / 1000).toFixed(2)}秒×${srcPlays}回 → ${(plan.per / 1000).toFixed(2)}秒×${plan.L}回 = ${plan.S}秒`);
+
+  // 6) 書き出し(300KBを超えたら差分方式で軽量化)
+  const imgs = out.map(f => f.img);
+  let apng = await encodeAPNG(imgs, S, S, delays, plan.L, false);
+  if (apng.length > LINE_EMOJI.MAX_FILE) {
+    const lite = await encodeAPNG(imgs, S, S, delays, plan.L, true);
+    notes.push(`容量 ${kb(apng.length)} → 差分保存で ${kb(lite.length)}`);
+    apng = lite;
+  }
+  if (apng.length > LINE_EMOJI.MAX_FILE) errors.push(`容量が${kb(apng.length)}で300KBを超えています(コマ数を減らしてください)`);
+  return { apng, notes, errors, thumbs, frames: out.length, plays: plan.L, seconds: plan.S, firstFixed: !!firstFix, firstEmpty };
+}
+function kb(n) { return (n / 1024).toFixed(1) + 'KB'; }
+
+async function makeTab(bytes) {
+  const info = parsePNG(bytes);
+  const fr = (await renderFrames(info))[0].img;
+  const src = makeCanvas(info.width, info.height); src.getContext('2d').putImageData(fr, 0, 0);
+  const W = LINE_EMOJI.TAB_W, H = LINE_EMOJI.TAB_H;
+  if (info.width === W && info.height === H && !info.isAPNG) return { png: bytes, note: 'tab.png をそのまま使用' };
+  const box = contentBox([{ img: fr }], info.width, info.height) || { x: 0, y: 0, w: info.width, h: info.height };
+  const s = Math.min(W / box.w, H / box.h);
+  const cv = makeCanvas(W, H), ctx = cv.getContext('2d'); ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, box.x, box.y, box.w, box.h, (W - box.w * s) / 2, (H - box.h * s) / 2, box.w * s, box.h * s);
+  return { png: await canvasPNG(cv), note: `${info.width}×${info.height} → 96×74 の静止画に変換` };
+}
+
+// ---------- ZIP全体の変換 ----------
+async function convertStickerZip(buf, opts, onProgress) {
+  const entries = await unzip(buf);
+  const { main, tab, items, ignored } = classify(entries);
+  const log = { warnings: [], items: [], tab: null, ignored };
+  if (!items.length) throw new Error('スタンプ画像(01.png など)が見つかりませんでした');
+  let list = items;
+  if (list.length > LINE_EMOJI.MAX_COUNT) { log.warnings.push(`スタンプが${list.length}個あるため、先頭の40個だけ変換しました`); list = list.slice(0, 40); }
+  if (list.length < LINE_EMOJI.MIN_COUNT) log.warnings.push(`絵文字は8個以上必要ですが、${list.length}個しかありません`);
+  if (main) log.warnings.push('main.png は絵文字では使いません(メイン画像はLINEの登録画面で4つ選びます)');
+  const outFiles = [];
+  for (let i = 0; i < list.length; i++) {
+    const name = String(i + 1).padStart(3, '0') + '.png';
+    onProgress && onProgress(i, list.length, name);
+    const src = baseName(list[i].name);
+    try {
+      const r = await convertOne(list[i].data, opts, name);
+      outFiles.push({ name, data: r.apng });
+      log.items.push({ name, src, ...r });
+    } catch (e) {
+      log.items.push({ name, src, errors: ['変換できませんでした: ' + e.message], notes: [], fatal: true });
+    }
+  }
+  let tabSrc = tab ? tab.data : (main ? main.data : null);
+  if (!tabSrc && outFiles.length) tabSrc = outFiles[0].data;
+  if (tabSrc) {
+    const t = await makeTab(tabSrc);
+    outFiles.push({ name: 'tab.png', data: t.png });
+    log.tab = (tab ? '' : main ? 'tab.png が無いため main.png から作成。' : 'tab.png が無いため 001.png から作成。') + t.note;
+  }
+  return { zip: zipStore(outFiles), files: outFiles, log };
+}
+
+// ---------- 検証(LINE規定チェック) ----------
+async function verifyEmojiZip(buf) {
+  const R = { ok: true, checks: [], files: [], zipSize: buf.byteLength ?? buf.length };
+  const add = (level, where, msg) => { R.checks.push({ level, where, msg }); if (level === 'error') R.ok = false; };
+  let entries;
+  try { entries = await unzip(buf); } catch (e) { add('error', 'ZIP', e.message); return R; }
+  if (R.zipSize > LINE_EMOJI.MAX_ZIP) add('error', 'ZIP', `ZIPが${(R.zipSize / 1048576).toFixed(1)}MBで20MBを超えています`);
+  const real = entries.filter(e => !/(^|\/)__MACOSX\//.test(e.name) && !baseName(e.name).startsWith('.'));
+  if (entries.length !== real.length) add('warn', 'ZIP', 'Mac用の隠しファイル(__MACOSX など)が入っています');
+  if (real.some(e => e.name.includes('/'))) add('error', 'ZIP', 'フォルダに入ったファイルがあります。画像はZIPの直下に置いてください');
+  const emo = real.filter(e => /^\d{3}\.png$/.test(baseName(e.name))).sort((a, b) => a.name.localeCompare(b.name));
+  const tab = real.find(e => baseName(e.name) === 'tab.png');
+  const other = real.filter(e => !emo.includes(e) && e !== tab);
+  if (!emo.length && real.some(e => /^\d{2}\.png$/.test(baseName(e.name)))) add('error', 'ZIP', 'これはアニメスタンプ用のZIP(01.png〜)のようです。上の「スタンプZIPを読み込む」で絵文字用に変換してください');
+  other.forEach(e => add('error', baseName(e.name), 'ファイル名が規定外です(001.png〜040.png と tab.png のみ)'));
+  if (emo.length < LINE_EMOJI.MIN_COUNT || emo.length > LINE_EMOJI.MAX_COUNT) add('error', 'ZIP', `絵文字の数が${emo.length}個です(8〜40個)`);
+  emo.forEach((e, i) => { const want = String(i + 1).padStart(3, '0') + '.png'; if (baseName(e.name) !== want) add('error', baseName(e.name), `番号が飛んでいます(${want} があるはずです)`); });
+  if (!tab) add('error', 'tab.png', 'タブ画像 tab.png がありません');
+  else {
+    try {
+      const t = parsePNG(tab.data);
+      if (t.width !== 96 || t.height !== 74) add('error', 'tab.png', `サイズが${t.width}×${t.height}です(96×74)`);
+      if (tab.data.length > 1024 * 1024) add('error', 'tab.png', '容量が1MBを超えています');
+      R.tab = { width: t.width, height: t.height, size: tab.data.length, ok: t.width === 96 && t.height === 74 };
+    } catch (e) { add('error', 'tab.png', e.message); }
+  }
+  for (const e of emo) {
+    const n = baseName(e.name), f = { name: n, size: e.data.length, issues: [] };
+    const err = m => { f.issues.push({ level: 'error', msg: m }); add('error', n, m); };
+    const warn = m => { f.issues.push({ level: 'warn', msg: m }); add('warn', n, m); };
+    try {
+      const p = parsePNG(e.data);
+      f.width = p.width; f.height = p.height; f.frames = p.frames.length; f.plays = p.numPlays;
+      if (p.width !== 180 || p.height !== 180) err(`サイズが${p.width}×${p.height}です(180×180)`);
+      if (!p.isAPNG) { err('アニメーションPNG(APNG)ではありません'); R.files.push(f); continue; }
+      if (p.numFrames !== p.frames.length) err(`コマ数の記録(${p.numFrames})と実際(${p.frames.length})が合いません`);
+      if (p.frames.length < 5 || p.frames.length > 20) err(`コマ数が${p.frames.length}です(5〜20)`);
+      if (p.numPlays < 1 || p.numPlays > 4) err(p.numPlays === 0 ? 'ループが無限になっています(1〜4回)' : `ループが${p.numPlays}回です(1〜4回)`);
+      const loopMs = p.frames.reduce((a, x) => a + delayMs(x), 0);
+      const totalMs = loopMs * (p.numPlays || 1);
+      f.loopMs = Math.round(loopMs * 1000) / 1000; f.totalMs = Math.round(totalMs * 1000) / 1000;
+      if (totalMs > 4000 + 0.5) err(`再生時間が${(totalMs / 1000).toFixed(2)}秒です(最大4秒)`);
+      else if (Math.abs(totalMs - Math.round(totalMs / 1000) * 1000) > 0.5 || totalMs < 999.5) err(`再生時間が${(totalMs / 1000).toFixed(3)}秒です(1・2・3・4秒のどれかぴったり)`);
+      if (e.data.length > LINE_EMOJI.MAX_FILE) err(`容量が${kb(e.data.length)}です(300KB以下)`);
+      if (p.colorType !== 6 && p.colorType !== 4 && !p.extra.some(c => c.type === 'tRNS')) err('透過がない画像です(背景を透過にしてください)');
+      const fr = await renderFrames(p);
+      const total = p.width * p.height;
+      f.firstCoverage = opaqueCount(fr[0].img) / total;
+      if (opaqueCount(fr[0].img) === 0) err('1コマ目に画像がありません(完全に透明)');
+      else if (f.firstCoverage < LINE_EMOJI.EMPTY_RATIO) err(`1コマ目の絵がほとんどありません(${(f.firstCoverage * 100).toFixed(2)}%)`);
+      if (fr.every(x => sameImage(x.img, fr[0].img))) err('すべてのコマが同じ絵です');
+      const d = fr[0].img.data, W = p.width;
+      const corners = [0, W - 1, (p.height - 1) * W, p.height * W - 1].filter(k => d[k * 4 + 3] === 255).length;
+      if (corners === 4) warn('四隅が不透明です。背景が透過になっているか確認してください');
+    } catch (ex) { err('読み込めません: ' + ex.message); }
+    R.files.push(f);
+  }
+  R.errorCount = R.checks.filter(c => c.level === 'error').length;
+  R.warnCount = R.checks.filter(c => c.level === 'warn').length;
+  return R;
+}
+
+function reportText(R, convLog, srcName) {
+  const L = [];
+  const now = new Date();
+  L.push('Mon Chein 絵文字変換 検証結果');
+  L.push(`日時: ${now.toLocaleString('ja-JP')}`);
+  if (srcName) L.push(`元ファイル: ${srcName}`);
+  L.push(`判定: ${R.ok ? '合格(LINEの規定チェックをすべて通過)' : `不合格(エラー ${R.errorCount}件)`} / 注意 ${R.warnCount}件`);
+  L.push(`ZIP容量: ${kb(R.zipSize)}  絵文字: ${R.files.length}個  タブ: ${R.tab ? `${R.tab.width}×${R.tab.height}` : 'なし'}`);
+  L.push('');
+  L.push('--- 絵文字ごとの結果 ---');
+  for (const f of R.files) {
+    const st = f.issues.some(i => i.level === 'error') ? 'NG' : f.issues.length ? '注意' : 'OK';
+    L.push(`[${st}] ${f.name}  ${f.width}×${f.height}  ${f.frames}コマ  ${f.plays}回  ${f.totalMs != null ? (f.totalMs / 1000).toFixed(2) + '秒' : '-'}  ${kb(f.size)}  1コマ目の絵 ${f.firstCoverage != null ? (f.firstCoverage * 100).toFixed(1) + '%' : '-'}`);
+    f.issues.forEach(i => L.push(`    ${i.level === 'error' ? '× ' : '△ '}${i.msg}`));
+    const c = convLog?.items.find(x => x.name === f.name);
+    if (c) { L.push(`    元: ${c.src}`); c.notes.forEach(n => L.push(`    ・${n}`)); (c.errors || []).forEach(n => L.push(`    変換時 × ${n}`)); }
+  }
+  const zipLevel = R.checks.filter(c => !R.files.some(f => f.name === c.where));
+  if (zipLevel.length) { L.push(''); L.push('--- ZIP全体 ---'); zipLevel.forEach(c => L.push(`${c.level === 'error' ? '× ' : '△ '}${c.where}: ${c.msg}`)); }
+  if (convLog) {
+    L.push(''); L.push('--- 変換メモ ---');
+    if (convLog.tab) L.push('tab.png: ' + convLog.tab);
+    convLog.warnings.forEach(w => L.push('△ ' + w));
+    convLog.items.filter(i => i.fatal).forEach(i => L.push(`× ${i.src}: ${i.errors.join(' / ')}`));
+    if (convLog.ignored.length) L.push('無視したファイル: ' + convLog.ignored.join(', '));
+  }
+  return L.join('\n');
+}
+
+</script>
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const state = { srcName: '', entries: null, items: [], files: [], log: null, verify: null, zip: null, firstFrame: {}, sample: false, v2: null, v2Name: '' };
+
+  function opts() {
+    return { firstMode: $('optFirst').value, plays: +$('optPlays').value, margin: +$('optMargin').value, trim: $('optTrim').checked, firstFrame: state.firstFrame };
+  }
+  function setProgress(r, msg) { $('bar').style.width = Math.round(r * 100) + '%'; if (msg) $('status').textContent = msg; }
+
+  // ---- 保存(claude.ai では保存の確認が出ます。ふつうのWebページではそのままダウンロード) ----
+  let dlPromise = null;
+  function getDownloads() {
+    if (!dlPromise) dlPromise = (window.claude && typeof window.claude.use === 'function') ? window.claude.use('downloads').catch(() => null) : Promise.resolve(null);
+    return dlPromise;
+  }
+  async function saveFile(name, data, mime) {
+    const dl = await getDownloads();
+    if (dl) {
+      try { await dl.save({ filename: name, data: new Blob([data], { type: mime }) }); return '保存しました: ' + name; }
+      catch (e) { if (e && e.code === 'declined') return '保存をキャンセルしました'; if (!['unavailable', 'not_granted', 'capability_disabled', 'capability_removed'].includes(e && e.code)) return '保存できませんでした: ' + (e && e.message || e); }
+    }
+    const url = URL.createObjectURL(new Blob([data], { type: mime }));
+    const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return '保存しました: ' + name;
+  }
+
+  // ---- 変換の実行 ----
+  async function runFromBuffer(buf, name, isSample) {
+    state.srcName = name; state.sample = !!isSample; state.firstFrame = {};
+    state.srcBuf = buf;
+    $('zipInput').disabled = true;
+    try {
+      setProgress(0.02, `${name} を読み込み中…`);
+      const res = await convertStickerZip(buf, opts(), (i, n, f) => setProgress((i + 0.5) / n * 0.9, `変換中 ${i + 1}/${n}(${f})`));
+      state.files = res.files; state.log = res.log; state.zip = res.zip;
+      const entries = await unzip(buf); const cls = classify(entries);
+      state.sources = cls.items.slice(0, 40).map(e => e.data);
+      setProgress(0.95, '検証中…');
+      state.verify = await verifyEmojiZip(res.zip);
+      setProgress(1, `${name} → 絵文字 ${res.files.filter(f => f.name !== 'tab.png').length}個を作成しました`);
+      render();
+    } catch (e) {
+      setProgress(0, '変換できませんでした: ' + e.message);
+      $('result').hidden = true; $('cardsWrap').hidden = true;
+    } finally { $('zipInput').disabled = false; }
+  }
+
+  // 1個だけ作り直す
+  async function redoOne(idx, pick) {
+    const name = String(idx + 1).padStart(3, '0') + '.png';
+    if (pick == null) delete state.firstFrame[name]; else state.firstFrame[name] = pick;
+    $('status').textContent = `${name} を作り直し中…`;
+    const r = await convertOne(state.sources[idx], opts(), name);
+    const it = state.log.items[idx];
+    Object.assign(it, r, { fatal: false });
+    state.files[idx] = { name, data: r.apng };
+    state.zip = zipStore(state.files);
+    state.verify = await verifyEmojiZip(state.zip);
+    $('status').textContent = `${name} を作り直しました`;
+    render();
+  }
+
+  // ---- 表示 ----
+  const urls = [];
+  function render() {
+    const V = state.verify, log = state.log;
+    $('result').hidden = false; $('cardsWrap').hidden = false;
+    $('sampleTag').hidden = !state.sample;
+    $('h-res').textContent = V.ok ? 'LINEの規定をすべて満たしています' : `直す必要がある点が ${V.errorCount}件 あります`;
+    $('verdictPill').innerHTML = V.ok ? '<span class="pill ok">合格</span>' : '<span class="pill bad">不合格</span>';
+    const fixed = log.items.filter(i => i.firstFixed).length;
+    $('stats').innerHTML = `<span>元 <b>${esc(state.srcName)}</b></span><span>絵文字 <b>${V.files.length}</b>個</span><span>ZIP <b>${kb(V.zipSize)}</b></span><span>1コマ目を修正 <b>${fixed}</b>個</span><span>注意 <b>${V.warnCount}</b>件</span>`;
+    const zipIssues = V.checks.filter(c => !/^\d{3}\.png$/.test(c.where));
+    const warns = log.warnings.map(w => ({ level: 'warn', where: 'メモ', msg: w }));
+    $('issues').innerHTML = zipIssues.concat(warns).map(c => `<li class="${c.level === 'warn' ? 'warn' : ''}"><b>${c.level === 'warn' ? '注意' : 'エラー'}</b> ${esc(c.where)}: ${esc(c.msg)}</li>`).join('');
+    const txt = reportText(V, log, state.srcName);
+    $('report').textContent = txt;
+
+    urls.splice(0).forEach(u => URL.revokeObjectURL(u));
+    $('cards').innerHTML = '';
+    log.items.forEach((it, idx) => {
+      const vf = V.files.find(f => f.name === it.name);
+      const errs = vf ? vf.issues.filter(i => i.level === 'error') : [{ msg: (it.errors || []).join(' / ') }];
+      const card = document.createElement('article'); card.className = 'card' + (errs.length ? ' bad' : '');
+      let img = '';
+      const file = state.files.find(f => f.name === it.name);
+      if (file) { const u = URL.createObjectURL(new Blob([file.data], { type: 'image/png' })); urls.push(u); img = `<img src="${u}" alt="${it.name} のアニメーション">`; }
+      const chips = [errs.length ? '<span class="pill bad">NG</span>' : '<span class="pill ok">OK</span>'];
+      if (it.firstFixed) chips.push('<span class="pill fix">1コマ目を修正</span>');
+      if (it.firstEmpty) chips.push('<span class="pill warn">元は1コマ目が空</span>');
+      const facts = vf && vf.frames != null ? `${vf.frames}コマ ・ ${vf.plays}回 ・ ${(vf.totalMs / 1000).toFixed(0)}秒 ・ ${kb(vf.size)}` : '';
+      const notes = (it.notes || []).map(n => `<li>${esc(n)}</li>`).concat(errs.map(e => `<li class="err">${esc(e.msg)}</li>`)).join('');
+      const cur = state.firstFrame[it.name];
+      const strip = it.thumbs ? `<details class="frames"><summary>コマを見る(${it.thumbs.length}コマ)</summary>
+        <div class="strip">${it.thumbs.map((t, i) => `<button type="button" data-i="${i}" class="${cur === i ? 'on' : ''}" aria-label="${i + 1}コマ目を1コマ目にする"><img src="${t}" alt="">${i + 1}</button>`).join('')}</div>
+        <p class="hint">タップしたコマの絵が1コマ目になります。${cur != null ? '<button type="button" class="btn" data-auto style="min-height:32px;padding:4px 10px;font-size:.8rem">自動に戻す</button>' : ''}</p></details>` : '';
+      card.innerHTML = `<div class="card-top"><div class="stage">${img}</div><div class="meta"><span class="num">${it.name}</span><span class="src">元: ${esc(it.src)}</span><div class="chips">${chips.join('')}</div><span class="facts">${facts}</span></div></div><ul class="notes">${notes}</ul>${strip}`;
+      card.querySelectorAll('.strip button').forEach(b => b.addEventListener('click', () => redoOne(idx, +b.dataset.i)));
+      const auto = card.querySelector('[data-auto]'); if (auto) auto.addEventListener('click', () => redoOne(idx, null));
+      if (cur != null) card.querySelector('details').open = true;
+      $('cards').appendChild(card);
+    });
+  }
+  function esc(s) { return String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+  function outName(ext) { return (state.srcName.replace(/\.zip$/i, '') || 'emoji') + ext; }
+
+  $('saveZip').addEventListener('click', async () => { $('saveMsg').textContent = await saveFile(outName('_emoji.zip'), state.zip, 'application/zip'); });
+  $('saveReport').addEventListener('click', async () => { $('saveMsg').textContent = await saveFile(outName('_検証結果.txt'), $('report').textContent, 'text/plain'); });
+  $('toggleReport').addEventListener('click', e => { const r = $('report'); r.hidden = !r.hidden; e.currentTarget.setAttribute('aria-expanded', String(!r.hidden)); e.currentTarget.textContent = r.hidden ? '検証結果を表示' : '検証結果を隠す'; });
+
+  // オプションを変えたら同じZIPで作り直す
+  ['optFirst', 'optPlays', 'optMargin', 'optTrim'].forEach(id => $(id).addEventListener('change', () => { if (state.srcBuf) runFromBuffer(state.srcBuf, state.srcName, state.sample); }));
+
+  async function readFile(f) { return new Uint8Array(await f.arrayBuffer()); }
+  $('zipInput').addEventListener('change', async e => { const f = e.target.files[0]; if (f) runFromBuffer(await readFile(f), f.name, false); e.target.value = ''; });
+  function dropZone(el, fn) {
+    el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('over'); });
+    el.addEventListener('dragleave', () => el.classList.remove('over'));
+    el.addEventListener('drop', async e => { e.preventDefault(); el.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) fn(await readFile(f), f.name); });
+  }
+  dropZone($('drop'), (b, n) => runFromBuffer(b, n, false));
+
+  // ---- 検証だけ ----
+  async function verifyOnly(buf, name) {
+    const V = await verifyEmojiZip(buf);
+    state.v2 = reportText(V, null, name); state.v2Name = name;
+    $('verifyOut').hidden = false;
+    $('v2Title').textContent = V.ok ? `${name}: 規定をすべて満たしています` : `${name}: エラー ${V.errorCount}件`;
+    $('v2Pill').innerHTML = V.ok ? '<span class="pill ok">合格</span>' : '<span class="pill bad">不合格</span>';
+    $('v2Report').textContent = state.v2;
+  }
+  $('verifyInput').addEventListener('change', async e => { const f = e.target.files[0]; if (f) verifyOnly(await readFile(f), f.name); e.target.value = ''; });
+  dropZone($('drop2'), verifyOnly);
+  $('v2Save').addEventListener('click', async () => { $('v2Save').textContent = (await saveFile(state.v2Name.replace(/\.zip$/i, '') + '_検証結果.txt', state.v2, 'text/plain')).startsWith('保存しました') ? '保存しました' : '検証結果を保存(.txt)'; });
+
+  // ---- 最初はサンプル(1コマ目が空のスタンプ入り)で動きを見せる ----
+  async function makeSampleZip() {
+    const W = 320, H = 270, files = [];
+    const cols = ['#f6d9b0', '#fbeacb', '#e8c9a0', '#f4f1ec', '#f0d2c2', '#e6e2c8', '#ffe3d0', '#f3dfa8'];
+    const cv = makeCanvas(W, H), x = cv.getContext('2d');
+    function dogAt(cx, cy, col, t) {
+      x.lineWidth = 6; x.strokeStyle = '#2a1f1c';
+      x.fillStyle = '#7a5032'; [[-1], [1]].forEach(([s]) => { x.beginPath(); x.ellipse(cx + s * 70, cy - 40, 20, 34, s * 0.4, 0, 7); x.fill(); });
+      x.fillStyle = col; x.beginPath(); x.arc(cx, cy, 80, 0, 7); x.fill(); x.stroke();
+      x.fillStyle = '#1b1414'; [[-22], [22]].forEach(([dx]) => { x.beginPath(); x.arc(cx + dx, cy - 8, 8, 0, 7); x.fill(); });
+      x.beginPath(); x.ellipse(cx, cy + 18, 10, 7, 0, 0, 7); x.fill();
+      x.beginPath(); x.lineWidth = 5; x.arc(cx, cy + 22, 20 + 4 * Math.sin(t), 0.25, Math.PI - 0.25); x.stroke();
+    }
+    for (let k = 0; k < 8; k++) {
+      const n = 10, imgs = [];
+      for (let i = 0; i < n; i++) {
+        x.clearRect(0, 0, W, H);
+        if (k % 3 === 0) { if (i > 0) dogAt(-90 + (W / 2 + 90) * Math.min(1, i / 6), H / 2, cols[k], i); } // 左から登場(1コマ目は空)
+        else dogAt(W / 2, H / 2 + 22 * Math.sin(i / n * Math.PI * 2 + k), cols[k], i);
+        imgs.push(x.getImageData(0, 0, W, H));
+      }
+      files.push({ name: String(k + 1).padStart(2, '0') + '.png', data: await encodeAPNG(imgs, W, H, Array(n).fill(120), 2, false) });
+    }
+    x.clearRect(0, 0, W, H); dogAt(W / 2, H / 2, cols[0], 0);
+    const t = makeCanvas(96, 74); t.getContext('2d').drawImage(cv, 40, 0, 240, 270, 15, 0, 66, 74);
+    files.push({ name: 'tab.png', data: await canvasPNG(t) });
+    return zipStore(files);
+  }
+  makeSampleZip().then(z => runFromBuffer(z, 'サンプル.zip', true)).catch(e => { $('status').textContent = 'ZIPを選んでください'; });
+})();
+</script>
+
+</body></html>
