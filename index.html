@@ -3,66 +3,90 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#eef1f4">
+<meta name="theme-color" content="#f1eee8">
+<style>body{margin:0}</style>
 <title>Mon Chein スタンプ工房</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500&family=Shippori+Mincho:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
 <style>
 /* レイアウト: スマホは1カラム(プレビュー → 犬の一覧 → 文字の一覧 → シート切り出し → 動きと配置 → 全体設定 → 規格チェック → 書き出し)。広い画面ではプレビューを左に固定し、操作を右に置く。 */
 :root {
-  --bg: #eef1f4;
-  --surface: #ffffff;
-  --ink: #18212b;
-  --muted: #5d6b7a;
-  --line: #d5dce3;
-  --accent: #1c7c8c;
+  --bg: #f1eee8;
+  --surface: #fbf9f5;
+  --ink: #26231f;
+  --muted: #6a6359;
+  --line: #ddd5c7;
+  --line-strong: #c9bda8;
+  --accent: #8a6a2f;
   --accent-ink: #ffffff;
-  --accent-soft: #d8eef2;
-  --ok: #1f7a45;
-  --ok-soft: #dff3e6;
-  --ng: #b3321f;
-  --ng-soft: #fbe3df;
-  --check-a: #e1e6eb;
-  --check-b: #f5f7f9;
-  --font-display: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --accent-soft: #efe3c8;
+  --gold: #b8924a;
+  --ok: #2e7048;
+  --ok-soft: #e1efe4;
+  --ng: #a8341f;
+  --ng-soft: #f6ded8;
+  --check-a: #e4ded2;
+  --check-b: #f6f2ea;
+  --glow1: rgba(255,255,255,.9);
+  --glow2: rgba(226,214,190,.55);
+  --panel-veil: rgba(251,249,245,.84);
+  --shadow: 0 1px 0 rgba(255,255,255,.9) inset, 0 18px 40px -26px rgba(70,52,20,.45);
+  --font-display: 'Shippori Mincho', 'Hiragino Mincho ProN', 'Yu Mincho', serif;
+  --font-ui: 'Zen Maru Gothic', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+  --font-brand: 'Cormorant Garamond', 'Hiragino Mincho ProN', serif;
   --font-body: 'Noto Sans JP', 'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif;
   --font-num: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --marble: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1100' height='820'><filter id='c' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.0016 0.0026' numOctaves='3' seed='21' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.627 0 0 0 0 0.588 0 0 0 0 0.529 1 0 0 0 0'/><feComponentTransfer><feFuncA type='linear' slope='0.22' intercept='-0.077'/></feComponentTransfer></filter><filter id='a' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.0032 0.0068' numOctaves='5' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.502 0 0 0 0 0.533 0 0 0 0 0.58 1 0 0 0 0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0 0 0 0 0 0 0 0 0.5 1 0.5 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feComponentTransfer><feFuncA type='linear' slope='0.2'/></feComponentTransfer></filter><filter id='b' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.009 0.017' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.722 0 0 0 0 0.588 0 0 0 0 0.314 1 0 0 0 0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0 0 0 0 0 0 0 0 0.5 1 0.5 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feComponentTransfer><feFuncA type='linear' slope='0.3'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23c)'/><rect width='100%' height='100%' filter='url(%23a)'/><rect width='100%' height='100%' filter='url(%23b)'/></svg>");
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #12181e;
-    --surface: #1a222a;
-    --ink: #e8edf2;
-    --muted: #93a1b0;
-    --line: #2b3641;
-    --accent: #4cc0d1;
-    --accent-ink: #07242a;
-    --accent-soft: #17363c;
-    --ok: #6fd39a;
-    --ok-soft: #17301f;
-    --ng: #ff9a8c;
-    --ng-soft: #3a1d19;
-    --check-a: #232c35;
-    --check-b: #1b232b;
-    color-scheme: dark;
+  --bg: #111113;
+  --surface: #1b1a1d;
+  --ink: #ece8e0;
+  --muted: #a49d91;
+  --line: #34312e;
+  --line-strong: #4a4439;
+  --accent: #d6b36a;
+  --accent-ink: #1d1608;
+  --accent-soft: #3a3020;
+  --gold: #d6b36a;
+  --ok: #7fd6a0;
+  --ok-soft: #1b3024;
+  --ng: #ff9f90;
+  --ng-soft: #3b1f1b;
+  --check-a: #2a2927;
+  --check-b: #201f1d;
+  --glow1: rgba(70,66,80,.38);
+  --glow2: rgba(120,98,52,.22);
+  --panel-veil: rgba(27,26,29,.80);
+  --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 20px 44px -26px rgba(0,0,0,.9);
+  --marble: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1100' height='820'><filter id='c' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.0016 0.0026' numOctaves='3' seed='21' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.314 0 0 0 0 0.298 0 0 0 0 0.345 1 0 0 0 0'/><feComponentTransfer><feFuncA type='linear' slope='0.5' intercept='-0.175'/></feComponentTransfer></filter><filter id='a' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.0032 0.0068' numOctaves='5' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.745 0 0 0 0 0.745 0 0 0 0 0.784 1 0 0 0 0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0 0 0 0 0 0 0 0 0.5 1 0.5 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feComponentTransfer><feFuncA type='linear' slope='0.15'/></feComponentTransfer></filter><filter id='b' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.009 0.017' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.839 0 0 0 0 0.702 0 0 0 0 0.416 1 0 0 0 0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0 0 0 0 0 0 0 0 0.5 1 0.5 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feComponentTransfer><feFuncA type='linear' slope='0.26'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23c)'/><rect width='100%' height='100%' filter='url(%23a)'/><rect width='100%' height='100%' filter='url(%23b)'/></svg>");
+  color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #12181e;
-  --surface: #1a222a;
-  --ink: #e8edf2;
-  --muted: #93a1b0;
-  --line: #2b3641;
-  --accent: #4cc0d1;
-  --accent-ink: #07242a;
-  --accent-soft: #17363c;
-  --ok: #6fd39a;
-  --ok-soft: #17301f;
-  --ng: #ff9a8c;
-  --ng-soft: #3a1d19;
-  --check-a: #232c35;
-  --check-b: #1b232b;
+  --bg: #111113;
+  --surface: #1b1a1d;
+  --ink: #ece8e0;
+  --muted: #a49d91;
+  --line: #34312e;
+  --line-strong: #4a4439;
+  --accent: #d6b36a;
+  --accent-ink: #1d1608;
+  --accent-soft: #3a3020;
+  --gold: #d6b36a;
+  --ok: #7fd6a0;
+  --ok-soft: #1b3024;
+  --ng: #ff9f90;
+  --ng-soft: #3b1f1b;
+  --check-a: #2a2927;
+  --check-b: #201f1d;
+  --glow1: rgba(70,66,80,.38);
+  --glow2: rgba(120,98,52,.22);
+  --panel-veil: rgba(27,26,29,.80);
+  --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 20px 44px -26px rgba(0,0,0,.9);
+  --marble: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='1100' height='820'><filter id='c' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.0016 0.0026' numOctaves='3' seed='21' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.314 0 0 0 0 0.298 0 0 0 0 0.345 1 0 0 0 0'/><feComponentTransfer><feFuncA type='linear' slope='0.5' intercept='-0.175'/></feComponentTransfer></filter><filter id='a' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.0032 0.0068' numOctaves='5' seed='7' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.745 0 0 0 0 0.745 0 0 0 0 0.784 1 0 0 0 0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0 0 0 0 0 0 0 0 0.5 1 0.5 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feComponentTransfer><feFuncA type='linear' slope='0.15'/></feComponentTransfer></filter><filter id='b' x='0' y='0' width='100%' height='100%' color-interpolation-filters='sRGB'><feTurbulence type='fractalNoise' baseFrequency='0.009 0.017' numOctaves='4' seed='3' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0.839 0 0 0 0 0.702 0 0 0 0 0.416 1 0 0 0 0'/><feComponentTransfer><feFuncA type='table' tableValues='0 0 0 0 0 0 0 0 0 0.5 1 0.5 0 0 0 0 0 0 0 0 0'/></feComponentTransfer><feComponentTransfer><feFuncA type='linear' slope='0.26'/></feComponentTransfer></filter><rect width='100%' height='100%' filter='url(%23c)'/><rect width='100%' height='100%' filter='url(%23a)'/><rect width='100%' height='100%' filter='url(%23b)'/></svg>");
   color-scheme: dark;
 }
 
@@ -74,10 +98,10 @@ body {
   padding-block: 20px 40px;
 }
 .wrap { max-width: 1000px; margin-inline: auto; }
-h1 { font: 700 24px/1.3 var(--font-display); margin: 0; text-wrap: balance; }
+h1 { font: 700 24px/1.3 var(--font-ui); margin: 0; text-wrap: balance; }
 .lead { color: var(--muted); font-size: 14px; margin: 6px 0 20px; }
 h2, summary {
-  font: 700 13px/1.4 var(--font-display);
+  font: 700 13px/1.4 var(--font-ui);
   letter-spacing: .08em;
   color: var(--muted);
   margin: 0 0 10px;
@@ -137,7 +161,7 @@ h2, summary {
   display: flex; align-items: center; justify-content: center;
   min-height: 44px; padding: 6px 8px;
   border: 1px solid var(--line); border-radius: 10px;
-  font: 500 14px/1.3 var(--font-display);
+  font: 500 14px/1.3 var(--font-ui);
   text-align: center;
   background: var(--surface);
 }
@@ -155,7 +179,7 @@ select {
   border: 1px solid var(--line); border-radius: 10px;
   background: var(--surface); color: var(--ink);
 }
-.sub { font: 500 13px/1.4 var(--font-display); color: var(--muted); margin: 18px 0 8px; }
+.sub { font: 500 13px/1.4 var(--font-ui); color: var(--muted); margin: 18px 0 8px; }
 input[type=number] {
   font: 400 16px/1 var(--font-body);
   min-height: 44px; padding: 0 10px; width: 100%;
@@ -207,7 +231,7 @@ details[open] > summary { margin-bottom: 6px; }
 .thumb .bd {
   font-style: normal;
   position: absolute; top: 3px; padding: 2px 4px; border-radius: 6px; background: var(--accent); color: var(--accent-ink);
-  font: 700 9px/1 var(--font-display); font-style: normal; pointer-events: none;
+  font: 700 9px/1 var(--font-ui); font-style: normal; pointer-events: none;
 }
 .thumb .bd.m { left: 3px; }
 .thumb .bd.t { right: 3px; }
@@ -225,8 +249,23 @@ details[open] > summary { margin-bottom: 6px; }
 .topnav { margin-top: 12px; }
 .btn.danger { background: #b3261e; border-color: #b3261e; color: #fff; }
 .minisec { margin: 12px 0 0; }
+.boardwrap { position: relative; }
+.topnav-btn { position: absolute; top: 50%; transform: translateY(-50%); width: 36px; height: 64px; padding: 0; border-radius: 10px;
+  border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--ink); font-size: 16px; cursor: pointer; }
+.topnav-btn.l { left: 6px; }
+.topnav-btn.r { right: 6px; }
+.topnav-btn:hover:not(:disabled) { border-color: var(--accent); }
+.topnav-btn:disabled { opacity: .35; cursor: not-allowed; }
+.topnav-count { position: absolute; left: 50%; bottom: 8px; transform: translateX(-50%); padding: 2px 10px; border-radius: 999px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent); color: var(--ink); font: 500 12px/1.5 var(--font-num); font-variant-numeric: tabular-nums; pointer-events: none; }
+.mini-row { display: flex; align-items: center; gap: 8px; }
+.mini-row .btn { min-width: 44px; padding: 0; font-size: 18px; }
+.mini-cap { font-variant-numeric: tabular-nums; }
 .minisec .mini { width: 150px; }
 .tgtchips { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: 10px; }
+.tgtchips.t4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.tgtchips.t4 .chip span { padding-inline: 2px; font-size: 13px; }
+.tgtchips.t2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .win { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 20, 0.6); }
 .win[hidden] { display: none; }
 .win-card { background: var(--surface); color: var(--ink); border-radius: 16px; width: 100%; max-width: 440px; max-height: 94vh; overflow: auto; padding: 16px; box-sizing: border-box; }
@@ -253,7 +292,7 @@ details[open] > summary { margin-bottom: 6px; }
 }
 .checks li:first-child { border-top: 0; }
 .checks .val { font-family: var(--font-num); font-variant-numeric: tabular-nums; color: var(--muted); text-align: right; }
-.pill { font: 700 12px/1 var(--font-display); padding: 5px 9px; border-radius: 999px; min-width: 56px; text-align: center; }
+.pill { font: 700 12px/1 var(--font-ui); padding: 5px 9px; border-radius: 999px; min-width: 56px; text-align: center; }
 .pill.ok { background: var(--ok-soft); color: var(--ok); }
 .pill.ng { background: var(--ng-soft); color: var(--ng); }
 .pill.wait { background: var(--check-a); color: var(--muted); }
@@ -264,15 +303,62 @@ details[open] > summary { margin-bottom: 6px; }
 .result { max-width: 320px; }
 
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
-</style>
-</head>
-<body>
 
+/* ---- 大理石調の仕上げ ---- */
+body { position: relative; isolation: isolate; }
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 8% -8%, var(--glow1), transparent 62%),
+    radial-gradient(800px 560px at 100% 38%, var(--glow2), transparent 62%),
+    var(--marble) 0 0 / 1100px 820px,
+    var(--bg);
+}
+.brand { font: italic 500 17px/1 var(--font-brand); letter-spacing: .16em; color: var(--gold); margin: 0 0 6px; }
+h1 { font: 700 26px/1.3 var(--font-display); letter-spacing: .04em; }
+h2, summary { font: 700 14px/1.4 var(--font-display); letter-spacing: .1em; color: var(--ink); }
+header { display: grid; gap: 4px; padding-bottom: 16px; margin-bottom: 20px; border-bottom: 1px solid var(--line-strong); position: relative; }
+header::after { content: ''; position: absolute; left: 0; bottom: -1px; width: 72px; height: 2px; background: var(--gold); }
+.headtop { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.theme { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; padding: 3px; background: var(--surface); flex: 0 0 auto; }
+.theme button { font: 500 13px/1 var(--font-ui); min-height: 34px; padding: 0 14px; border: 0; border-radius: 999px; background: transparent; color: var(--muted); cursor: pointer; }
+.theme button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); font-weight: 700; }
+.theme button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.panel {
+  background:
+    linear-gradient(var(--panel-veil), var(--panel-veil)),
+    var(--marble) 0 0 / 1100px 820px,
+    var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+}
+.board { border-color: var(--line-strong); border-radius: 14px; box-shadow: var(--shadow); }
+.btn { background: color-mix(in srgb, var(--surface) 92%, transparent); border-color: var(--line-strong); letter-spacing: .02em; transition: border-color .15s, background .15s; }
+.btn:hover:not(:disabled) { border-color: var(--gold); background: var(--accent-soft); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); letter-spacing: .06em; }
+.btn.primary:hover:not(:disabled) { background: var(--accent); filter: brightness(1.08); }
+.chip span { border-color: var(--line-strong); background: color-mix(in srgb, var(--surface) 92%, transparent); }
+.chip input:checked + span { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+select, input[type=number] { border-color: var(--line-strong); }
+.thumb { border-color: var(--line-strong); }
+.win-card { border: 1px solid var(--line-strong); }
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+</style>
 
 <div class="wrap">
   <header>
-    <h1>Mon Chein スタンプ工房</h1>
-    <p class="lead">犬の画像と文字の画像を別々に切り出して重ね、動かして、LINEアニメスタンプ用のAPNGを書き出します。</p>
+    <div class="headtop">
+      <div>
+        <p class="brand">Mon Chein</p>
+        <h1>スタンプ工房</h1>
+      </div>
+      <div class="theme" role="group" aria-label="表示の色">
+        <button type="button" id="themeLight" aria-pressed="false">ホワイト</button>
+        <button type="button" id="themeDark" aria-pressed="false">ダーク</button>
+      </div>
+    </div>
+    <p class="lead">メイン画像と文字画像を別々に切り出して重ね、動かして、LINEアニメスタンプ用のAPNGを書き出します。</p>
     <div class="stage-bar topnav">
       <button type="button" class="btn" id="goFx">↓ エフェクトへ</button>
       <button type="button" class="btn" id="goExport">↓ 書き出し・保存へ</button>
@@ -281,68 +367,105 @@ details[open] > summary { margin-bottom: 6px; }
 
   <main class="app">
     <section class="stage" aria-label="プレビュー">
+      <div class="boardwrap">
       <div class="board" id="board"><canvas id="cv" width="320" height="270" role="img" aria-label="アニメーションのプレビュー"></canvas></div>
+      <button type="button" class="topnav-btn l" id="topPrev" aria-label="前のスタンプ">◀</button>
+      <button type="button" class="topnav-btn r" id="topNext" aria-label="次のスタンプ">▶</button>
+      <span class="topnav-count" id="topCount" aria-hidden="true"></span>
+      </div>
       <div class="stage-bar">
         <button type="button" class="btn" id="playBtn">一時停止</button>
         <button type="button" class="btn" id="rotL" aria-label="左に回す">↺ 回す</button>
         <button type="button" class="btn" id="rotR" aria-label="右に回す">↻ 回す</button>
         <button type="button" class="btn primary openWin">LINE風の動作確認</button>
       </div>
-      <div class="chips tgtchips" role="radiogroup" aria-label="操作する対象">
-        <label class="chip"><input type="radio" name="tgt" id="tgtDog" value="dog" checked><span>犬</span></label>
+      <div class="stage-bar">
+        <button type="button" class="btn" id="oneStickerBtn">この1個をスタンプ用APNGで保存</button>
+        <button type="button" class="btn" id="oneEmojiBtn">この1個を絵文字用APNGで保存</button>
+      </div>
+      <p class="note" id="oneMsg" role="status" aria-live="polite"></p>
+      <a class="btn" id="oneLink" href="#" download="sticker.png" hidden>保存ファイルをダウンロード</a>
+      <div class="chips tgtchips t4" role="radiogroup" aria-label="操作する対象">
+        <label class="chip"><input type="radio" name="tgt" id="tgtDog" value="dog" checked><span>メイン</span></label>
         <label class="chip"><input type="radio" name="tgt" id="tgtText" value="text"><span>文字</span></label>
         <label class="chip"><input type="radio" name="tgt" id="tgtFx" value="fx"><span>エフェクト</span></label>
+        <label class="chip"><input type="radio" name="tgt" id="tgtErase" value="erase"><span>消しゴム</span></label>
+      </div>
+      <div id="erasePad" hidden>
+        <div class="chips tgtchips t2" role="radiogroup" aria-label="消しゴムで直すもの">
+          <label class="chip"><input type="radio" name="eraseOn" id="eraseDog" value="dog" checked><span>メイン画像</span></label>
+          <label class="chip"><input type="radio" name="eraseOn" id="eraseText" value="text"><span>文字画像</span></label>
+        </div>
+        <div class="chips tgtchips t2" role="radiogroup" aria-label="ブラシの種類">
+          <label class="chip"><input type="radio" name="brush" value="erase" checked><span>消す</span></label>
+          <label class="chip"><input type="radio" name="brush" value="restore"><span>戻す</span></label>
+        </div>
+        <div class="field" style="margin-top:12px">
+          <div class="field-head"><label for="brushSize">ブラシの太さ</label><output id="brushOut" for="brushSize">12</output></div>
+          <input type="range" id="brushSize" min="2" max="50" step="1" value="12">
+        </div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="undoErase" disabled>ひとつ戻す</button>
+          <button type="button" class="btn" id="resetErase" disabled>この画像を全部元に戻す</button>
+        </div>
+        <p class="note">はみ出した部分は、「消す」でなぞって消せます。消しすぎたら「ひとつ戻す」か、「戻す」でなぞると元の絵に戻ります(うすく見えているのが消した部分です)。文字画像は、同じ画像を使っているスタンプすべてに反映されます。消しゴムのあいだは動きが止まります。</p>
       </div>
       <p class="note" id="srcNote"></p>
-      <p class="note">プレビューを直接さわれます。文字の上をドラッグすると文字、それ以外は犬の画像が動きます。「エフェクト」を選ぶと、エフェクトだけが動きます。2本指(パソコンではマウスのホイール)で、さわっているほうの大きさを変えられます。2本指をひねると回転します(パソコンではShiftを押しながらホイール、または「↺ 回す」「↻ 回す」。「犬」「文字」で対象を切り替えます)。操作中は動きが止まります。</p>
+      <p class="note">プレビューを直接さわれます。文字の上をドラッグすると文字、それ以外はメイン画像が動きます。「エフェクト」を選ぶと、エフェクトだけが動きます。「消しゴム」を選ぶと、はみ出した部分をなぞって消せます。2本指(パソコンではマウスのホイール)で、さわっているほうの大きさを変えられます。2本指をひねると回転します(パソコンではShiftを押しながらホイール、または「↺ 回す」「↻ 回す」。「メイン」「文字」で対象を切り替えます)。操作中は動きが止まります。</p>
     </section>
 
     <section class="panel" aria-label="設定">
       <div>
         <div class="strip-head">
-          <h2>犬の画像(スタンプ一覧)</h2>
+          <h2>メイン画像(スタンプ一覧)</h2>
           <span class="count" id="countText"></span>
           <span class="pill wait" id="countPill">あと24個</span>
         </div>
-        <div class="strip" id="strip" role="listbox" aria-label="犬の画像(スタンプ一覧)" data-empty="シートを切り出すか、画像を追加すると、ここに並びます。画像ファイルはここにドロップしても追加できます。"></div>
+        <div class="strip" id="strip" role="listbox" aria-label="メイン画像(スタンプ一覧)" data-empty="シートを切り出すか、画像を追加すると、ここに並びます。画像ファイルはここにドロップしても追加できます。"></div>
         <div class="stage-bar">
           <button type="button" class="btn" id="dogAdd">画像を追加</button>
           <input type="file" id="dogAddFile" accept="image/*" multiple hidden>
+          <button type="button" class="btn" id="dogAddWhole">画像全体を取り込む</button>
+          <input type="file" id="dogAddWholeFile" accept="image/*" multiple hidden>
           <label class="check" for="dogAuto"><input type="checkbox" id="dogAuto" checked><span>複数のコマが並んだ画像は、追加したときに自動で切り出す</span></label>
           <button type="button" class="btn" id="mvL">← 前へ</button>
           <button type="button" class="btn" id="mvR">後ろへ →</button>
           <button type="button" class="btn" id="delBtn">削除</button>
           <button type="button" class="btn" id="undoBtn">削除を戻す</button>
-          <button type="button" class="btn" id="delAllBtn">犬の画像をすべて削除</button>
+          <button type="button" class="btn" id="delAllBtn">メイン画像をすべて削除</button>
         </div>
       </div>
 
       <div>
         <div class="strip-head">
-          <h2>文字の画像</h2>
+          <h2>文字画像</h2>
           <span class="count" id="tCountText"></span>
         </div>
-        <div class="strip" id="tstrip" role="listbox" aria-label="文字の画像" data-empty="文字のシートを切り出すか、画像を追加すると、ここに並びます。画像ファイルはここにドロップしても追加できます。"></div>
+        <div class="strip" id="tstrip" role="listbox" aria-label="文字画像" data-empty="文字のシートを切り出すか、画像を追加すると、ここに並びます。画像ファイルはここにドロップしても追加できます。"></div>
         <div class="stage-bar">
           <button type="button" class="btn" id="textAdd">画像を追加</button>
           <input type="file" id="textAddFile" accept="image/*" multiple hidden>
+          <button type="button" class="btn" id="textAddWhole">画像全体を取り込む</button>
+          <input type="file" id="textAddWholeFile" accept="image/*" multiple hidden>
           <label class="check" for="textAuto"><input type="checkbox" id="textAuto" checked><span>複数の文字が並んだ画像は、追加したときに自動で切り出す</span></label>
           <button type="button" class="btn" id="tDelBtn">削除</button>
           <button type="button" class="btn" id="tUndoBtn">削除を戻す</button>
-          <button type="button" class="btn" id="tDelAllBtn">文字の画像をすべて削除</button>
+          <button type="button" class="btn" id="tDelAllBtn">文字画像をすべて削除</button>
         </div>
-        <p class="note">文字の画像をタップすると、選んでいるスタンプに重なります。パソコンでは、文字の画像をプレビューにドラッグ&ドロップしても重ねられます(犬の画像の上にドロップすると、そのスタンプに重なります)。</p>
+        <p class="note">文字画像をタップすると、選んでいるスタンプに重なります。パソコンでは、文字画像をプレビューにドラッグ&ドロップしても重ねられます(メイン画像の上にドロップすると、そのスタンプに重なります)。</p>
       </div>
 
       <div>
-        <h2>犬の画像の位置と動き</h2>
+        <h2>メイン画像の位置と動き</h2>
         <button type="button" class="btn" id="dogBtn">この画像を差し替える</button>
         <input type="file" id="dogFile" accept="image/*" hidden>
-        <p class="note">文字の画像と位置・動きはそのままで、犬の画像だけが入れ替わります。</p>
-        <button type="button" class="btn mt" id="dogReset">犬の位置・大きさ・回転をもとに戻す</button>
+        <p class="note">文字画像と位置・動きはそのままで、メイン画像だけが入れ替わります。</p>
+        <button type="button" class="btn mt" id="dogReset">メイン画像の位置・大きさ・回転をもとに戻す</button>
+        <button type="button" class="btn mt" id="dogFit">はみ出した分を枠の中に戻す</button>
+        <p class="note" id="dogFitMsg" role="status" aria-live="polite">メイン画像が枠の外にはみ出して切れているとき、位置(必要なら大きさ)を直して、全体が枠に収まるようにします。</p>
         <p class="sub">動き</p>
         <p class="note">いくつか選ぶと、動きが組み合わさります。「とめる」を押すと全部はずれます。</p>
-        <div class="chips" id="chips" role="group" aria-label="犬の画像の動き"></div>
+        <div class="chips" id="chips" role="group" aria-label="メイン画像の動き"></div>
         <div class="field">
           <div class="field-head"><label for="power">動きの強さ</label><output id="powerOut" for="power"></output></div>
           <input type="range" id="power" min="30" max="150" step="5" value="100">
@@ -352,15 +475,15 @@ details[open] > summary { margin-bottom: 6px; }
       </div>
 
       <div>
-        <h2>文字の画像の位置と動き</h2>
+        <h2>文字画像の位置と動き</h2>
         <div class="textrow">
-          <div class="board" id="textThumbWrap" hidden><img id="textThumb" alt="重ねている文字の画像"></div>
-          <p class="note" id="textNone">文字の画像は重ねていません。上の文字の一覧からタップしてください。</p>
+          <div class="board" id="textThumbWrap" hidden><img id="textThumb" alt="重ねている文字画像"></div>
+          <p class="note" id="textNone">文字画像は重ねていません。上の文字の一覧からタップしてください。</p>
         </div>
         <button type="button" class="btn" id="textRemove">文字を外す</button>
         <p class="sub">動き</p>
         <p class="note">いくつか選ぶと、動きが組み合わさります。</p>
-        <div class="chips" id="tchips" role="group" aria-label="文字の画像の動き"></div>
+        <div class="chips" id="tchips" role="group" aria-label="文字画像の動き"></div>
         <div class="field">
           <div class="field-head"><label for="tpower">動きの強さ</label><output id="tpowerOut" for="tpower"></output></div>
           <input type="range" id="tpower" min="30" max="150" step="5" value="100">
@@ -372,8 +495,13 @@ details[open] > summary { margin-bottom: 6px; }
 
       <div id="fxSection">
         <h2>エフェクト</h2>
-        <p class="note">スタンプの手前に重なる飾りです。いくつか選ぶと組み合わさります。犬や文字の動きとは別に動きます。</p>
+        <p class="note">スタンプの手前に重なる飾りです。いくつか選ぶと組み合わさります。メイン画像や文字の動きとは別に動きます。「スライド通過」だけは飾りではなく、スタンプ全体が右へ抜けて左から戻ります(1コマ目は真ん中に表示)。</p>
         <div class="chips" id="fxchips" role="group" aria-label="エフェクト"></div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="fxClear">このスタンプのエフェクトを全部解除</button>
+          <button type="button" class="btn" id="fxClearAll">全スタンプのエフェクトを解除</button>
+        </div>
+        <p class="note" id="fxMsg" role="status" aria-live="polite"></p>
         <div class="field">
           <div class="field-head"><label for="fxpower">エフェクトの強さ</label><output id="fxpowerOut" for="fxpower"></output></div>
           <input type="range" id="fxpower" min="30" max="150" step="5" value="100">
@@ -456,7 +584,10 @@ details[open] > summary { margin-bottom: 6px; }
         <p class="fine">絵文字(001.png〜、180×180)とタブ画像(tab.png、96×74)を入れます。一覧の先頭から最大40個までです。再生時間・コマ数・ループはスタンプと共通です。</p>
         <p id="zipMsg" role="status" aria-live="polite"></p>
         <a class="btn" id="zipLink" href="#" download="mon-chein-stickers.zip" hidden>ZIPを保存する</a>
-        <button type="button" class="btn" id="exportBtn">選んでいるスタンプだけ書き出す</button>
+        <p class="sub">選んでいる1個だけ(LINEにそのままアップロードできるAPNG)</p>
+        <button type="button" class="btn primary" id="exportBtn">スタンプ用APNGを1個だけ保存</button>
+        <button type="button" class="btn primary" id="exportEmojiBtn">絵文字用APNG(180×180)を1個だけ保存</button>
+        <p class="fine">ZIPではなく、いま選んでいるスタンプの動く画像(.png)を1つだけ保存します。スタンプ用は「キャンバスサイズ」の大きさ、絵文字用は180×180で、再生時間・コマ数・ループは今の設定のままです。</p>
         <p class="sub">作業の保存(あとで続きから作れます)</p>
         <div class="stage-bar">
           <button type="button" class="btn primary" id="projSave">作業を保存する</button>
@@ -467,14 +598,14 @@ details[open] > summary { margin-bottom: 6px; }
         <p id="projMsg" role="status" aria-live="polite"></p>
         <a class="btn" id="projLink" href="#" download="mon-chein-project.json" hidden>保存ファイルをダウンロード</a>
         <p class="sub">素材ごとの書き出し・読み込み</p>
-        <p class="fine">犬の画像・文字の画像・エフェクトを、それぞれ別のファイル(.json)にして持ち運べます。読み込みは「追加」になり、今ある分は消えません(画像は上限の60個まで)。</p>
+        <p class="fine">メイン画像・文字画像・エフェクトを、それぞれ別のファイル(.json)にして持ち運べます。読み込みは「追加」になり、今ある分は消えません(画像は上限の60個まで)。</p>
         <div class="stage-bar">
-          <button type="button" class="btn" id="dogOut">犬の画像をすべて書き出す</button>
-          <button type="button" class="btn" id="dogIn">犬の画像を読み込む</button>
+          <button type="button" class="btn" id="dogOut">メイン画像をすべて書き出す</button>
+          <button type="button" class="btn" id="dogIn">メイン画像を読み込む</button>
         </div>
         <div class="stage-bar">
-          <button type="button" class="btn" id="textOut">文字の画像をすべて書き出す</button>
-          <button type="button" class="btn" id="textIn">文字の画像を読み込む</button>
+          <button type="button" class="btn" id="textOut">文字画像をすべて書き出す</button>
+          <button type="button" class="btn" id="textIn">文字画像を読み込む</button>
         </div>
         <div class="stage-bar">
           <button type="button" class="btn" id="fxOut">エフェクトを書き出す</button>
@@ -856,6 +987,345 @@ function findCells(bg, W, H, opt) {
   }
   return rects;
 }
+// 背景を透明にする。単色背景のときは、輪郭の1画素を背景色との差に応じて半透明にし、白いふちが残らないようにする。
+function cleanPixels(data, W, H, info, tol) {
+  const out = new Uint8ClampedArray(data);
+  const bg = info.bg;
+  for (let i = 0; i < bg.length; i++) if (bg[i]) out[i * 4 + 3] = 0;
+  if (info.hasAlpha || !info.color) return out;
+  const B = info.color, span = Math.max(48, tol * 3);
+  for (let y = 0; y < H; y++) {
+    for (let x = 0; x < W; x++) {
+      const i = y * W + x;
+      if (bg[i]) continue;
+      if (!((x > 0 && bg[i - 1]) || (x < W - 1 && bg[i + 1]) || (y > 0 && bg[i - W]) || (y < H - 1 && bg[i + W]))) continue;
+      const q = i * 4;
+      const d = Math.max(Math.abs(data[q] - B[0]), Math.abs(data[q + 1] - B[1]), Math.abs(data[q + 2] - B[2]));
+      const a = d / span;
+      if (a >= 1) continue;
+      const aa = Math.max(a, 0.05);
+      for (let j = 0; j < 3; j++) out[q + j] = (data[q + j] - (1 - aa) * B[j]) / aa;
+      out[q + 3] = Math.round(a * 255);
+    }
+  }
+  return out;
+}
+// 犬用: つながっている絵のかたまりごとに分ける。マスの線では切らないので、隣のマスにはみ出していても犬の形のまま取り出せる。
+// ・大きなかたまり = 1コマ。汗やしっぽの先など離れた小さなかたまりは、いちばん近いコマに含める。
+// ・隣の犬と触れてつながったかたまりは、境目あたりのいちばん細い所で分ける。
+// opt: {mode:'auto'} か {mode:'grid', cols, rows}。返す lab は、画素ごとのコマ番号(1〜、0はどのコマでもない)。
+function segmentCells(bg, W, H, opt) {
+  const N = W * H, grid = opt.mode === 'grid';
+  const lab = new Int32Array(N), stack = new Int32Array(N);
+  let n = 0;
+  for (let s = 0; s < N; s++) {
+    if (bg[s] || lab[s]) continue;
+    lab[s] = ++n;
+    let sp = 0;
+    stack[sp++] = s;
+    while (sp) {
+      const i = stack[--sp], x = i % W, y = (i - x) / W;
+      const xa = x > 0 ? x - 1 : x, xb = x < W - 1 ? x + 1 : x, ya = y > 0 ? y - 1 : y, yb = y < H - 1 ? y + 1 : y;
+      for (let yy = ya; yy <= yb; yy++) {
+        for (let xx = xa; xx <= xb; xx++) {
+          const j = yy * W + xx;
+          if (!bg[j] && !lab[j]) { lab[j] = n; stack[sp++] = j; }
+        }
+      }
+    }
+  }
+  const none = { cells: [], rows: 0, cols: 0, lab, split: 0 };
+  if (!n) return none;
+  const measure = () => {
+    const st = new Array(n + 1);
+    for (let k = 0; k <= n; k++) st[k] = { id: k, area: 0, x0: W, y0: H, x1: -1, y1: -1, sx: 0, sy: 0 };
+    for (let y = 0; y < H; y++) {
+      const row = y * W;
+      for (let x = 0; x < W; x++) {
+        const l = lab[row + x];
+        if (!l) continue;
+        const s = st[l];
+        s.area++; s.sx += x; s.sy += y;
+        if (x < s.x0) s.x0 = x;
+        if (x > s.x1) s.x1 = x;
+        if (y < s.y0) s.y0 = y;
+        if (y > s.y1) s.y1 = y;
+      }
+    }
+    return st;
+  };
+  const mainsOf = (st) => {
+    let mx = 0;
+    for (let k = 1; k <= n; k++) if (st[k].area > mx) mx = st[k].area;
+    return st.filter((s) => s.id && s.area >= 16 && s.area >= mx * (opt.minRatio || 0.15));
+  };
+  const med = (a) => { const b = a.slice().sort((p, q) => p - q); return b[Math.floor((b.length - 1) / 2)]; };
+  let st = measure(), mains = mainsOf(st);
+  if (!mains.length) return none;
+  // 1コマぶんの大きさの目安。等分のときはマスの大きさ、自動のときは見つけたかたまりの中央値。
+  const rw = grid ? W / opt.cols : med(mains.map((s) => s.x1 - s.x0 + 1));
+  const rh = grid ? H / opt.rows : med(mains.map((s) => s.y1 - s.y0 + 1));
+  let split = 0;
+  const splitAxis = (s, horiz) => {
+    const o0 = horiz ? s.x0 : s.y0, len = horiz ? s.x1 - s.x0 + 1 : s.y1 - s.y0 + 1, ref = horiz ? rw : rh;
+    const targets = [];
+    if (grid ? len <= ref * 1.25 : len <= ref * 1.6) return;
+    const cnt = new Uint32Array(len);
+    for (let y = s.y0; y <= s.y1; y++) {
+      const row = y * W;
+      for (let x = s.x0; x <= s.x1; x++) if (lab[row + x] === s.id) cnt[horiz ? x - s.x0 : y - s.y0]++;
+    }
+    if (grid) {
+      // 絵がしっかり入っているマスどうしの境目だけを、分ける候補にする(少しはみ出しただけなら分けない)
+      const c0 = Math.floor(o0 / ref), c1 = Math.floor((o0 + len - 1) / ref);
+      const mass = [];
+      let mx = 0;
+      for (let c = c0; c <= c1; c++) {
+        let m = 0;
+        const a = Math.max(0, Math.round(c * ref) - o0), b = Math.min(len, Math.round((c + 1) * ref) - o0);
+        for (let i = a; i < b; i++) m += cnt[i];
+        mass.push(m);
+        if (m > mx) mx = m;
+      }
+      let prev = -1;
+      mass.forEach((m, k) => {
+        if (m < mx * 0.25) return;
+        if (prev >= 0) targets.push(Math.round(((prev + 1 + k) / 2 + c0) * ref) - o0);
+        prev = k;
+      });
+    } else {
+      const k = Math.round(len / ref);
+      for (let j = 1; j < k; j++) targets.push(Math.round((j * len) / k));
+    }
+    const rad = Math.max(2, Math.round(ref * 0.22));
+    const cuts = [];
+    targets.forEach((t) => {
+      const a = Math.max(1, t - rad), b = Math.min(len - 1, t + rad);
+      if (a > b) return;
+      let mn = Infinity;
+      for (let i = a; i <= b; i++) if (cnt[i] < mn) mn = cnt[i];
+      const thin = (i) => i >= 0 && i < len && cnt[i] <= mn * 1.3 + 1;
+      // 細い所(しっぽなど)の端 = その先で急に太くなる所が、隣の体に触れている所。目安の位置にいちばん近い端で分ける。
+      let best = -1, bd = Infinity;
+      for (let i = a; i <= b; i++) {
+        if (!thin(i)) continue;
+        if (i + 1 < len && !thin(i + 1) && Math.abs(i + 1 - t) < bd) { bd = Math.abs(i + 1 - t); best = i + 1; }
+        if (i - 1 >= 0 && !thin(i - 1) && Math.abs(i - t) < bd) { bd = Math.abs(i - t); best = i; }
+      }
+      if (best < 0) for (let i = a; i <= b; i++) if (thin(i) && Math.abs(i - t) < bd) { bd = Math.abs(i - t); best = i; }
+      if (best > 0 && (!cuts.length || best > cuts[cuts.length - 1])) cuts.push(best);
+    });
+    if (!cuts.length) return;
+    const ids = cuts.map(() => ++n);
+    for (let y = s.y0; y <= s.y1; y++) {
+      const row = y * W;
+      for (let x = s.x0; x <= s.x1; x++) {
+        if (lab[row + x] !== s.id) continue;
+        const p = horiz ? x - s.x0 : y - s.y0;
+        let k = -1;
+        while (k + 1 < cuts.length && p >= cuts[k + 1]) k++;
+        if (k >= 0) lab[row + x] = ids[k];
+      }
+    }
+    split += cuts.length;
+  };
+  mains.forEach((s) => splitAxis(s, true));
+  if (split) { st = measure(); mains = mainsOf(st); }
+  const before = split;
+  mains.forEach((s) => splitAxis(s, false));
+  if (split > before) { st = measure(); mains = mainsOf(st); }
+  // 並び順: 上の段から、左→右
+  const info = mains.map((s) => ({ s, cx: s.sx / s.area, cy: s.sy / s.area }));
+  let ordered = [], rows = 0, cols = 0;
+  if (grid) {
+    const cw = W / opt.cols, ch = H / opt.rows;
+    info.forEach((m) => {
+      m.r = Math.min(opt.rows - 1, Math.floor(m.cy / ch)); m.c = Math.min(opt.cols - 1, Math.floor(m.cx / cw));
+      m.ccx = (m.c + 0.5) * cw; m.ccy = (m.r + 0.5) * ch;
+    });
+    // 同じマスに入った大きなかたまりは、まとめて1コマにする(体から離れた大きなパーツがあっても1コマになる)
+    info.sort((a, b) => a.r - b.r || a.c - b.c || a.cx - b.cx).forEach((m) => {
+      const last = ordered[ordered.length - 1];
+      if (!last || last.r !== m.r || last.c !== m.c) ordered.push(m);
+      m.idx = ordered.length;
+    });
+    rows = opt.rows; cols = opt.cols;
+  } else {
+    info.sort((a, b) => a.cy - b.cy);
+    const lines = [];
+    let line = null, top = 0;
+    info.forEach((m) => {
+      if (!line || m.cy - top > rh * 0.5) { line = []; lines.push(line); top = m.cy; }
+      line.push(m);
+    });
+    lines.forEach((ln, r) => {
+      ln.sort((a, b) => a.cx - b.cx);
+      cols = Math.max(cols, ln.length);
+      ln.forEach((m, c) => { m.ccx = ((c + 0.5) * W) / ln.length; m.ccy = ((r + 0.5) * H) / lines.length; ordered.push(m); m.idx = ordered.length; });
+    });
+    rows = lines.length;
+  }
+  // 離れた小さなかたまりを、いちばん近いコマに含める(遠すぎるものは捨てる)
+  const owner = new Int32Array(n + 1);
+  info.forEach((m) => { owner[m.s.id] = m.idx; });
+  // 各コマの絵から外へ少しずつ広げて、「どのコマの絵にいちばん近いか」の地図を作る(範囲の四角ではなく、絵そのものからの近さ)
+  const reach = Math.round(Math.max(rw, rh) * 0.3);
+  const near = new Int32Array(N);
+  let qh = 0, qt = 0;
+  for (let i = 0; i < N; i++) { const o = owner[lab[i]]; if (o) { near[i] = o; stack[qt++] = i; } }
+  for (let depth = 0; depth < reach && qh < qt; depth++) {
+    const end = qt;
+    while (qh < end) {
+      const i = stack[qh++], x = i % W, o = near[i];
+      if (x > 0 && !near[i - 1]) { near[i - 1] = o; stack[qt++] = i - 1; }
+      if (x < W - 1 && !near[i + 1]) { near[i + 1] = o; stack[qt++] = i + 1; }
+      if (i >= W && !near[i - W]) { near[i - W] = o; stack[qt++] = i - W; }
+      if (i < N - W && !near[i + W]) { near[i + W] = o; stack[qt++] = i + W; }
+    }
+  }
+  // 小さなかたまりは、その画素の多くがいちばん近いと判定されたコマに含める
+  const M = ordered.length + 1, votes = new Map();
+  for (let i = 0; i < N; i++) {
+    const l = lab[i];
+    if (!l || owner[l] || !near[i]) continue;
+    const key = l * M + near[i];
+    votes.set(key, (votes.get(key) || 0) + 1);
+  }
+  const bestN = new Int32Array(n + 1), bestO = new Int32Array(n + 1);
+  votes.forEach((v, key) => {
+    const o = key % M, k = (key - o) / M;
+    if (v > bestN[k]) { bestN[k] = v; bestO[k] = o; }
+  });
+  for (let k = 1; k <= n; k++) if (!owner[k] && st[k].area >= 6) owner[k] = bestO[k];
+  const box = ordered.map(() => ({ x0: W, y0: H, x1: -1, y1: -1 }));
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    for (let x = 0; x < W; x++) {
+      const o = owner[lab[row + x]];
+      lab[row + x] = o;
+      if (!o) continue;
+      const b = box[o - 1];
+      if (x < b.x0) b.x0 = x;
+      if (x > b.x1) b.x1 = x;
+      if (y < b.y0) b.y0 = y;
+      if (y > b.y1) b.y1 = y;
+    }
+  }
+  const cells = ordered.map((m, i) => ({ x: box[i].x0, y: box[i].y0, w: box[i].x1 - box[i].x0 + 1, h: box[i].y1 - box[i].y0 + 1, label: i + 1, ccx: m.ccx, ccy: m.ccy }));
+  return { cells, rows, cols, lab, split };
+}
+// 絵(bg でない所)を r 画素ぶん太らせた「背景」の地図を返す。文字のように、1つの言葉が離れた字でできているものを、1つのかたまりとして扱うために使う。
+function dilatedBg(bg, W, H, r) {
+  const N = W * H, tmp = new Uint8Array(N), out = new Uint8Array(N);
+  for (let y = 0; y < H; y++) {
+    const row = y * W;
+    let last = -1e9;
+    const fwd = new Int32Array(W);
+    for (let x = 0; x < W; x++) { if (!bg[row + x]) last = x; fwd[x] = last; }
+    last = 1e9;
+    for (let x = W - 1; x >= 0; x--) {
+      if (!bg[row + x]) last = x;
+      tmp[row + x] = (x - fwd[x] <= r || last - x <= r) ? 1 : 0;
+    }
+  }
+  for (let x = 0; x < W; x++) {
+    let last = -1e9;
+    const fwd = new Int32Array(H);
+    for (let y = 0; y < H; y++) { if (tmp[y * W + x]) last = y; fwd[y] = last; }
+    last = 1e9;
+    for (let y = H - 1; y >= 0; y--) {
+      if (tmp[y * W + x]) last = y;
+      out[y * W + x] = (y - fwd[y] <= r || last - y <= r) ? 0 : 1;
+    }
+  }
+  return out;
+}
+// 文字用: 字を太らせてつなげ、言葉ごとのかたまりに分ける。隣の言葉に食い込んだ細い線があっても、触れていなければ分かれる。
+// 返す lab は、元の絵の画素ごとのコマ番号。範囲は、元の絵(太らせる前)にぴったり合わせる。
+// 何画素ぶん太らせるかは、画像から決める。太らせる量を少しずつ増やして「かたまりの数」を数え、数が変わらなくなる所(字がつながって、まだ言葉どうしはつながっていない所)を探す。
+// 見つからないとき(字がもともと輪郭でつながっているときなど)は、ごくわずかだけ太らせる。
+function pickTextRadius(bg, W, H) {
+  const m = Math.max(W, H), minArea = W * H * 0.002;
+  const fr = [0, 0.002, 0.004, 0.008, 0.012, 0.018, 0.026, 0.036, 0.05];
+  const stack = new Int32Array(W * H);
+  const counts = fr.map((f) => {
+    const r = Math.round(f * m);
+    const d = dilatedBg(bg, W, H, r), seen = new Uint8Array(W * H);
+    let n = 0;
+    for (let s0 = 0; s0 < d.length; s0++) {
+      if (d[s0] || seen[s0]) continue;
+      seen[s0] = 1;
+      let sp = 0, area = 0;
+      stack[sp++] = s0;
+      while (sp) {
+        const i = stack[--sp], x = i % W, y = (i - x) / W;
+        area++;
+        if (x > 0 && !d[i - 1] && !seen[i - 1]) { seen[i - 1] = 1; stack[sp++] = i - 1; }
+        if (x < W - 1 && !d[i + 1] && !seen[i + 1]) { seen[i + 1] = 1; stack[sp++] = i + 1; }
+        if (y > 0 && !d[i - W] && !seen[i - W]) { seen[i - W] = 1; stack[sp++] = i - W; }
+        if (y < H - 1 && !d[i + W] && !seen[i + W]) { seen[i + W] = 1; stack[sp++] = i + W; }
+      }
+      if (area >= minArea) n++;
+    }
+    return n;
+  });
+  // 「減ったあとに、同じ数が続く所」のうち、いちばん太らせる量が少ない所を使う(字がつながったあとの、言葉の数)
+  let best = -1;
+  for (let i = 0; i < counts.length && best < 0;) {
+    let j = i;
+    while (j + 1 < counts.length && counts[j + 1] === counts[i]) j++;
+    if (i > 0 && counts[i - 1] > counts[i] && counts[i] >= 2 && j - i + 1 >= 2) best = i;
+    i = j + 1;
+  }
+  return best >= 0 ? Math.round(fr[best] * m) : Math.max(2, Math.round(0.002 * m));
+}
+function segmentText(bg, W, H) {
+  const r = pickTextRadius(bg, W, H);
+  const det = segmentCells(dilatedBg(bg, W, H, r), W, H, { mode: 'auto', minRatio: 0.12 });
+  const cells = [];
+  det.cells.forEach((c) => {
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    for (let y = c.y; y < c.y + c.h; y++) {
+      const row = y * W;
+      for (let x = c.x; x < c.x + c.w; x++) {
+        if (bg[row + x] || det.lab[row + x] !== c.label) continue;
+        if (x < x0) x0 = x;
+        if (x > x1) x1 = x;
+        if (y < y0) y0 = y;
+        if (y > y1) y1 = y;
+      }
+    }
+    if (x1 >= 0) cells.push({ x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1, label: c.label });
+  });
+  return { cells, lab: det.lab };
+}
+// 文字用: すき間で区切って、上の段から左→右の順で範囲を返す。
+// ごく細い食い込み(隣のコマからはみ出した細い線など)は、すき間をつぶさないように無視して数える。
+function findTextCells(bg, W, H, opt) {
+  const thr = Math.max(2, Math.round(Math.max(W, H) * 0.012));
+  const rowCnt = new Uint32Array(H), rowHas = new Uint8Array(H);
+  for (let y = 0; y < H; y++) {
+    let n = 0;
+    const row = y * W;
+    for (let x = 0; x < W; x++) if (!bg[row + x]) n++;
+    rowCnt[y] = n;
+    rowHas[y] = n >= thr ? 1 : 0;
+  }
+  const out = [];
+  for (const [y0, y1] of bandsOf(rowHas, H, opt.minGap)) {
+    const colHas = new Uint8Array(W), colCnt = new Uint32Array(W);
+    for (let y = y0; y < y1; y++) {
+      const row = y * W;
+      for (let x = 0; x < W; x++) if (!bg[row + x]) colCnt[x]++;
+    }
+    for (let x = 0; x < W; x++) colHas[x] = colCnt[x] >= Math.min(thr, Math.max(2, (y1 - y0) >> 4)) ? 1 : 0;
+    for (const [x0, x1] of bandsOf(colHas, W, opt.minGap)) {
+      const b = tightBox(bg, W, x0, y0, x1, y1);
+      if (b && b.w * b.h >= opt.minArea) out.push(b);
+    }
+  }
+  return out;
+}
 // ==SHEET END==
 </script>
 
@@ -927,9 +1397,28 @@ function findCells(bg, W, H, opt) {
       const e = easeOutBounce(Math.min(1, t / 0.7));
       return { dy: -(1 - e) * H * 0.6 * k, alpha: Math.min(1, t / 0.1) };
     } },
-    slidein: { label: 'スライドイン', note: '登場', anchor: 'center', once: true, f: (t, k, W) => {
-      const e = easeOutBack(Math.min(1, t / 0.7));
-      return { dx: -(1 - e) * W * 0.7 * k };
+    // 1コマ目は真ん中に表示。真ん中で止まる → 右へ枠の外まで抜ける → 左の枠の外から入る → 真ん中で止まる(繰り返すと、止まっている時間がつながる)。
+    // 時間の配分(1周を1とする): 止まる0.5(はじめ0.25+おわり0.25)、抜ける0.2、枠の外0.1、入る0.2。再生時間2秒なら、止まるのは合計1秒。
+    slidein: { label: 'スライド登場', note: '止まって右へ抜ける', anchor: 'center', once: false, f: (t, k, W) => {
+      const far = W * 1.35;
+      if (t < 0.25 || t >= 0.75) return {};
+      if (t < 0.45) { const u = (t - 0.25) / 0.2; return { dx: far * u * u }; }
+      if (t < 0.55) return { dx: far };
+      const u = (t - 0.55) / 0.2;
+      return { dx: -far * (1 - u) * (1 - u) };
+    } },
+    // 1コマ目は真ん中に表示。そのあと枠の外(左)から勢いよく入って、だんだんゆるやかに真ん中で止まる
+    slidefar: { label: 'スライドイン', note: '外から勢いよく', anchor: 'center', once: false, f: (t, k, W) => {
+      if (t < 0.03 || t >= 0.35) return {};
+      const u = (t - 0.03) / 0.32;
+      return { dx: -W * 1.35 * Math.pow(1 - u, 3) };
+    } },
+    // 真ん中で止まったあと、ゆっくり動き出して、どんどん速くなって枠の外(右)へ出ていく。繰り返すと1コマ目の真ん中に戻る
+    slideout: { label: 'スライドアウト', note: '外へ勢いよく', anchor: 'center', once: false, f: (t, k, W) => {
+      if (t < 0.4) return {};
+      if (t >= 0.65) return { dx: W * 1.35 };
+      const u = (t - 0.4) / 0.25;
+      return { dx: W * 1.35 * Math.pow(u, 2.6) };
     } },
     zigzag: { label: 'ぴょこぴょこ', note: '横に跳ねる', anchor: 'bottom', once: false, f: (t, k, W, H) => ({
       dx: Math.sin(TAU * t) * W * 0.06 * k,
@@ -949,7 +1438,7 @@ function findCells(bg, W, H, opt) {
     none: { label: 'とめる', anchor: 'center', once: false, f: () => ({}) }
   };
 
-  // 犬の画像1枚が、そのままスタンプ1個になる。文字の画像は文字の一覧から重ねる(位置・大きさ・動きはスタンプごと)。
+  // メイン画像1枚が、そのままスタンプ1個になる。文字画像は文字の一覧から重ねる(位置・大きさ・動きはスタンプごと)。
   const DEF = { drot: 0, trot: 0, dscale: 100, dx: 50, dy: 50, fx: [], fxpower: 100, fxscale: 100, fxx: 50, fxy: 50, fxrot: 0, motion: ['bounce'], power: 100, tmotion: ['jelly'], tpower: 100, textFront: true, tscale: 100, tx: 50, ty: 80 };
   const state = {
     items: [], texts: [], sel: -1, tsel: -1,
@@ -958,7 +1447,8 @@ function findCells(bg, W, H, opt) {
       dog: { mode: 'auto', cols: 3, rows: 4, tol: 30, gap: 8, inner: false, sheet: null },
       text: { mode: 'auto', cols: 2, rows: 2, tol: 30, gap: 8, inner: false, sheet: null }
     },
-    ver: 0, editing: false, hover: false, editTarget: 'dog', mainId: null, tabId: null
+    ver: 0, editing: false, hover: false, editTarget: 'dog', mainId: null, tabId: null,
+    erase: false, eraseOn: 'dog', brush: 12, brushMode: 'erase'
   };
   const syncDelay = () => { state.delay = (state.duration * 1000) / state.frames; };
   // 合計がちょうど指定のミリ秒になるように、コマごとの長さを割り振る
@@ -967,6 +1457,8 @@ function findCells(bg, W, H, opt) {
     return Array.from({ length: n }, (_, i) => base + (i < extra ? 1 : 0));
   }
   let uid = 0, sheetSeq = 0, lastDeleted = null, lastDeletedText = null;
+  let stroke = null, brushPos = null;
+  const undoStack = [];
 
   const cv = $('cv');
   const ctx = cv.getContext('2d');
@@ -1017,7 +1509,7 @@ function findCells(bg, W, H, opt) {
     g.restore();
   }
   function makeSampleSheet() {
-    const cols = 3, rows = 4, cell = 300;
+    const cols = 1, rows = 1, cell = 300;
     const c = document.createElement('canvas');
     c.width = cols * cell; c.height = rows * cell;
     const g = c.getContext('2d', { willReadFrequently: true });
@@ -1031,18 +1523,18 @@ function findCells(bg, W, H, opt) {
     return c;
   }
   function makeSampleTextSheet() {
-    const words = ['ワン!', 'おはよう', 'ありがとう', 'おやすみ'];
-    const cw = 420, ch = 200;
+    const words = ['ワン!'];
+    const cw = 640, ch = 320;
     const c = document.createElement('canvas');
-    c.width = cw * 2; c.height = ch * 2;
+    c.width = cw; c.height = ch;
     const g = c.getContext('2d', { willReadFrequently: true });
     g.fillStyle = '#ffffff';
     g.fillRect(0, 0, c.width, c.height);
     g.font = '700 64px "Zen Maru Gothic", "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif';
     g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.lineJoin = 'round'; g.lineWidth = 14; g.strokeStyle = '#ffd966';
+    g.lineJoin = 'round'; g.lineWidth = 24; g.strokeStyle = '#ffd966';
     words.forEach((w, n) => {
-      const x = (n % 2) * cw + cw / 2, y = Math.floor(n / 2) * ch + ch / 2;
+      const x = cw / 2, y = ch / 2;
       g.strokeText(w, x, y);
       g.fillStyle = '#24405a';
       g.fillText(w, x, y);
@@ -1053,7 +1545,7 @@ function findCells(bg, W, H, opt) {
   // ---- 描画: 1コマの中の2枚(犬・文字)をそれぞれの動きで重ねる ----
   // 動きは複数を組み合わせられる(位置・回転は足し算、拡大・透明度は掛け算)
   const keysOf = (v) => (Array.isArray(v) ? v : v && v !== 'none' ? [v] : []).filter((k) => MOTIONS[k] && k !== 'none');
-  function drawLayer(g, W, H, i, N, src, motionKeys, power, pl) {
+  function drawLayer(g, W, H, i, N, src, motionKeys, power, pl, am) {
     const k = power / 100;
     const o = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 };
     const keys = keysOf(motionKeys);
@@ -1068,7 +1560,7 @@ function findCells(bg, W, H, opt) {
     const bottom = !top && anchors.indexOf('bottom') >= 0;
     const ax = pl.cx, ay = bottom ? pl.cy + pl.dh / 2 : top ? pl.cy - pl.dh / 2 : pl.cy;
     g.save();
-    g.globalAlpha = Math.max(0, Math.min(1, o.alpha));
+    g.globalAlpha = Math.max(0, Math.min(1, o.alpha)) * (am === undefined ? 1 : am);
     g.translate(pl.cx, pl.cy);
     g.rotate(pl.rot || 0);
     g.translate(ax - pl.cx + o.dx, ay - pl.cy + o.dy);
@@ -1079,7 +1571,7 @@ function findCells(bg, W, H, opt) {
     g.drawImage(src, -pl.dw / 2, bottom ? -pl.dh : top ? 0 : -pl.dh / 2, pl.dw, pl.dh);
     g.restore();
   }
-  // 文字の画像を置く場所(動きを付ける前の、止まった状態)
+  // 文字画像を置く場所(動きを付ける前の、止まった状態)
   function textPl(W, H, item) {
     const tc = item && item.text && item.text.canvas;
     if (!tc) return null;
@@ -1089,7 +1581,7 @@ function findCells(bg, W, H, opt) {
     dw *= s; dh *= s;
     return { cx: clamp((W * item.tx) / 100, dw / 2, W - dw / 2), cy: clamp((H * item.ty) / 100, dh / 2, H - dh / 2), dw, dh, rot: (item.trot * Math.PI) / 180 };
   }
-  // 犬の画像を置く場所(動きを付ける前の、止まった状態)
+  // メイン画像を置く場所(動きを付ける前の、止まった状態)
   function dogPl(W, H, item) {
     const dog = item.canvas;
     const base = Math.min((W * 0.72) / dog.width, (H * 0.72) / dog.height) * (item.dscale / 100);
@@ -1117,6 +1609,14 @@ function findCells(bg, W, H, opt) {
   function paint(g, fill, stroke, lw) {
     g.fillStyle = fill; g.fill();
     g.lineWidth = lw; g.strokeStyle = stroke; g.lineJoin = 'round'; g.stroke();
+  }
+  // 横に通りぬける動き。dir=1: 右へ抜けて左から入る / dir=-1: 左へ抜けて右から入る。動く時間は全体の約4割(速め)
+  function slideShift(c, dir) {
+    const far = c.W * 1.15 * dir, t = c.t;
+    if (t < 0.15 || t >= 0.55) return 0;
+    if (t < 0.35) { const u = (t - 0.15) / 0.2; return far * Math.pow(u, 2); }
+    const u = (t - 0.35) / 0.2;
+    return -far * Math.pow(1 - u, 2);
   }
   // c: { W, H, t(0〜1でひと回り), k(強さ), u(大きさの基準), pl(犬の置き場所) }
   const FX = {
@@ -1296,23 +1796,37 @@ function findCells(bg, W, H, opt) {
         g.closePath(); g.fill();
       }
       g.restore();
-    } }
+    } },
+    // スタンプ全体が横に動く。1コマ目は真ん中に表示(LINEで1コマ目が空にならないように)。
+    // スライド通過: 真ん中で止まる → 右へ抜ける → 左から入る → 真ん中で止まる(1コマ目は真ん中に表示)
+    slide: { label: 'スライド通過', note: '右へ抜け左から', shift: (c) => slideShift(c, 1), f: () => {} }
   };
   // エフェクトを置く場所(犬・文字とは別。正方形の枠の中心と大きさ)
   function fxPl(W, H, item) {
     const base = Math.min(W, H) * 0.72 * (item.fxscale / 100);
     return { cx: (W * item.fxx) / 100, cy: (H * item.fxy) / 100, dw: base, dh: base, rot: (item.fxrot * Math.PI) / 180 };
   }
-  function renderFrame(g, W, H, i, N, item, still) {
+  function renderFrame(g, W, H, i, N, item, still, ghost) {
     g.clearRect(0, 0, W, H);
     if (!item) return;
     const mk = (k) => (still ? [] : k);
     const layers = [];
-    layers.push({ src: item.canvas, motion: mk(item.motion), power: item.power, pl: dogPl(W, H, item) });
+    layers.push({ kind: 'dog', src: item.canvas, orig: item.orig, motion: mk(item.motion), power: item.power, pl: dogPl(W, H, item) });
     const pl = textPl(W, H, item);
-    if (pl) layers.push({ src: item.text.canvas, motion: mk(item.tmotion), power: item.tpower, pl });
+    if (pl) layers.push({ kind: 'text', src: item.text.canvas, orig: item.text.orig, motion: mk(item.tmotion), power: item.tpower, pl });
     if (!item.textFront) layers.reverse();
-    layers.forEach((L) => drawLayer(g, W, H, i, N, L.src, L.motion, L.power, L.pl));
+    // スタンプ全体を動かすエフェクト(スライドイン)。止め絵・消しゴム中は動かさない
+    let shiftX = 0;
+    if (!still) (item.fx || []).forEach((k) => { if (FX[k] && FX[k].shift) shiftX += FX[k].shift({ W, H, t: N > 0 ? i / N : 0 }); });
+    g.save();
+    if (shiftX) g.translate(shiftX, 0);
+    layers.forEach((L) => {
+      if (!ghost) { drawLayer(g, W, H, i, N, L.src, L.motion, L.power, L.pl); return; }
+      // 消しゴムのあいだ: 直している絵は、消す前の絵をうすく下に敷き、もう一方はうすく表示する
+      if (L.kind === ghost && L.orig) drawLayer(g, W, H, i, N, L.orig, [], L.power, L.pl, 0.28);
+      drawLayer(g, W, H, i, N, L.src, L.motion, L.power, L.pl, L.kind === ghost ? 1 : 0.3);
+    });
+    g.restore();
     const fxKeys = (item.fx || []).filter((k) => FX[k]);
     if (fxKeys.length) {
       const pl = fxPl(W, H, item), sc = item.fxscale / 100;
@@ -1329,7 +1843,8 @@ function findCells(bg, W, H, opt) {
   function draw() {
     const { W, H } = dims();
     const it = cur();
-    renderFrame(ctx, W, H, state.editing ? 0 : idx % state.frames, state.frames, it, state.editing);
+    const still = state.editing || state.erase;
+    renderFrame(ctx, W, H, still ? 0 : idx % state.frames, state.frames, it, still, state.erase ? state.eraseOn : null);
     ['miniCv', 'miniDog', 'miniText', 'miniFx'].forEach((id) => {
       const mc = $(id);
       if (!mc) return;
@@ -1337,7 +1852,13 @@ function findCells(bg, W, H, opt) {
       if (mc.height !== H) mc.height = H;
       renderFrame(mc.getContext('2d'), W, H, state.editing ? 0 : idx % state.frames, state.frames, it, state.editing);
     });
-    if (it && (state.editing || state.hover)) {
+    if (state.erase && brushPos) {
+      ctx.save();
+      ctx.lineWidth = 1.5; ctx.strokeStyle = state.brushMode === 'restore' ? '#1f7a45' : '#b3321f';
+      ctx.beginPath(); ctx.arc(brushPos.x, brushPos.y, Math.max(1, state.brush), 0, Math.PI * 2); ctx.stroke();
+      ctx.restore();
+    }
+    if (it && !state.erase && (state.editing || state.hover)) {
       const pl = state.editing
         ? ((state.editTarget !== 'text' || it.text) ? (state.editTarget === 'dog' ? dogPl(W, H, it) : state.editTarget === 'fx' ? fxPl(W, H, it) : textPl(W, H, it)) : null)
         : targetPl(it);
@@ -1544,12 +2065,14 @@ function findCells(bg, W, H, opt) {
     cv.style.cursor = it ? 'grab' : 'default';
     cv.style.touchAction = it ? 'none' : 'auto';
     $('dogReset').disabled = !it;
+    $('dogFit').disabled = !it;
     $('textReset').disabled = !has;
     $('fxReset').disabled = !it;
     $('setMain').disabled = !it;
     $('setTab').disabled = !it;
     $('rotL').disabled = !it;
     $('rotR').disabled = !it;
+    syncErase();
   }
   // 選んでいるスタンプの設定を変える
   function setItem(props, resetFrame) {
@@ -1561,7 +2084,7 @@ function findCells(bg, W, H, opt) {
     applyChange(!!resetFrame);
   }
 
-  // ---- 犬の画像(スタンプ一覧) ----
+  // ---- メイン画像(スタンプ一覧) ----
   function keyClick(el) {
     el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); el.click(); } });
   }
@@ -1584,7 +2107,7 @@ function findCells(bg, W, H, opt) {
       b.innerHTML = '<img alt="" draggable="false" src="' + it.thumb + '">' + (it.text ? '<img class="mini" alt="" draggable="false" src="' + it.text.thumb + '">' : '') + (it.id === state.mainId ? '<em class="bd m">メイン</em>' : '') + (it.id === state.tabId ? '<em class="bd t">タブ</em>' : '') + '<i>' + (i + 1) + '</i>';
       b.addEventListener('click', () => useItem(i));
       keyClick(b);
-      // 文字の画像をこのスタンプにドロップして重ねる
+      // 文字画像をこのスタンプにドロップして重ねる
       b.addEventListener('dragover', (e) => { if (hasInternal(e)) { e.preventDefault(); b.classList.add('dropok'); } });
       b.addEventListener('dragleave', () => b.classList.remove('dropok'));
       b.addEventListener('drop', (e) => {
@@ -1608,8 +2131,45 @@ function findCells(bg, W, H, opt) {
     $('mvR').disabled = state.sel < 0 || state.sel >= n - 1;
     $('delBtn').disabled = state.sel < 0;
     $('delAllBtn').disabled = !n;
+    syncMiniNav();
     $('undoBtn').disabled = !lastDeleted;
     scrollIntoTray(strip, strip.children[state.sel]);
+  }
+  // ミニプレビューの左右に「前のスタンプ」「次のスタンプ」ボタンを付ける
+  const miniCaps = [];
+  ['miniCv', 'miniDog', 'miniText', 'miniFx'].forEach((id) => {
+    const c = $(id);
+    if (!c || !c.parentNode) return;
+    const fig = c.parentNode;
+    const row = document.createElement('div');
+    row.className = 'mini-row';
+    const mk = (d, label, ch) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'btn'; b.textContent = ch;
+      b.setAttribute('aria-label', label);
+      b.addEventListener('click', () => { if (state.items.length) useItem(clamp(state.sel + d, 0, state.items.length - 1)); });
+      return b;
+    };
+    const prev = mk(-1, '前のスタンプ', '◀'), next = mk(1, '次のスタンプ', '▶');
+    fig.insertBefore(row, c);
+    row.appendChild(prev); row.appendChild(c); row.appendChild(next);
+    const cap = fig.querySelector('figcaption');
+    if (cap) cap.classList.add('mini-cap');
+    miniCaps.push({ prev, next, cap });
+  });
+  const goStep = (d) => { if (state.items.length) useItem(clamp(state.sel + d, 0, state.items.length - 1)); };
+  $('topPrev').addEventListener('click', () => goStep(-1));
+  $('topNext').addEventListener('click', () => goStep(1));
+  function syncMiniNav() {
+    const n = state.items.length;
+    $('topPrev').disabled = state.sel <= 0;
+    $('topNext').disabled = state.sel < 0 || state.sel >= n - 1;
+    $('topCount').textContent = n && state.sel >= 0 ? (state.sel + 1) + ' / ' + n : '';
+    miniCaps.forEach((m) => {
+      m.prev.disabled = state.sel <= 0;
+      m.next.disabled = state.sel < 0 || state.sel >= n - 1;
+      if (m.cap) m.cap.textContent = n ? 'スタンプ ' + (state.sel + 1) + ' / ' + n : 'スタンプなし';
+    });
   }
   function useItem(i) {
     state.sel = i;
@@ -1654,7 +2214,7 @@ function findCells(bg, W, H, opt) {
     useItem(pos);
   }
 
-  // ---- 文字の画像 ----
+  // ---- 文字画像 ----
   function renderTexts() {
     const strip = $('tstrip');
     strip.innerHTML = '';
@@ -1665,7 +2225,7 @@ function findCells(bg, W, H, opt) {
       b.draggable = true;
       b.setAttribute('role', 'option');
       b.setAttribute('aria-selected', i === state.tsel ? 'true' : 'false');
-      b.setAttribute('aria-label', '文字の画像' + (i + 1));
+      b.setAttribute('aria-label', '文字画像' + (i + 1));
       b.innerHTML = '<img alt="" draggable="false" src="' + p.thumb + '"><i>' + (i + 1) + '</i>';
       b.addEventListener('click', () => tapText(i));
       keyClick(b);
@@ -1686,13 +2246,13 @@ function findCells(bg, W, H, opt) {
   function tapText(i) {
     state.tsel = i;
     renderTexts();
-    if (!cur()) { note('先に犬の画像(スタンプ)を選んでください。'); return; }
+    if (!cur()) { note('先にメイン画像(スタンプ)を選んでください。'); return; }
     assignText(state.texts[i], null, null);
   }
-  // 選んでいるスタンプに文字の画像を重ねる。位置を渡したときだけ、その位置に置く(中心の位置、0〜100%)。
+  // 選んでいるスタンプに文字画像を重ねる。位置を渡したときだけ、その位置に置く(中心の位置、0〜100%)。
   function assignText(piece, px, py) {
     const it = cur();
-    if (!it) { note('先に犬の画像(スタンプ)を選んでください。'); return; }
+    if (!it) { note('先にメイン画像(スタンプ)を選んでください。'); return; }
     it.text = piece;
     it.sample = false;
     if (px !== null && py !== null) { it.tx = clamp(px, 0, 100); it.ty = clamp(py, 0, 100); }
@@ -1708,7 +2268,7 @@ function findCells(bg, W, H, opt) {
     lastDeletedText = { item: state.texts[i], index: i };
     state.texts.splice(i, 1);
     state.tsel = state.texts.length ? Math.min(i, state.texts.length - 1) : -1;
-    note('文字の画像を一覧から削除しました。すでに重ねたスタンプの文字は、そのまま残ります。');
+    note('文字画像を一覧から削除しました。すでに重ねたスタンプの文字は、そのまま残ります。');
     renderTexts();
   }
   function undoDeleteText() {
@@ -1778,28 +2338,47 @@ function findCells(bg, W, H, opt) {
     try {
       const cfg = state.cfg[kind];
       const W = c.width, H = c.height;
-      const data = c.getContext('2d').getImageData(0, 0, W, H).data;
-      const info = analyzeSheet(data, W, H, cfg.tol, cfg.inner);
+      const data = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, W, H).data;
+      // 文字は、文字の中の囲まれた部分の背景色も消す
+      const info = analyzeSheet(data, W, H, cfg.tol, kind === 'text' ? true : cfg.inner);
       let bgN = 0;
       for (let i = 0; i < info.bg.length; i++) if (info.bg[i]) bgN++;
       if (bgN < info.bg.length * 0.2) return null;
-      const gap = Math.max(cfg.gap, Math.round(Math.max(W, H) * 0.01));
-      const rects = findCells(info.bg, W, H, { mode: 'auto', minGap: gap }).filter((r) => r.w * r.h >= W * H * 0.003);
-      if (rects.length < 2) return null;
-      const out = new Uint8ClampedArray(data);
-      for (let i = 0; i < info.bg.length; i++) if (info.bg[i]) out[i * 4 + 3] = 0;
-      const clean = document.createElement('canvas');
-      clean.width = W; clean.height = H;
-      clean.getContext('2d').putImageData(new ImageData(out, W, H), 0, 0);
-      return rects.map((r) => {
+      const px = cleanPixels(data, W, H, info, cfg.tol);
+      let cells, lab = null;
+      if (kind === 'dog') {
+        // つながった絵のかたまりごとに分ける。マスの線では切らないので、少しはみ出していても犬の形のまま取り出せる
+        const det = segmentCells(info.bg, W, H, { mode: 'auto' });
+        cells = det.cells; lab = det.lab;
+      } else {
+        const t = segmentText(info.bg, W, H);
+        cells = t.cells; lab = t.lab;
+        if (cells.length < 2) {
+          lab = null;
+          cells = findTextCells(info.bg, W, H, { minGap: Math.max(8, Math.round(Math.max(W, H) * 0.05)), minArea: W * H * 0.003 });
+        }
+      }
+      cells = cells.filter((r) => r.w * r.h >= W * H * 0.003);
+      if (cells.length < 2) return null;
+      return cells.map((r) => {
+        // そのコマの画素だけを写す(範囲が隣のコマと重なっていても、隣の絵は入らない)
+        const im = new ImageData(r.w, r.h), d = im.data;
+        for (let y = 0; y < r.h; y++) {
+          const src = (r.y + y) * W + r.x;
+          for (let x = 0; x < r.w; x++) {
+            if (lab && lab[src + x] !== r.label) continue;
+            const s4 = (src + x) * 4, q = (y * r.w + x) * 4;
+            d[q] = px[s4]; d[q + 1] = px[s4 + 1]; d[q + 2] = px[s4 + 2]; d[q + 3] = px[s4 + 3];
+          }
+        }
         const cc = document.createElement('canvas');
         cc.width = r.w; cc.height = r.h;
-        cc.getContext('2d').drawImage(clean, r.x, r.y, r.w, r.h, 0, 0, r.w, r.h);
+        cc.getContext('2d').putImageData(im, 0, 0);
         return shrink(cc, 1024);
       });
     } catch (e) { return null; }
   }
-  async function addOne(kind, file) {
+  async function addOne(kind, file, whole) {
     if (!isImage(file)) { note('画像ファイル(PNGなど)を選んでください。'); return false; }
     try {
       const big = await loadImageCanvas(file, 2400);
@@ -1812,9 +2391,9 @@ function findCells(bg, W, H, opt) {
         else renderTexts();
         return false;
       }
-      const auto = $(kind + 'Auto').checked;
+      const auto = whole ? false : $(kind + 'Auto').checked;
       const parts = auto ? autoSplit(big, kind) : null;
-      const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+      const label = kind === 'dog' ? 'メイン画像' : '文字画像';
       const pieces = parts ? parts.slice(0, room) : [shrink(big, 1024)];
       const from = parts ? ++sheetSeq : -1;
       const first = list.length;
@@ -1822,8 +2401,9 @@ function findCells(bg, W, H, opt) {
       const msg = parts
         ? parts.length + '個のコマを自動で見つけて、' + pieces.length + '個の' + label + 'に切り出しました。'
           + (parts.length > pieces.length ? '上限の' + MAX_ITEMS + '個に収まる分だけ追加しました。' : '')
-          + '1枚のまま使いたいときは、「自動で切り出す」のチェックを外して追加し直してください。'
-        : '1枚の' + label + 'として追加しました(複数のコマは見つかりませんでした)。';
+          + '1枚のまま使いたいときは、「画像全体を取り込む」で追加し直してください。'
+        : whole ? '画像全体を、切り出さずに1枚の' + label + 'として取り込みました。'
+          : '1枚の' + label + 'として追加しました(複数のコマは見つかりませんでした)。';
       if (kind === 'dog') {
         useItem(first);
       } else {
@@ -1837,15 +2417,15 @@ function findCells(bg, W, H, opt) {
       return false;
     }
   }
-  async function addFiles(kind, files) {
-    for (const f of Array.from(files || [])) { if (!(await addOne(kind, f))) break; }
+  async function addFiles(kind, files, whole) {
+    for (const f of Array.from(files || [])) { if (!(await addOne(kind, f, whole))) break; }
   }
 
   // ---- シートの切り出し(犬用・文字用それぞれ。前の分は残して、一覧の後ろに追加する) ----
   function cutSheet(kind) {
     const c = state.cfg[kind], sh = c.sheet;
     if (!sh) return;
-    const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+    const label = kind === 'dog' ? 'メイン画像' : '文字画像';
     const msg = { textContent: '' };
     const info = analyzeSheet(sh.data, sh.W, sh.H, c.tol, c.inner);
     const out = new Uint8ClampedArray(sh.data);
@@ -1996,6 +2576,34 @@ function findCells(bg, W, H, opt) {
     const t = $('board');
     if (t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }));
+  // 枠の外にはみ出したメイン画像を、枠の中に戻す(回転も考えた外枠で見る。枠より大きいときは、収まる大きさまで小さくする)
+  $('dogFit').addEventListener('click', () => {
+    const it = cur(), msg = $('dogFitMsg');
+    if (!it) { msg.textContent = '先にスタンプを選んでください。'; return; }
+    const { W, H } = dims();
+    const ext = (pl) => {
+      const c = Math.abs(Math.cos(pl.rot || 0)), sn = Math.abs(Math.sin(pl.rot || 0));
+      return { bw: pl.dw * c + pl.dh * sn, bh: pl.dw * sn + pl.dh * c };
+    };
+    let pl = dogPl(W, H, it), e = ext(pl);
+    const eps = 0.5;
+    if (pl.cx - e.bw / 2 >= -eps && pl.cx + e.bw / 2 <= W + eps && pl.cy - e.bh / 2 >= -eps && pl.cy + e.bh / 2 <= H + eps) {
+      msg.textContent = 'メイン画像は、枠の中に収まっています。';
+      return;
+    }
+    let scale = it.dscale, shrunk = false;
+    if (e.bw > W || e.bh > H) {
+      const k = Math.min(W / e.bw, H / e.bh);
+      scale = Math.max(20, Math.floor(it.dscale * k * 100) / 100);
+      shrunk = true;
+      pl = dogPl(W, H, Object.assign({}, it, { dscale: scale }));
+      e = ext(pl);
+    }
+    const cx = clamp(pl.cx, e.bw / 2, W - e.bw / 2), cy = clamp(pl.cy, e.bh / 2, H - e.bh / 2);
+    setItem({ dscale: scale, dx: (cx / W) * 100, dy: (cy / H) * 100 }, false);
+    syncPanel();
+    msg.textContent = shrunk ? '枠より大きかったので、収まる大きさまで小さくして、枠の中に戻しました。' : '枠の中に戻しました(大きさはそのままです)。';
+  });
   $('dogReset').addEventListener('click', () => {
     if (!cur()) return;
     setItem({ dscale: 100, dx: 50, dy: 50, drot: 0 }, false);
@@ -2035,20 +2643,42 @@ function findCells(bg, W, H, opt) {
     });
     b.addEventListener('blur', reset);
   }
-  twoTap('delAllBtn', '犬の画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
+  $('fxClear').addEventListener('click', () => {
+    const it = cur();
+    if (!it) { $('fxMsg').textContent = '先にスタンプを選んでください。'; return; }
+    if (!(it.fx || []).length) { $('fxMsg').textContent = 'このスタンプには、エフェクトが付いていません。'; return; }
+    setItem({ fx: [] }, false);
+    syncPanel();
+    $('fxMsg').textContent = 'スタンプ ' + (state.items.indexOf(it) + 1) + ' のエフェクトを全部解除しました。';
+  });
+  twoTap('fxClearAll', '全スタンプのエフェクトを解除', '本当に全部解除する(もう一度タップ)', () => {
+    const n = state.items.filter((it) => (it.fx || []).length).length;
+    if (!n) { $('fxMsg').textContent = 'エフェクトが付いているスタンプはありません。'; return; }
+    state.items.forEach((it) => { it.fx = []; });
+    state.ver++;
+    renderStrip();
+    applyChange(false);
+    syncPanel();
+    $('fxMsg').textContent = n + '個のスタンプのエフェクトを解除しました。位置・大きさ・強さの設定は残っています。';
+  });
+  twoTap('delAllBtn', 'メイン画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
     if (!state.items.length) return;
     state.items = []; state.mainId = null; state.tabId = null; lastDeleted = null;
     showNone();
-    note('犬の画像をすべて削除しました。');
+    note('メイン画像をすべて削除しました。');
   });
-  twoTap('tDelAllBtn', '文字の画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
+  twoTap('tDelAllBtn', '文字画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
     if (!state.texts.length) return;
     state.texts = []; state.tsel = -1; lastDeletedText = null;
-    note('文字の画像の一覧をすべて削除しました。すでにスタンプに重ねた文字は、そのまま残ります。');
+    note('文字画像の一覧をすべて削除しました。すでにスタンプに重ねた文字は、そのまま残ります。');
     renderTexts();
   });
   $('dogAdd').addEventListener('click', () => $('dogAddFile').click());
   $('dogAddFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('dog', fl); });
+  $('dogAddWhole').addEventListener('click', () => $('dogAddWholeFile').click());
+  $('dogAddWholeFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('dog', fl, true); });
+  $('textAddWhole').addEventListener('click', () => $('textAddWholeFile').click());
+  $('textAddWholeFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('text', fl, true); });
   $('textAdd').addEventListener('click', () => $('textAddFile').click());
   $('textAddFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('text', fl); });
   // 画像ファイルを一覧にドロップして追加
@@ -2062,7 +2692,7 @@ function findCells(bg, W, H, opt) {
     });
   });
 
-  // 犬の画像の差し替え(文字の画像・位置・動き・重なり順はそのまま)
+  // メイン画像の差し替え(文字画像・位置・動き・重なり順はそのまま)
   $('dogBtn').addEventListener('click', () => {
     if (!cur()) { note('先にスタンプを選んでください。'); return; }
     $('dogFile').click();
@@ -2075,9 +2705,9 @@ function findCells(bg, W, H, opt) {
     if (!isImage(f)) { note('画像ファイル(PNGなど)を選んでください。'); return; }
     try {
       const c = await loadImageCanvas(f, 1024);
-      it.canvas = c; it.thumb = makeThumb(c, 128); it.sample = false;
+      it.canvas = c; it.orig = null; it.thumb = makeThumb(c, 128); it.sample = false;
       state.ver++;
-      note('スタンプ ' + (state.items.indexOf(it) + 1) + ' の犬の画像を差し替えました(文字はそのまま)。');
+      note('スタンプ ' + (state.items.indexOf(it) + 1) + ' のメイン画像を差し替えました(文字はそのまま)。');
       renderStrip();
       applyChange(false);
     } catch (err) {
@@ -2085,7 +2715,7 @@ function findCells(bg, W, H, opt) {
     }
   });
 
-  // ---- プレビュー上の操作: 文字をドラッグして動かす / 文字の画像をドロップして重ねる ----
+  // ---- プレビュー上の操作: 文字をドラッグして動かす / 文字画像をドロップして重ねる ----
   function canvasPoint(e) {
     const r = cv.getBoundingClientRect();
     const { W, H } = dims();
@@ -2173,10 +2803,11 @@ function findCells(bg, W, H, opt) {
     return boxCorners(pl).some((q) => Math.hypot(q.x - p.x, q.y - p.y) <= r);
   }
   cv.addEventListener('pointerenter', (e) => { if (e.pointerType !== 'touch') { state.hover = true; draw(); } });
-  cv.addEventListener('pointerleave', () => { state.hover = false; if (!state.editing) draw(); });
+  cv.addEventListener('pointerleave', () => { state.hover = false; brushPos = null; if (!state.editing) draw(); });
   cv.addEventListener('pointerdown', (e) => {
     const it = cur();
     if (!it) return;
+    if (state.erase) { startStroke(e, canvasPoint(e)); return; }
     const p = canvasPoint(e);
     if (!ptrs.size && !resizing && state.hover && hitHandle(it, p)) {
       const pl = targetPl(it), K = KEYS[state.editTarget];
@@ -2198,6 +2829,7 @@ function findCells(bg, W, H, opt) {
   });
   cv.addEventListener('pointermove', (e) => {
     const id = e.pointerId === undefined ? 0 : e.pointerId;
+    if (state.erase) { moveStroke(e); return; }
     if (resizing) {
       if (id !== resizing.id) return;
       const it0 = cur();
@@ -2238,6 +2870,7 @@ function findCells(bg, W, H, opt) {
   });
   const endPtr = (e) => {
     const id = e.pointerId === undefined ? 0 : e.pointerId;
+    if (stroke && id === stroke.id) { endStroke(); return; }
     if (resizing && id === resizing.id) { resizing = null; endEdit(); return; }
     if (!ptrs.delete(id)) return;
     if (ptrs.size) rebase(); else { base = null; endEdit(); }
@@ -2247,7 +2880,7 @@ function findCells(bg, W, H, opt) {
   // マウスのホイール(トラックパッドのピンチ操作も含む)で大きさを変える
   cv.addEventListener('wheel', (e) => {
     const it = cur();
-    if (!it) return;
+    if (!it || state.erase) return;
     if (e.preventDefault) e.preventDefault();
     const p = canvasPoint(e);
     if (!ptrs.size) {
@@ -2268,18 +2901,157 @@ function findCells(bg, W, H, opt) {
   }, { passive: false });
 
   function syncTarget() {
-    $('tgtDog').checked = state.editTarget === 'dog';
-    $('tgtText').checked = state.editTarget === 'text';
-    $('tgtFx').checked = state.editTarget === 'fx';
+    $('tgtDog').checked = !state.erase && state.editTarget === 'dog';
+    $('tgtText').checked = !state.erase && state.editTarget === 'text';
+    $('tgtFx').checked = !state.erase && state.editTarget === 'fx';
+    $('tgtErase').checked = state.erase;
   }
   $('tgtDog').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'dog'; });
   $('tgtText').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'text'; });
   $('tgtFx').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'fx'; });
+  ['tgtDog', 'tgtText', 'tgtFx'].forEach((id) => $(id).addEventListener('change', (e) => { if (e.target.checked) setErase(false); }));
+  $('tgtErase').addEventListener('change', (e) => { if (e.target.checked) setErase(true); });
+
+  // ---- 消しゴム(選んでいるスタンプのメイン画像、または重ねている文字画像を、なぞって消す・戻す) ----
+  function copyCanvas(c) {
+    const o = document.createElement('canvas');
+    o.width = c.width; o.height = c.height;
+    o.getContext('2d', { willReadFrequently: true }).drawImage(c, 0, 0);
+    return o;
+  }
+  const eraseTarget = () => { const it = cur(); return state.eraseOn === 'text' ? (it && it.text) : it; };
+  const eraseList = (kind) => (kind === 'text' ? state.texts : state.items);
+  const eraseAlive = (u) => eraseList(u.kind).indexOf(u.f) >= 0;
+  // プレビュー上の位置を、画像の中の位置に直す。k は「プレビューの1px = 画像の何px」
+  function toImg(it, f, kind, p) {
+    const { W, H } = dims();
+    const pl = kind === 'text' ? textPl(W, H, it) : dogPl(W, H, it);
+    const ux = p.x - pl.cx, uy = p.y - pl.cy, c = Math.cos(-pl.rot), sn = Math.sin(-pl.rot);
+    const lx = ux * c - uy * sn, ly = ux * sn + uy * c;
+    const k = f.canvas.width / pl.dw;
+    return { x: (lx + pl.dw / 2) * k, y: (ly + pl.dh / 2) * k, k };
+  }
+  function paintStroke(f, a, b, rad) {
+    const g = f.canvas.getContext('2d');
+    g.save();
+    g.lineCap = 'round'; g.lineJoin = 'round'; g.lineWidth = Math.max(1, rad * 2);
+    const line = () => { g.beginPath(); g.moveTo(a.x, a.y); g.lineTo(b.x + 0.01, b.y + 0.01); g.stroke(); };
+    g.globalCompositeOperation = 'destination-out'; g.strokeStyle = '#000';
+    line();
+    if (state.brushMode === 'restore') {
+      // いったん消してから、同じ場所に元の絵を描き戻す
+      g.globalCompositeOperation = 'source-over'; g.strokeStyle = g.createPattern(f.orig, 'no-repeat');
+      line();
+    }
+    g.restore();
+  }
+  function pushUndo(f, kind) {
+    undoStack.push({ f, kind, data: f.canvas.getContext('2d').getImageData(0, 0, f.canvas.width, f.canvas.height) });
+    if (undoStack.length > 20) undoStack.shift();
+  }
+  function startStroke(e, p) {
+    const it = cur(), kind = state.eraseOn, f = eraseTarget();
+    if (!it || stroke) return;
+    if (!f) { note('このスタンプには文字が重なっていません。先に、文字の一覧からタップして重ねてください。'); return; }
+    if (!f.orig) {
+      if (state.brushMode === 'restore') { note(kind === 'text' ? 'この文字は、まだ何も消していません。' : 'この画像は、まだ何も消していません。'); return; }
+      f.orig = f.canvas; f.canvas = copyCanvas(f.orig);
+    }
+    pushUndo(f, kind);
+    if (cv.setPointerCapture && e.pointerId !== undefined) { try { cv.setPointerCapture(e.pointerId); } catch (err) { /* 対応していない環境 */ } }
+    const q = toImg(it, f, kind, p);
+    stroke = { id: e.pointerId === undefined ? 0 : e.pointerId, f, kind, it, last: q };
+    paintStroke(f, q, q, state.brush * q.k);
+    brushPos = p;
+    draw();
+    if (e.preventDefault) e.preventDefault();
+  }
+  function moveStroke(e) {
+    const p = canvasPoint(e);
+    brushPos = p;
+    const id = e.pointerId === undefined ? 0 : e.pointerId;
+    if (stroke && id === stroke.id) {
+      const q = toImg(stroke.it, stroke.f, stroke.kind, p);
+      paintStroke(stroke.f, stroke.last, q, state.brush * q.k);
+      stroke.last = q;
+    }
+    draw();
+  }
+  // 絵が変わったあとの後始末: 一覧の小さな絵を作り直し、書き出しの作り直しを促す
+  function refreshErased(f, kind) {
+    f.thumb = makeThumb(f.canvas, kind === 'text' ? 160 : 128);
+    state.ver++;
+    renderStrip();
+    if (kind === 'text') renderTexts();
+    applyChange(false);
+    syncErase();
+  }
+  function endStroke() {
+    const st = stroke;
+    stroke = null;
+    refreshErased(st.f, st.kind);
+  }
+  function syncErase() {
+    const f = eraseTarget();
+    $('undoErase').disabled = !undoStack.some(eraseAlive);
+    $('resetErase').disabled = !(f && f.orig);
+    $('resetErase').textContent = state.eraseOn === 'text' ? 'この文字を全部元に戻す' : 'この画像を全部元に戻す';
+    $('eraseDog').checked = state.eraseOn === 'dog';
+    $('eraseText').checked = state.eraseOn === 'text';
+  }
+  function setErase(on) {
+    state.erase = on;
+    $('erasePad').hidden = !on;
+    stroke = null; brushPos = null;
+    syncTarget();
+    syncErase();
+    if (on) note(state.eraseOn === 'text' ? '重ねている文字を消しゴムで直します。消したい所をなぞってください。メイン画像はうすく表示しています。' : '選んでいるメイン画像を消しゴムで直します。消したい所をなぞってください。');
+    draw();
+  }
+  function undoErase() {
+    while (undoStack.length) {
+      const u = undoStack.pop();
+      if (!eraseAlive(u)) continue;
+      u.f.canvas.getContext('2d').putImageData(u.data, 0, 0);
+      refreshErased(u.f, u.kind);
+      note('消しゴムを、ひとつ前の状態に戻しました。');
+      return;
+    }
+    syncErase();
+    note('戻せる操作はありません。');
+  }
+  $('undoErase').addEventListener('click', undoErase);
+  $('resetErase').addEventListener('click', () => {
+    const f = eraseTarget(), kind = state.eraseOn;
+    if (!f || !f.orig) return;
+    pushUndo(f, kind);
+    const g = f.canvas.getContext('2d');
+    g.clearRect(0, 0, f.canvas.width, f.canvas.height);
+    g.drawImage(f.orig, 0, 0);
+    refreshErased(f, kind);
+    note('消しゴムを使う前の絵に戻しました。');
+  });
+  document.querySelectorAll('input[name=eraseOn]').forEach((el) => el.addEventListener('change', () => {
+    if (!el.checked) return;
+    state.eraseOn = el.value;
+    setErase(true);
+  }));
+  document.querySelectorAll('input[name=brush]').forEach((el) => el.addEventListener('change', () => {
+    if (!el.checked) return;
+    state.brushMode = el.value;
+    note(el.value === 'erase' ? 'なぞった所を消します。' : 'なぞった所を、元の絵に戻します。うすく見えているのが、消した部分です。');
+    draw();
+  }));
+  $('brushSize').addEventListener('input', (e) => {
+    state.brush = clamp(Math.round(Number(e.target.value)), 2, 50);
+    $('brushOut').textContent = state.brush;
+    draw();
+  });
   function rotBy(deg) {
     const it = cur();
     if (!it) return;
     const K = KEYS[state.editTarget];
-    if (state.editTarget === 'text' && !it.text) { note('文字の画像を重ねてから回してください。'); return; }
+    if (state.editTarget === 'text' && !it.text) { note('文字画像を重ねてから回してください。'); return; }
     if (state.editTarget === 'fx' && !(it.fx || []).length) { note('先にエフェクトを選んでください。'); return; }
     setItem({ [K.rot]: normRot(it[K.rot] + deg) }, false);
   }
@@ -2380,18 +3152,21 @@ function findCells(bg, W, H, opt) {
   }
   $('zipBtn').addEventListener('click', () => runZip('sticker'));
   $('emojiZipBtn').addEventListener('click', () => runZip('emoji'));
-  $('exportBtn').addEventListener('click', async () => {
+  // 選んでいる1個だけを、APNG(.png)1つで保存する。kind: 'sticker' / 'emoji'
+  const ONE_BTNS = ['oneStickerBtn', 'oneEmojiBtn', 'exportBtn', 'exportEmojiBtn'];
+  async function saveOne(kind) {
+    const say = (t) => { $('oneMsg').textContent = t; $('msg').textContent = t; };
     const it = cur();
-    if (!it) { $('msg').textContent = '書き出すスタンプを選んでください。'; return; }
-    const btn = $('exportBtn');
-    btn.disabled = true;
-    $('msg').textContent = '書き出し中…';
+    if (!it) { say('保存するスタンプを選んでください。'); return; }
+    const emoji = kind === 'emoji';
+    const label = emoji ? '絵文字' : 'スタンプ';
+    ONE_BTNS.forEach((id) => { $(id).disabled = true; });
+    say(label + '用APNGを作成中…');
+    $('oneLink').hidden = true;
     try {
-      const res = await buildApng();
-      cache = res;
-      sizeBytes = res.bytes.length;
-      lightInfo = res.light;
-      updateChecks();
+      let res;
+      if (emoji) res = await buildApngFor(it, 180, 180);
+      else { res = await buildApng(); cache = res; sizeBytes = res.bytes.length; lightInfo = res.light; updateChecks(); }
       const blob = new Blob([res.bytes], { type: 'image/png' });
       const img = $('result');
       if (img.dataset.url) URL.revokeObjectURL(img.dataset.url);
@@ -2399,25 +3174,40 @@ function findCells(bg, W, H, opt) {
       img.dataset.url = url;
       img.src = url;
       $('resultBoard').hidden = false;
-      const fname = 'sticker_' + String(state.items.indexOf(it) + 1).padStart(2, '0') + '.png';
+      const no = state.items.indexOf(it) + 1;
+      const fname = (emoji ? 'emoji_' : 'sticker_') + String(no).padStart(2, '0') + '.png';
+      const kb = Math.round(blob.size / 1024);
+      const notes = [];
+      if (res.light) notes.push('自動で軽くしました(' + res.light.colors + '色' + (res.light.frames !== state.frames ? '・' + res.light.frames + 'コマ' : '') + ')。');
+      if (res.bytes.length > LIMIT_BYTES) notes.push('300KBを超えています(' + (state.autoLight ? 'キャンバスサイズを小さくするか、動き・エフェクトを減らしてください' : '「自動で軽くする」をオンにするか、コマ数を減らしてください') + ')。');
+      if (res.same) notes.push('全コマが同じ絵です(動きを付けないと登録できません)。');
+      if (res.blank0) notes.push('1コマ目が空です(登場の動きは、1コマ目が静止画になるため注意)。');
+      let head;
       if (downloads) {
         try {
           await downloads.save({ filename: fname, data: blob });
-          $('msg').textContent = '保存しました(' + Math.round(blob.size / 1024) + ' KB)。下の画像でも動きを確認できます。';
+          head = label + 'のAPNGを保存しました(スタンプ' + no + '番、' + kb + ' KB、' + fname + ')。';
         } catch (e) {
-          $('msg').textContent = (e && e.code === 'declined')
-            ? '保存をキャンセルしました。もう一度押すと保存できます。'
-            : 'この画面からは保存できませんでした。下の画像を長押し(右クリック)で保存してください。';
+          head = (e && e.code === 'declined') ? '保存をキャンセルしました。もう一度押すと保存できます。' : 'この画面からは保存できませんでした。下の画像を長押し(右クリック)で保存してください。';
         }
       } else {
-        $('msg').textContent = '下の画像を長押し(右クリック)で保存してください。';
+        const link = $('oneLink');
+        if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+        link.dataset.url = URL.createObjectURL(blob);
+        link.href = link.dataset.url;
+        link.download = fname;
+        link.hidden = false;
+        head = label + 'のAPNGができました(スタンプ' + no + '番、' + kb + ' KB)。下のボタンから保存してください。';
       }
+      say([head].concat(notes).join(' '));
     } catch (e) {
-      $('msg').textContent = '書き出しに失敗しました。画像を選び直してもう一度お試しください。';
+      say('書き出しに失敗しました。画像を選び直してもう一度お試しください。');
     } finally {
-      btn.disabled = false;
+      ONE_BTNS.forEach((id) => { $(id).disabled = false; });
     }
-  });
+  }
+  ['oneStickerBtn', 'exportBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('sticker')));
+  ['oneEmojiBtn', 'exportEmojiBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('emoji')));
 
   // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
   const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
@@ -2426,9 +3216,9 @@ function findCells(bg, W, H, opt) {
     return {
       app: 'mon-chein-stamp', version: 1,
       settings: { frames: state.frames, duration: state.duration, loops: state.loops, size: state.size, autoLight: state.autoLight },
-      texts: state.texts.map((p) => ({ img: p.canvas.toDataURL('image/png'), sample: !!p.sample })),
+      texts: state.texts.map((p) => ({ img: p.canvas.toDataURL('image/png'), orig: p.orig ? p.orig.toDataURL('image/png') : undefined, sample: !!p.sample })),
       items: state.items.map((it) => {
-        const o = { img: it.canvas.toDataURL('image/png'), text: textIdx(it.text), sample: !!it.sample };
+        const o = { img: it.canvas.toDataURL('image/png'), orig: it.orig ? it.orig.toDataURL('image/png') : undefined, text: textIdx(it.text), sample: !!it.sample };
         ITEM_KEYS.forEach((k) => { o[k] = it[k]; });
         return o;
       }),
@@ -2485,7 +3275,8 @@ function findCells(bg, W, H, opt) {
       const pieces = [];
       for (const t of data.texts.slice(0, MAX_ITEMS)) {
         if (typeof t.img !== 'string' || t.img.indexOf('data:image/') !== 0) continue;
-        pieces.push(newPiece(await urlToCanvas(t.img), { sample: !!t.sample }));
+        const po = (typeof t.orig === 'string' && t.orig.indexOf('data:image/') === 0) ? await urlToCanvas(t.orig) : null;
+        pieces.push(newPiece(await urlToCanvas(t.img), { sample: !!t.sample, orig: po }));
       }
       const items = [];
       for (const o of data.items.slice(0, MAX_ITEMS)) {
@@ -2501,6 +3292,7 @@ function findCells(bg, W, H, opt) {
           dscale: num(o.dscale, 100, 20, 250), dx: num(o.dx, 50, 0, 100), dy: num(o.dy, 50, 0, 100), drot: num(o.drot, 0, -360, 360),
           fxscale: num(o.fxscale, 100, 20, 250), fxx: num(o.fxx, 50, 0, 100), fxy: num(o.fxy, 50, 0, 100), fxrot: num(o.fxrot, 0, -360, 360)
         };
+        if (typeof o.orig === 'string' && o.orig.indexOf('data:image/') === 0) extra.orig = await urlToCanvas(o.orig);
         items.push(newDog(await urlToCanvas(o.img), extra));
       }
       const st = data.settings || {};
@@ -2523,7 +3315,7 @@ function findCells(bg, W, H, opt) {
       msg.textContent = '保存ファイルを読み込めませんでした。壊れているか、別のファイルかもしれません。';
     }
   }
-  // ---- 素材ごとの書き出し・読み込み(犬の画像/文字の画像/エフェクト) ----
+  // ---- 素材ごとの書き出し・読み込み(メイン画像/文字画像/エフェクト) ----
   const FX_KEYS = ['fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
   async function saveJson(obj, filename, doneText) {
     const msg = $('partMsg');
@@ -2552,7 +3344,7 @@ function findCells(bg, W, H, opt) {
   }
   function outImages(kind) {
     const list = kind === 'dog' ? state.items : state.texts;
-    const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+    const label = kind === 'dog' ? 'メイン画像' : '文字画像';
     if (!list.length) { $('partMsg').textContent = label + 'がありません。'; return; }
     saveJson({ app: 'mon-chein-stamp', kind: kind === 'dog' ? 'dogs' : 'texts', version: 1, images: list.map((p) => ({ img: p.canvas.toDataURL('image/png'), sample: !!p.sample })) },
       kind === 'dog' ? 'mon-chein-dogs.json' : 'mon-chein-texts.json', label + list.length + '個を書き出しました');
@@ -2564,7 +3356,7 @@ function findCells(bg, W, H, opt) {
     saveJson({ app: 'mon-chein-stamp', kind: 'effects', version: 1, effects: arr }, 'mon-chein-effects.json', 'エフェクトを書き出しました(' + arr.length + '個中' + used + '個にエフェクトあり)');
   }
   async function inImages(kind, data) {
-    const label = kind === 'dog' ? '犬の画像' : '文字の画像';
+    const label = kind === 'dog' ? 'メイン画像' : '文字画像';
     if (!Array.isArray(data.images)) throw new Error('bad');
     dropSamples(kind);
     const list = kind === 'dog' ? state.items : state.texts;
@@ -2609,7 +3401,7 @@ function findCells(bg, W, H, opt) {
       const data = JSON.parse(await file.text());
       const want = { dog: 'dogs', text: 'texts', fx: 'effects' }[partMode];
       if (!data || data.app !== 'mon-chein-stamp' || data.kind !== want) {
-        const names = { dogs: '犬の画像', texts: '文字の画像', effects: 'エフェクト' };
+        const names = { dogs: 'メイン画像', texts: '文字画像', effects: 'エフェクト' };
         msg.textContent = data && names[data.kind] ? 'これは「' + names[data.kind] + '」のファイルです。' + names[want] + 'のファイルを選んでください。' : 'このファイルは、' + names[want] + 'の書き出しファイルではありません。';
         return;
       }
@@ -2743,6 +3535,24 @@ function findCells(bg, W, H, opt) {
   if (document.fonts && document.fonts.load) document.fonts.load('700 64px "Zen Maru Gothic"', 'ワン!おはようありがとうおやすみ').then(bootText, bootText);
   else bootText();
   requestAnimationFrame(tick);
+})();
+</script>
+
+<script>
+(function () {
+  var root = document.documentElement, KEY = 'mc-stamp-theme';
+  function saved() { try { var v = localStorage.getItem(KEY); return v === 'dark' || v === 'light' ? v : null; } catch (e) { return null; } }
+  function apply(t) {
+    root.setAttribute('data-theme', t);
+    var l = document.getElementById('themeLight'), d = document.getElementById('themeDark');
+    if (l) l.setAttribute('aria-pressed', t === 'light' ? 'true' : 'false');
+    if (d) d.setAttribute('aria-pressed', t === 'dark' ? 'true' : 'false');
+  }
+  var sys = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  apply(saved() || sys);
+  function pick(t) { apply(t); try { localStorage.setItem(KEY, t); } catch (e) {} }
+  document.getElementById('themeLight').addEventListener('click', function () { pick('light'); });
+  document.getElementById('themeDark').addEventListener('click', function () { pick('dark'); });
 })();
 </script>
 
