@@ -337,6 +337,8 @@ select, input[type=number] { border-color: var(--line-strong); }
 .thumb { border-color: var(--line-strong); }
 .win-card { border: 1px solid var(--line-strong); }
 @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+.thumb.pk{outline:3px solid #1f6fd0;outline-offset:-3px}.thumb.pk::after{content:'✓';position:absolute;right:4px;top:4px;width:22px;height:22px;border-radius:50%;background:#1f6fd0;color:#fff;font-size:14px;line-height:22px;text-align:center;font-weight:700}
+.pickbar{margin:8px 0}
 .fixbox { margin-top: 14px; border-top: 1px solid var(--line-strong); padding-top: 6px; }
 .fixbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .fixbox .field + .field { margin-top: 10px; }
@@ -2112,13 +2114,13 @@ function findTextCells(bg, W, H, opt) {
     strip.innerHTML = '';
     state.items.forEach((it, i) => {
       const b = document.createElement('div');
-      b.className = 'thumb' + (i === state.sel ? ' on' : '');
+      b.className = 'thumb' + (i === state.sel ? ' on' : '') + (pickSet && pickSet.dog && pickSet.dog.has(it) ? ' pk' : '');
       b.tabIndex = 0;
       b.setAttribute('role', 'option');
       b.setAttribute('aria-selected', i === state.sel ? 'true' : 'false');
       b.setAttribute('aria-label', 'スタンプ' + (i + 1) + (it.text ? '(文字あり)' : ''));
       b.innerHTML = '<img alt="" draggable="false" src="' + it.thumb + '">' + (it.text ? '<img class="mini" alt="" draggable="false" src="' + it.text.thumb + '">' : '') + (it.id === state.mainId ? '<em class="bd m">メイン</em>' : '') + (it.id === state.tabId ? '<em class="bd t">タブ</em>' : '') + '<i>' + (i + 1) + '</i>';
-      b.addEventListener('click', () => useItem(i));
+      b.addEventListener('click', () => { if (pickSet && pickSet.dog) togglePick('dog', it); else useItem(i); });
       keyClick(b);
       // 文字画像をこのスタンプにドロップして重ねる
       b.addEventListener('dragover', (e) => { if (hasInternal(e)) { e.preventDefault(); b.classList.add('dropok'); } });
@@ -2233,14 +2235,14 @@ function findTextCells(bg, W, H, opt) {
     strip.innerHTML = '';
     state.texts.forEach((p, i) => {
       const b = document.createElement('div');
-      b.className = 'thumb' + (i === state.tsel ? ' on' : '');
+      b.className = 'thumb' + (i === state.tsel ? ' on' : '') + (pickSet && pickSet.text && pickSet.text.has(p) ? ' pk' : '');
       b.tabIndex = 0;
       b.draggable = true;
       b.setAttribute('role', 'option');
       b.setAttribute('aria-selected', i === state.tsel ? 'true' : 'false');
       b.setAttribute('aria-label', '文字画像' + (i + 1));
       b.innerHTML = '<img alt="" draggable="false" src="' + p.thumb + '"><i>' + (i + 1) + '</i>';
-      b.addEventListener('click', () => tapText(i));
+      b.addEventListener('click', () => { if (pickSet && pickSet.text) togglePick('text', p); else tapText(i); });
       keyClick(b);
       b.addEventListener('dragstart', (e) => {
         if (!e.dataTransfer) return;
@@ -3725,9 +3727,71 @@ function findTextCells(bg, W, H, opt) {
   $('cutWin').addEventListener('click', (e) => { if (e.target === $('cutWin')) closeCut(); });
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('cutWin').hidden) closeCut(); });
 
+  // ---- 複数を選んで1枚にまとめる ----
+  var pickSet = { dog: null, text: null };
+  function pickUi(kind) {
+    const on = !!pickSet[kind], n = on ? pickSet[kind].size : 0;
+    $(kind + 'PickStart').hidden = on;
+    $(kind + 'PickDo').hidden = !on; $(kind + 'PickStop').hidden = !on;
+    $(kind + 'PickDo').disabled = n < 2;
+    $(kind + 'PickDo').textContent = '選んだ' + n + '枚を、1枚にまとめる';
+    $(kind + 'PickHint').textContent = on ? '上の一覧で、まとめたい画像を、タップして選んでください(もう一度タップすると外れます)。2枚以上選んだら、「まとめる」を押します。' : '';
+  }
+  function pickStart(kind) {
+    pickSet[kind] = new Set();
+    const cur = listOf(kind)[selOf(kind)];
+    if (cur) pickSet[kind].add(cur);
+    if (kind === 'dog') renderStrip(); else renderTexts();
+    pickUi(kind);
+  }
+  function pickStop(kind) {
+    pickSet[kind] = null;
+    if (kind === 'dog') renderStrip(); else renderTexts();
+    pickUi(kind);
+  }
+  function togglePick(kind, f) {
+    const s2 = pickSet[kind];
+    if (!s2) return;
+    if (s2.has(f)) s2.delete(f); else s2.add(f);
+    if (kind === 'dog') renderStrip(); else renderTexts();
+    pickUi(kind);
+  }
+  function fixMergeSet(kind) {
+    const list = listOf(kind), set = pickSet[kind];
+    if (!set || set.size < 2) { fixMsg(kind, '2枚以上、選んでください。'); return; }
+    const fs = list.filter((f) => set.has(f));
+    const keep = fs[0];
+    const same = fs.every((p) => p.geo && p.from > 0 && p.from === keep.from);
+    const boxes = fs.map((p) => same
+      ? { x: p.geo.x, y: p.geo.y, w: p.canvas.width / p.geo.sc, h: p.canvas.height / p.geo.sc }
+      : { x: -p.canvas.width / 2, y: -p.canvas.height / 2, w: p.canvas.width, h: p.canvas.height });
+    const x0 = Math.min(...boxes.map((b) => b.x)), y0 = Math.min(...boxes.map((b) => b.y));
+    const x1 = Math.max(...boxes.map((b) => b.x + b.w)), y1 = Math.max(...boxes.map((b) => b.y + b.h));
+    const w = x1 - x0, h = y1 - y0, sc = Math.min(1, 1024 / Math.max(w, h));
+    fixSnap = snapAll();
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc));
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    fs.forEach((p, k) => { const b = boxes[k]; g.drawImage(p.canvas, (b.x - x0) * sc, (b.y - y0) * sc, b.w * sc, b.h * sc); });
+    keep.canvas = c; keep.orig = null; keep.thumb = makeThumb(c, kind === 'text' ? 160 : 128);
+    keep.geo = same ? { x: x0, y: y0, sc } : undefined;
+    if (!same) keep.from = -1;
+    const others = fs.slice(1);
+    if (kind === 'dog') { if (!keep.text) { const t = others.find((p) => p.text); if (t) keep.text = t.text; } }
+    else state.items.forEach((it) => { if (others.includes(it.text)) it.text = keep; });
+    for (let k = list.length - 1; k >= 0; k--) if (others.includes(list[k])) list.splice(k, 1);
+    pickSet[kind] = null;
+    fixMsg(kind, fs.length + '枚を1枚にまとめました' + (same ? '(元のシートでの位置どおりに重ねました)' : '(位置が分からないため、中心をそろえて重ねました。ずれるときは、「ひとつ前に戻す」で戻して、「範囲を選んで切り出す」を使ってください)') + '。間違えたときは「ひとつ前に戻す」を押してください。');
+    afterFix(kind, list.indexOf(keep));
+    pickUi(kind);
+    $(kind + 'PickHint').textContent = $(kind + 'FixMsg').textContent;
+  }
+
   function buildFix(kind, host) {
     const p = kind, L = KL[kind];
     host.innerHTML =
+      '<div class="pickbar"><div class="fixbtns"><button type="button" class="btn" id="' + p + 'PickStart">複数を選んで、1枚にまとめる</button><button type="button" class="btn primary" id="' + p + 'PickDo" hidden disabled>選んだ0枚を、1枚にまとめる</button><button type="button" class="btn" id="' + p + 'PickStop" hidden>やめる</button></div><p class="note" id="' + p + 'PickHint" role="status" aria-live="polite"></p></div>' +
       '<details class="fixbox"><summary>切り出しの直し方</summary>' +
       '<p class="note">文字が' + L + 'から離れて別々に切り出されたり、1つも切り出せなかったり、全部が1枚になったときに使います。</p>' +
       '<p class="sub">1. 取り込むときの切り出し方(次に「画像を追加」するとき)</p>' +
@@ -3759,6 +3823,9 @@ function findTextCells(bg, W, H, opt) {
     $(p + 'FixMergeNext').addEventListener('click', () => fixMerge(kind, 1));
     $(p + 'FixCut').addEventListener('click', () => openCut(kind));
     $(p + 'FixUndo').addEventListener('click', () => fixUndo(kind));
+    $(p + 'PickStart').addEventListener('click', () => pickStart(kind));
+    $(p + 'PickStop').addEventListener('click', () => pickStop(kind));
+    $(p + 'PickDo').addEventListener('click', () => fixMergeSet(kind));
   }
   buildFix('dog', $('fixDog'));
   buildFix('text', $('fixText'));
