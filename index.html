@@ -467,6 +467,11 @@ select, input[type=number] { border-color: var(--line-strong); }
         <p class="sub">動き</p>
         <p class="note">いくつか選ぶと、動きが組み合わさります。「とめる」を押すと全部はずれます。</p>
         <div class="chips" id="chips" role="group" aria-label="メイン画像の動き"></div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="mStopOne">このスタンプの動きを全部止める</button>
+          <button type="button" class="btn" id="mStopAll">全スタンプの動きをすべて止める</button>
+        </div>
+        <p class="note" id="mStopMsg" role="status" aria-live="polite"></p>
         <div class="field">
           <div class="field-head"><label for="power">動きの強さ</label><output id="powerOut" for="power"></output></div>
           <input type="range" id="power" min="30" max="150" step="5" value="100">
@@ -485,6 +490,11 @@ select, input[type=number] { border-color: var(--line-strong); }
         <p class="sub">動き</p>
         <p class="note">いくつか選ぶと、動きが組み合わさります。</p>
         <div class="chips" id="tchips" role="group" aria-label="文字画像の動き"></div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="tStopOne">このスタンプの動きを全部止める</button>
+          <button type="button" class="btn" id="tStopAll">全スタンプの動きをすべて止める</button>
+        </div>
+        <p class="note" id="tStopMsg" role="status" aria-live="polite"></p>
         <div class="field">
           <div class="field-head"><label for="tpower">動きの強さ</label><output id="tpowerOut" for="tpower"></output></div>
           <input type="range" id="tpower" min="30" max="150" step="5" value="100">
@@ -2685,6 +2695,28 @@ function findTextCells(bg, W, H, opt) {
     applyChange(false);
     syncPanel();
     $('fxMsg').textContent = n + '個のスタンプのエフェクトを解除しました。位置・大きさ・強さの設定は残っています。';
+  });
+  // ---- 動きを全部止める(メイン画像と文字の両方) ----
+  ['m', 't'].forEach((p) => {
+    const msg = (t) => { ['m', 't'].forEach((q) => { $(q + 'StopMsg').textContent = ''; }); $(p + 'StopMsg').textContent = t; };
+    $(p + 'StopOne').addEventListener('click', () => {
+      const it = cur();
+      if (!it) { msg('先にスタンプを選んでください。'); return; }
+      if (!keysOf(it.motion).length && !keysOf(it.tmotion).length) { msg('このスタンプには、動きが付いていません。'); return; }
+      setItem({ motion: [], tmotion: [] }, true);
+      syncPanel();
+      msg('スタンプ ' + (state.items.indexOf(it) + 1) + ' の動き(メイン画像と文字)を、全部止めました。エフェクトは、そのままです。');
+    });
+    twoTap(p + 'StopAll', '全スタンプの動きをすべて止める', '本当に全部止める(もう一度タップ)', () => {
+      const n = state.items.filter((it) => keysOf(it.motion).length || keysOf(it.tmotion).length).length;
+      if (!n) { msg('動きが付いているスタンプはありません。'); return; }
+      state.items.forEach((it) => { it.motion = []; it.tmotion = []; });
+      state.ver++;
+      renderStrip();
+      applyChange(true);
+      syncPanel();
+      msg(n + '個のスタンプの動き(メイン画像と文字)を、全部止めました。エフェクト・位置・大きさ・強さの設定は残っています。');
+    });
   });
   twoTap('delAllBtn', 'メイン画像をすべて削除', '本当に全部削除する(もう一度タップ)', () => {
     if (!state.items.length) return;
