@@ -1,11 +1,4 @@
-<!doctype html>
-<html lang="ja">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f1eee8">
-<style>body{margin:0}</style>
-<title>Mon Chein スタンプ工房</title>
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"><meta name="theme-color" content="#f1eee8"><style>body{margin:0}</style><title>Mon Chein スタンプ工房</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500&family=Shippori+Mincho:wght@500;700&family=Cormorant+Garamond:ital,wght@1,500&display=swap" rel="stylesheet">
@@ -344,6 +337,10 @@ select, input[type=number] { border-color: var(--line-strong); }
 .thumb { border-color: var(--line-strong); }
 .win-card { border: 1px solid var(--line-strong); }
 @media (prefers-reduced-motion: reduce) { .btn { transition: none; } }
+.fixbox { margin-top: 14px; border-top: 1px solid var(--line-strong); padding-top: 6px; }
+.fixbtns { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.fixbox .field + .field { margin-top: 10px; }
+#cutCv { cursor: crosshair; }
 </style>
 
 <div class="wrap">
@@ -434,6 +431,7 @@ select, input[type=number] { border-color: var(--line-strong); }
           <button type="button" class="btn" id="undoBtn">削除を戻す</button>
           <button type="button" class="btn" id="delAllBtn">メイン画像をすべて削除</button>
         </div>
+        <div id="fixDog"></div>
       </div>
 
       <div>
@@ -452,6 +450,7 @@ select, input[type=number] { border-color: var(--line-strong); }
           <button type="button" class="btn" id="tUndoBtn">削除を戻す</button>
           <button type="button" class="btn" id="tDelAllBtn">文字画像をすべて削除</button>
         </div>
+        <div id="fixText"></div>
         <p class="note">文字画像をタップすると、選んでいるスタンプに重なります。パソコンでは、文字画像をプレビューにドラッグ&ドロップしても重ねられます(メイン画像の上にドロップすると、そのスタンプに重なります)。</p>
       </div>
 
@@ -622,6 +621,20 @@ select, input[type=number] { border-color: var(--line-strong); }
   </main>
 </div>
 
+<div class="win" id="cutWin" hidden role="dialog" aria-modal="true" aria-labelledby="cutTitle">
+  <div class="win-card">
+    <div class="win-head"><h2 id="cutTitle">範囲を選んで切り出す</h2><button type="button" class="btn" id="cutClose">閉じる</button></div>
+    <p class="note">切り出したい所を、指やマウスでなぞって、四角く囲んでください。囲み直すと、選びなおせます。</p>
+    <div class="board mt"><canvas id="cutCv" width="320" height="270" role="img" aria-label="切り出す範囲を選ぶ画像" style="touch-action:none;cursor:crosshair"></canvas></div>
+    <div class="chips tgtchips t2" role="radiogroup" aria-label="切り出した画像の行き先">
+      <label class="chip"><input type="radio" name="cutTo" id="cutToDog" value="dog"><span>メイン画像に追加</span></label>
+      <label class="chip"><input type="radio" name="cutTo" id="cutToText" value="text" checked><span>文字画像に追加</span></label>
+    </div>
+    <label class="check" for="cutErase"><input type="checkbox" id="cutErase" checked><span>元の画像からは、その範囲を消す</span></label>
+    <div class="stage-bar"><button type="button" class="btn primary" id="cutDo" disabled>この範囲を切り出す</button></div>
+    <p class="note" id="cutMsg" role="status" aria-live="polite"></p>
+  </div>
+</div>
 <div class="win" id="checkWin" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
   <div class="win-card">
     <div class="win-head">
@@ -2334,9 +2347,11 @@ function findTextCells(bg, W, H, opt) {
     return o;
   }
   // 追加した画像に複数のコマが並んでいたら、コマごとの画像に分ける。見つからなければ null(そのまま使う)。
-  function autoSplit(c, kind) {
+  function autoSplit(c, kind, opt) {
     try {
       const cfg = state.cfg[kind];
+      const imp = opt || (state.imp && state.imp[kind]) || { mode: 'auto' };
+      const grid = imp.mode === 'grid' && imp.cols * imp.rows >= 2;
       const W = c.width, H = c.height;
       const data = c.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, W, H).data;
       // 文字は、文字の中の囲まれた部分の背景色も消す
@@ -2346,7 +2361,11 @@ function findTextCells(bg, W, H, opt) {
       if (bgN < info.bg.length * 0.2) return null;
       const px = cleanPixels(data, W, H, info, cfg.tol);
       let cells, lab = null;
-      if (kind === 'dog') {
+      if (grid) {
+        // 列×行を指定: マスごとに1コマ。同じマスに入った文字などの離れた絵も、いっしょに1コマになる
+        const det = segmentCells(info.bg, W, H, { mode: 'grid', cols: imp.cols, rows: imp.rows });
+        cells = det.cells; lab = det.lab;
+      } else if (kind === 'dog') {
         // つながった絵のかたまりごとに分ける。マスの線では切らないので、少しはみ出していても犬の形のまま取り出せる
         const det = segmentCells(info.bg, W, H, { mode: 'auto' });
         cells = det.cells; lab = det.lab;
@@ -2374,7 +2393,10 @@ function findTextCells(bg, W, H, opt) {
         const cc = document.createElement('canvas');
         cc.width = r.w; cc.height = r.h;
         cc.getContext('2d').putImageData(im, 0, 0);
-        return shrink(cc, 1024);
+        const out = shrink(cc, 1024);
+        // 元のシートの中での位置を覚えておく(あとで「まとめる」ときに使う)
+        out.geo = { x: r.x, y: r.y, sc: out.width / r.w };
+        return out;
       });
     } catch (e) { return null; }
   }
@@ -2397,13 +2419,14 @@ function findTextCells(bg, W, H, opt) {
       const pieces = parts ? parts.slice(0, room) : [shrink(big, 1024)];
       const from = parts ? ++sheetSeq : -1;
       const first = list.length;
-      pieces.forEach((pc) => list.push(kind === 'dog' ? newDog(pc, { from }) : newPiece(pc, { from })));
+      pieces.forEach((pc) => list.push(kind === 'dog' ? newDog(pc, { from, geo: pc.geo }) : newPiece(pc, { from, geo: pc.geo })));
       const msg = parts
         ? parts.length + '個のコマを自動で見つけて、' + pieces.length + '個の' + label + 'に切り出しました。'
           + (parts.length > pieces.length ? '上限の' + MAX_ITEMS + '個に収まる分だけ追加しました。' : '')
+          + ((state.imp[kind] && state.imp[kind].mode === 'grid') ? '(列×行を指定して切り出しました)' : '文字が離れたり、うまく分かれなかったときは、一覧の下の「切り出しの直し方」を使ってください。')
           + '1枚のまま使いたいときは、「画像全体を取り込む」で追加し直してください。'
         : whole ? '画像全体を、切り出さずに1枚の' + label + 'として取り込みました。'
-          : '1枚の' + label + 'として追加しました(複数のコマは見つかりませんでした)。';
+          : '1枚の' + label + 'として追加しました(複数のコマは見つかりませんでした)。うまく分けたいときは、一覧の下の「切り出しの直し方」で、列×行に分けられます。';
       if (kind === 'dog') {
         useItem(first);
       } else {
@@ -3510,6 +3533,236 @@ function findTextCells(bg, W, H, opt) {
     winReplay();
   }));
 
+
+  // ---- 切り出しの直し方(文字が離れた・分かれない・全部1枚になった) ----
+  // ・取り込むときの切り出し方(自動 / 列×行を指定)  ・選んでいる画像を列×行に分ける  ・前後の画像をまとめる  ・範囲を選んで切り出す
+  state.imp = { dog: { mode: 'auto', cols: 4, rows: 4 }, text: { mode: 'auto', cols: 2, rows: 2 } };
+  const KL = { dog: 'メイン画像', text: '文字画像' };
+  const listOf = (k) => (k === 'dog' ? state.items : state.texts);
+  const selOf = (k) => (k === 'dog' ? state.sel : state.tsel);
+  const nval = (id, d, lo, hi) => { const v = Math.round(Number($(id).value)); return Number.isFinite(v) ? Math.max(lo, Math.min(hi, v)) : d; };
+  let fixSnap = null;
+  function snapAll() {
+    return {
+      items: state.items.slice(), texts: state.texts.slice(), sel: state.sel, tsel: state.tsel,
+      fs: state.items.concat(state.texts).map((f) => {
+        const o = { f, canvas: f.canvas, orig: f.orig, thumb: f.thumb, geo: f.geo };
+        if ('text' in f) o.text = f.text;
+        return o;
+      })
+    };
+  }
+  function syncFixUndo() { ['dog', 'text'].forEach((k) => { const b = $(k + 'FixUndo'); if (b) b.disabled = !fixSnap; }); }
+  function fixMsg(kind, t) { $(kind + 'FixMsg').textContent = t; }
+  function afterFix(kind, idx) {
+    state.ver++;
+    if (kind === 'dog') {
+      if (state.items.length) useItem(Math.max(0, Math.min(idx, state.items.length - 1))); else showNone();
+      renderTexts();
+    } else {
+      state.tsel = Math.max(-1, Math.min(idx, state.texts.length - 1));
+      renderTexts(); renderStrip(); syncPanel(); applyChange(false);
+    }
+    syncFixUndo();
+  }
+  function fixUndo(kind) {
+    if (!fixSnap) return;
+    const s = fixSnap; fixSnap = null;
+    s.fs.forEach((o) => {
+      o.f.canvas = o.canvas; o.f.orig = o.orig; o.f.thumb = o.thumb; o.f.geo = o.geo;
+      if ('text' in o) o.f.text = o.text;
+    });
+    state.items = s.items; state.texts = s.texts;
+    state.sel = s.sel; state.tsel = s.tsel;
+    state.ver++;
+    if (state.items.length) useItem(Math.max(0, Math.min(state.sel, state.items.length - 1))); else showNone();
+    renderTexts();
+    syncFixUndo();
+    fixMsg(kind, 'ひとつ前の状態に戻しました。');
+  }
+  // 選んでいる画像を、列×行に分ける
+  function fixSplit(kind) {
+    const list = listOf(kind), i = selOf(kind), f = list[i];
+    if (!f) { fixMsg(kind, 'まず、分けたい画像を、一覧から選んでください。'); return; }
+    const cols = nval(kind + 'FixCols', 2, 1, 12), rows = nval(kind + 'FixRows', 2, 1, 12);
+    if (cols * rows < 2) { fixMsg(kind, '列と行を、合わせて2マス以上にしてください。'); return; }
+    const parts = autoSplit(f.canvas, kind, { mode: 'grid', cols, rows });
+    if (!parts) { fixMsg(kind, 'この画像は、' + cols + '列×' + rows + '行では分けられませんでした(中身が見つからないか、マスが1つだけです)。列と行を変えて試してください。'); return; }
+    if (list.length - 1 + parts.length > MAX_ITEMS) { fixMsg(kind, '分けると' + MAX_ITEMS + '個を超えるため、分けられません。不要な画像を削除してください。'); return; }
+    fixSnap = snapAll();
+    const from = ++sheetSeq;
+    const made = parts.map((pc) => (kind === 'dog' ? newDog(pc, { from, geo: pc.geo }) : newPiece(pc, { from, geo: pc.geo })));
+    list.splice(i, 1, ...made);
+    if (kind === 'text') state.items.forEach((it) => { if (it.text === f) it.text = made[0]; });
+    fixMsg(kind, i + 1 + '番を、' + made.length + '個に分けました(' + cols + '列×' + rows + '行)。間違えたときは「ひとつ前に戻す」を押してください。');
+    afterFix(kind, i);
+  }
+  // 選んでいる画像と、前(dir=-1)または次(dir=1)の画像を、元のシートでの位置どおりに1枚にまとめる
+  function fixMerge(kind, dir) {
+    const list = listOf(kind), i = selOf(kind), f = list[i], j = i + dir, g2 = list[j];
+    if (!f) { fixMsg(kind, 'まず、まとめたい画像を、一覧から選んでください。'); return; }
+    if (!g2) { fixMsg(kind, dir < 0 ? '前に、まとめる相手の画像がありません。' : '次に、まとめる相手の画像がありません。'); return; }
+    if (!f.geo || !g2.geo || !(f.from > 0) || f.from !== g2.from) {
+      fixMsg(kind, 'この2枚は、同じシートから切り出したものではないため、元の位置が分からず、まとめられません。「範囲を選んで切り出す」か、取り込み直しで直してください。');
+      return;
+    }
+    const bx = (p) => ({ x: p.geo.x, y: p.geo.y, w: p.canvas.width / p.geo.sc, h: p.canvas.height / p.geo.sc });
+    const A = bx(f), B = bx(g2);
+    const x0 = Math.min(A.x, B.x), y0 = Math.min(A.y, B.y), x1 = Math.max(A.x + A.w, B.x + B.w), y1 = Math.max(A.y + A.h, B.y + B.h);
+    const w = x1 - x0, h = y1 - y0, sc = Math.min(1, 1024 / Math.max(w, h));
+    fixSnap = snapAll();
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc));
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    [[A, f], [B, g2]].forEach(([b, p]) => g.drawImage(p.canvas, (b.x - x0) * sc, (b.y - y0) * sc, b.w * sc, b.h * sc));
+    f.canvas = c; f.orig = null; f.thumb = makeThumb(c, kind === 'text' ? 160 : 128); f.geo = { x: x0, y: y0, sc };
+    if (kind === 'dog') { if (!f.text && g2.text) f.text = g2.text; }
+    else state.items.forEach((it) => { if (it.text === g2) it.text = f; });
+    list.splice(j, 1);
+    fixMsg(kind, '2枚を1枚にまとめました。間違えたときは「ひとつ前に戻す」を押してください。');
+    afterFix(kind, j < i ? i - 1 : i);
+  }
+
+  // 範囲を選んで切り出す
+  const cutS = { kind: 'dog', rect: null, drag: null };
+  const cutSrc = () => listOf(cutS.kind)[selOf(cutS.kind)] || null;
+  function cutDraw() {
+    const f = cutSrc(), cv2 = $('cutCv'), g = cv2.getContext('2d');
+    if (!f) return;
+    if (cv2.width !== f.canvas.width || cv2.height !== f.canvas.height) { cv2.width = f.canvas.width; cv2.height = f.canvas.height; }
+    g.clearRect(0, 0, cv2.width, cv2.height);
+    g.drawImage(f.canvas, 0, 0);
+    const r = cutS.rect;
+    if (r) {
+      const lw = Math.max(2, cv2.width / 180);
+      g.save();
+      g.fillStyle = 'rgba(40,120,200,0.18)'; g.fillRect(r.x, r.y, r.w, r.h);
+      g.lineWidth = lw; g.strokeStyle = '#1f6fd0'; g.setLineDash([lw * 3, lw * 2]); g.strokeRect(r.x, r.y, r.w, r.h);
+      g.restore();
+    }
+    $('cutDo').disabled = !(r && r.w >= 4 && r.h >= 4);
+  }
+  function openCut(kind) {
+    cutS.kind = kind;
+    const f = cutSrc();
+    if (!f) { fixMsg(kind, 'まず、切り出したい画像を、一覧から選んでください。'); return; }
+    cutS.rect = null; cutS.drag = null;
+    $('cutMsg').textContent = '';
+    $('cutTitle').textContent = '範囲を選んで切り出す(' + KL[kind] + ' ' + (selOf(kind) + 1) + '番)';
+    $(kind === 'dog' ? 'cutToText' : 'cutToDog').checked = true;
+    $('cutErase').checked = true;
+    $('cutWin').hidden = false;
+    cutDraw();
+    $('cutClose').focus();
+  }
+  function closeCut() { $('cutWin').hidden = true; cutS.drag = null; }
+  function cutPoint(e) {
+    const cv2 = $('cutCv'), b = cv2.getBoundingClientRect();
+    return { x: Math.max(0, Math.min(cv2.width, ((e.clientX - b.left) / b.width) * cv2.width)), y: Math.max(0, Math.min(cv2.height, ((e.clientY - b.top) / b.height) * cv2.height)) };
+  }
+  $('cutCv').addEventListener('pointerdown', (e) => {
+    if (!cutSrc()) return;
+    const p = cutPoint(e);
+    cutS.drag = { x: p.x, y: p.y, id: e.pointerId };
+    cutS.rect = { x: p.x, y: p.y, w: 0, h: 0 };
+    try { $('cutCv').setPointerCapture(e.pointerId); } catch (err) { /* 対応していない環境 */ }
+    cutDraw();
+    e.preventDefault();
+  });
+  $('cutCv').addEventListener('pointermove', (e) => {
+    const d = cutS.drag;
+    if (!d || d.id !== e.pointerId) return;
+    const p = cutPoint(e);
+    cutS.rect = { x: Math.min(d.x, p.x), y: Math.min(d.y, p.y), w: Math.abs(p.x - d.x), h: Math.abs(p.y - d.y) };
+    cutDraw();
+  });
+  const cutEnd = (e) => { if (cutS.drag && cutS.drag.id === e.pointerId) { cutS.drag = null; cutDraw(); } };
+  $('cutCv').addEventListener('pointerup', cutEnd);
+  $('cutCv').addEventListener('pointercancel', cutEnd);
+  function cutDo() {
+    const kind = cutS.kind, f = cutSrc(), r = cutS.rect;
+    if (!f || !r || r.w < 4 || r.h < 4) return;
+    const dest = $('cutToDog').checked ? 'dog' : 'text';
+    const dl = listOf(dest);
+    if (dl.length >= MAX_ITEMS) { $('cutMsg').textContent = MAX_ITEMS + '個に達しているため、追加できません。不要な画像を削除してください。'; return; }
+    const rx = Math.max(0, Math.round(r.x)), ry = Math.max(0, Math.round(r.y));
+    const rw = Math.min(f.canvas.width - rx, Math.round(r.w)), rh = Math.min(f.canvas.height - ry, Math.round(r.h));
+    const c = document.createElement('canvas');
+    c.width = rw; c.height = rh;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(f.canvas, rx, ry, rw, rh, 0, 0, rw, rh);
+    const d = g.getImageData(0, 0, rw, rh).data;
+    let x0 = rw, y0 = rh, x1 = -1, y1 = -1;
+    for (let y = 0; y < rh; y++) for (let x = 0; x < rw; x++) if (d[(y * rw + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    if (x1 < 0) { $('cutMsg').textContent = '選んだ範囲には、何も入っていません。囲み直してください。'; return; }
+    const tc = document.createElement('canvas');
+    tc.width = x1 - x0 + 1; tc.height = y1 - y0 + 1;
+    tc.getContext('2d').drawImage(c, x0, y0, tc.width, tc.height, 0, 0, tc.width, tc.height);
+    const piece = shrink(tc, 1024);
+    fixSnap = snapAll();
+    const made = dest === 'dog' ? newDog(piece, { from: -1 }) : newPiece(piece, { from: -1 });
+    let at;
+    if (dest === kind) { at = selOf(kind) + 1; dl.splice(at, 0, made); } else { at = dl.length; dl.push(made); }
+    if ($('cutErase').checked) {
+      const nc = copyCanvas(f.canvas);
+      nc.getContext('2d').clearRect(rx, ry, rw, rh);
+      if (!f.orig) f.orig = f.canvas;
+      f.canvas = nc; f.thumb = makeThumb(nc, kind === 'text' ? 160 : 128);
+    }
+    cutS.rect = null;
+    state.ver++;
+    if (dest === 'dog') { renderStrip(); if (state.sel < 0) useItem(0); } else { state.tsel = at; renderTexts(); }
+    if (kind === 'dog' || dest === 'dog') renderStrip();
+    if (kind === 'text' || dest === 'text') renderTexts();
+    syncPanel(); applyChange(false); syncFixUndo();
+    cutDraw();
+    $('cutMsg').textContent = KL[dest] + 'の' + (at + 1) + '番として追加しました。' + ($('cutErase').checked ? '元の画像からは、その範囲を消しました。' : '') + '続けて、別の範囲も切り出せます。間違えたときは、閉じて「ひとつ前に戻す」を押してください。';
+    fixMsg(kind, KL[dest] + 'の' + (at + 1) + '番に、切り出しを追加しました。');
+  }
+  $('cutClose').addEventListener('click', closeCut);
+  $('cutDo').addEventListener('click', cutDo);
+  $('cutWin').addEventListener('click', (e) => { if (e.target === $('cutWin')) closeCut(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('cutWin').hidden) closeCut(); });
+
+  function buildFix(kind, host) {
+    const p = kind, L = KL[kind];
+    host.innerHTML =
+      '<details class="fixbox"><summary>切り出しの直し方</summary>' +
+      '<p class="note">文字が' + L + 'から離れて別々に切り出されたり、1つも切り出せなかったり、全部が1枚になったときに使います。</p>' +
+      '<p class="sub">1. 取り込むときの切り出し方(次に「画像を追加」するとき)</p>' +
+      '<div class="field"><label for="' + p + 'ImpMode">切り出し方</label><select id="' + p + 'ImpMode"><option value="auto">自動(つながった絵ごと)</option><option value="grid">列×行を指定(マスの中の文字もいっしょに1個)</option></select></div>' +
+      '<div class="pair"><div><label for="' + p + 'ImpCols">列(横のマス数)</label><input type="number" id="' + p + 'ImpCols" min="1" max="12" step="1" value="' + state.imp[kind].cols + '" inputmode="numeric" disabled></div>' +
+      '<div><label for="' + p + 'ImpRows">行(縦のマス数)</label><input type="number" id="' + p + 'ImpRows" min="1" max="12" step="1" value="' + state.imp[kind].rows + '" inputmode="numeric" disabled></div></div>' +
+      '<p class="fine">シートが4列×4行なら、4と4を入れます。マスの中で文字と絵が離れていても、1個にまとまります。</p>' +
+      '<p class="sub">2. 取り込んだあとの直し(いま選んでいる画像に効きます)</p>' +
+      '<div class="pair"><div><label for="' + p + 'FixCols">列</label><input type="number" id="' + p + 'FixCols" min="1" max="12" step="1" value="2" inputmode="numeric"></div>' +
+      '<div><label for="' + p + 'FixRows">行</label><input type="number" id="' + p + 'FixRows" min="1" max="12" step="1" value="2" inputmode="numeric"></div></div>' +
+      '<div class="fixbtns"><button type="button" class="btn" id="' + p + 'FixSplit">選んでいる画像を、列×行に分ける</button></div>' +
+      '<div class="fixbtns"><button type="button" class="btn" id="' + p + 'FixMergePrev">前の画像とまとめる</button><button type="button" class="btn" id="' + p + 'FixMergeNext">次の画像とまとめる</button></div>' +
+      '<div class="fixbtns"><button type="button" class="btn" id="' + p + 'FixCut">範囲を選んで切り出す</button><button type="button" class="btn" id="' + p + 'FixUndo" disabled>ひとつ前に戻す</button></div>' +
+      '<p class="note" id="' + p + 'FixMsg" role="status" aria-live="polite"></p>' +
+      '<p class="fine">「まとめる」は、同じシートから切り出した、隣り合う画像どうしで使えます(文字だけ・絵だけに分かれてしまったとき)。「範囲を選んで切り出す」では、囲んだ所を、メイン画像か文字画像として追加できます。</p>' +
+      '</details>';
+    const mode = $(p + 'ImpMode'), cols = $(p + 'ImpCols'), rows = $(p + 'ImpRows');
+    const apply = () => {
+      state.imp[kind].mode = mode.value;
+      state.imp[kind].cols = nval(p + 'ImpCols', state.imp[kind].cols, 1, 12);
+      state.imp[kind].rows = nval(p + 'ImpRows', state.imp[kind].rows, 1, 12);
+      cols.disabled = rows.disabled = mode.value !== 'grid';
+    };
+    mode.addEventListener('change', apply);
+    cols.addEventListener('change', apply); rows.addEventListener('change', apply);
+    cols.addEventListener('input', apply); rows.addEventListener('input', apply);
+    $(p + 'FixSplit').addEventListener('click', () => fixSplit(kind));
+    $(p + 'FixMergePrev').addEventListener('click', () => fixMerge(kind, -1));
+    $(p + 'FixMergeNext').addEventListener('click', () => fixMerge(kind, 1));
+    $(p + 'FixCut').addEventListener('click', () => openCut(kind));
+    $(p + 'FixUndo').addEventListener('click', () => fixUndo(kind));
+  }
+  buildFix('dog', $('fixDog'));
+  buildFix('text', $('fixText'));
+
   // ---- 起動 ----
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     state.playing = false;
@@ -3555,6 +3808,4 @@ function findTextCells(bg, W, H, opt) {
   document.getElementById('themeDark').addEventListener('click', function () { pick('dark'); });
 })();
 </script>
-
-</body>
-</html>
+</body></html>
