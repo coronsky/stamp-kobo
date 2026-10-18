@@ -3580,7 +3580,7 @@ function findTextCells(bg, W, H, opt) {
     return {
       items: state.items.slice(), texts: state.texts.slice(), sel: state.sel, tsel: state.tsel,
       fs: state.items.concat(state.texts).map((f) => {
-        const o = { f, canvas: f.canvas, orig: f.orig, thumb: f.thumb, geo: f.geo };
+        const o = { f, canvas: f.canvas, orig: f.orig, thumb: f.thumb, geo: f.geo, from: f.from, mg: f._merge ? f._merge.slice() : undefined };
         if ('text' in f) o.text = f.text;
         return o;
       })
@@ -3603,7 +3603,7 @@ function findTextCells(bg, W, H, opt) {
     if (!fixSnap) return;
     const s = fixSnap; fixSnap = null;
     s.fs.forEach((o) => {
-      o.f.canvas = o.canvas; o.f.orig = o.orig; o.f.thumb = o.thumb; o.f.geo = o.geo;
+      o.f.canvas = o.canvas; o.f.orig = o.orig; o.f.thumb = o.thumb; o.f.geo = o.geo; o.f.from = o.from; o.f._merge = o.mg;
       if ('text' in o) o.f.text = o.text;
     });
     state.items = s.items; state.texts = s.texts;
@@ -3631,6 +3631,53 @@ function findTextCells(bg, W, H, opt) {
     fixMsg(kind, i + 1 + '番を、' + made.length + '個に分けました(' + cols + '列×' + rows + '行)。間違えたときは「ひとつ前に戻す」を押してください。');
     afterFix(kind, i);
   }
+
+  // まとめる前の状態を覚えておく(あとで「元に戻す」で分けるため)
+  function recMerge(kind, keep, others) {
+    const rec = { snap: { canvas: keep.canvas, orig: keep.orig, thumb: keep.thumb, geo: keep.geo, from: keep.from, text: keep.text }, others: others.slice(), repoint: [] };
+    if (kind === 'text') state.items.forEach((it) => { if (others.indexOf(it.text) >= 0) rec.repoint.push([it, it.text]); });
+    (keep._merge = keep._merge || []).push(rec);
+  }
+  // まとめた画像を、まとめる前の画像に分けて戻す
+  function fixUnmerge(kind) {
+    const list = listOf(kind), i = selOf(kind), f = list[i];
+    if (!f) { fixMsg(kind, 'まず、元に戻したい(まとめた)画像を、一覧から選んでください。'); return; }
+    if (!f._merge || !f._merge.length) { fixMsg(kind, 'この画像は、まとめたものではないため、分けて戻せません。(まとめた直後なら「ひとつ前に戻す」でも戻せます)'); return; }
+    if (list.length - 1 + f._merge[f._merge.length - 1].others.length + 1 > MAX_ITEMS) { fixMsg(kind, '分けると' + MAX_ITEMS + '個を超えるため、戻せません。不要な画像を削除してください。'); return; }
+    fixSnap = snapAll();
+    const rec = f._merge.pop();
+    Object.assign(f, { canvas: rec.snap.canvas, orig: rec.snap.orig, thumb: rec.snap.thumb, geo: rec.snap.geo, from: rec.snap.from });
+    if (kind === 'dog') f.text = rec.snap.text;
+    rec.repoint.forEach(([it, old]) => { it.text = old; });
+    list.splice(i + 1, 0, ...rec.others);
+    fixMsg(kind, (1 + rec.others.length) + '枚に、元どおり分けました。間違えたときは「ひとつ前に戻す」を押してください。');
+    afterFix(kind, i);
+  }
+  // 選んでいる画像を、n個に複製する(元の画像は、そのまま残る)
+  function cloneOf(kind, f) {
+    const c = Object.assign({}, f, { id: ++uid, canvas: copyCanvas(f.canvas), orig: f.orig ? copyCanvas(f.orig) : null, _merge: undefined });
+    ['motion', 'tmotion', 'fx'].forEach((k) => { if (Array.isArray(f[k])) c[k] = f[k].slice(); });
+    return c;
+  }
+  function fixDup(kind, count, thenCut) {
+    const list = listOf(kind), i = selOf(kind), f = list[i];
+    if (!f) { fixMsg(kind, 'まず、複製したい画像を、一覧から選んでください。'); return null; }
+    const n = count == null ? nval(kind + 'DupN', 1, 1, 23) : count;
+    if (list.length + n > MAX_ITEMS) { fixMsg(kind, '複製すると' + MAX_ITEMS + '個を超えるため、複製できません。不要な画像を削除してください。'); return null; }
+    fixSnap = snapAll();
+    const made = [];
+    for (let k = 0; k < n; k++) made.push(cloneOf(kind, f));
+    list.splice(i + 1, 0, ...made);
+    fixMsg(kind, i + 1 + '番を、' + n + '個複製しました(' + (i + 2) + '番〜' + (i + 1 + n) + '番)。複製したものを選んで、「範囲を選んで切り出す」で、必要な部分だけ残せます。間違えたときは「ひとつ前に戻す」を押してください。');
+    afterFix(kind, thenCut ? i + 1 : i);
+    return made[0];
+  }
+  function dupThenCut(kind) {
+    if (!fixDup(kind, 1, true)) return;
+    openCut(kind);
+    $('cutErase').checked = true;
+    $('cutMsg').textContent = '複製した画像を開きました。必要な部分を囲んで、切り出してください(元の画像は、そのまま残っています)。';
+  }
   // 選んでいる画像と、前(dir=-1)または次(dir=1)の画像を、元のシートでの位置どおりに1枚にまとめる
   function fixMerge(kind, dir) {
     const list = listOf(kind), i = selOf(kind), f = list[i], j = i + dir, g2 = list[j];
@@ -3645,6 +3692,7 @@ function findTextCells(bg, W, H, opt) {
     const x0 = Math.min(A.x, B.x), y0 = Math.min(A.y, B.y), x1 = Math.max(A.x + A.w, B.x + B.w), y1 = Math.max(A.y + A.h, B.y + B.h);
     const w = x1 - x0, h = y1 - y0, sc = Math.min(1, 1024 / Math.max(w, h));
     fixSnap = snapAll();
+    recMerge(kind, f, [g2]);
     const c = document.createElement('canvas');
     c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc));
     const g = c.getContext('2d');
@@ -3801,6 +3849,7 @@ function findTextCells(bg, W, H, opt) {
     const x1 = Math.max(...boxes.map((b) => b.x + b.w)), y1 = Math.max(...boxes.map((b) => b.y + b.h));
     const w = x1 - x0, h = y1 - y0, sc = Math.min(1, 1024 / Math.max(w, h));
     fixSnap = snapAll();
+    recMerge(kind, keep, fs.slice(1));
     const c = document.createElement('canvas');
     c.width = Math.max(1, Math.round(w * sc)); c.height = Math.max(1, Math.round(h * sc));
     const g = c.getContext('2d');
@@ -3823,7 +3872,9 @@ function findTextCells(bg, W, H, opt) {
   function buildFix(kind, host) {
     const p = kind, L = KL[kind];
     host.innerHTML =
-      '<div class="pickbar"><div class="fixbtns"><button type="button" class="btn" id="' + p + 'PickStart">複数を選んで、1枚にまとめる</button><button type="button" class="btn primary" id="' + p + 'PickDo" hidden disabled>選んだ0枚を、1枚にまとめる</button><button type="button" class="btn" id="' + p + 'PickStop" hidden>やめる</button></div><p class="note" id="' + p + 'PickHint" role="status" aria-live="polite"></p></div>' +
+      '<div class="pickbar"><div class="fixbtns"><button type="button" class="btn" id="' + p + 'PickStart">複数を選んで、1枚にまとめる</button><button type="button" class="btn primary" id="' + p + 'PickDo" hidden disabled>選んだ0枚を、1枚にまとめる</button><button type="button" class="btn" id="' + p + 'PickStop" hidden>やめる</button></div>' +
+      '<div class="fixbtns"><button type="button" class="btn" id="' + p + 'Unmerge">まとめた画像を、元に戻す(分ける)</button></div>' +
+      '<div class="fixbtns dupbar"><label for="' + p + 'DupN">複製の数</label><input type="number" id="' + p + 'DupN" min="1" max="23" step="1" value="1" inputmode="numeric" style="width:4.5em"><button type="button" class="btn" id="' + p + 'Dup">選んでいる画像を、複製する</button><button type="button" class="btn" id="' + p + 'DupCut">複製して、範囲を切り出す</button></div><p class="note" id="' + p + 'PickHint" role="status" aria-live="polite"></p></div>' +
       '<details class="fixbox"><summary>切り出しの直し方</summary>' +
       '<p class="note">文字が' + L + 'から離れて別々に切り出されたり、1つも切り出せなかったり、全部が1枚になったときに使います。</p>' +
       '<p class="sub">1. 取り込むときの切り出し方(次に「画像を追加」するとき)</p>' +
@@ -3838,7 +3889,7 @@ function findTextCells(bg, W, H, opt) {
       '<div class="fixbtns"><button type="button" class="btn" id="' + p + 'FixMergePrev">前の画像とまとめる</button><button type="button" class="btn" id="' + p + 'FixMergeNext">次の画像とまとめる</button></div>' +
       '<div class="fixbtns"><button type="button" class="btn" id="' + p + 'FixCut">範囲を選んで切り出す</button><button type="button" class="btn" id="' + p + 'FixUndo" disabled>ひとつ前に戻す</button></div>' +
       '<p class="note" id="' + p + 'FixMsg" role="status" aria-live="polite"></p>' +
-      '<p class="fine">「まとめる」は、同じシートから切り出した、隣り合う画像どうしで使えます(文字だけ・絵だけに分かれてしまったとき)。「範囲を選んで切り出す」では、囲んだ所を、メイン画像か文字画像として追加できます。</p>' +
+      '<p class="fine">「まとめる」は、同じシートから切り出した、隣り合う画像どうしで使えます(文字だけ・絵だけに分かれてしまったとき)。「範囲を選んで切り出す」では、囲んだ所を、メイン画像か文字画像として追加できます。縦一列・横一列のまま分けられなかったときは、「複製の数」を入れて複製し、複製したものを1つずつ「範囲を選んで切り出す」で必要な所だけ残してください。</p>' +
       '</details>';
     const mode = $(p + 'ImpMode'), cols = $(p + 'ImpCols'), rows = $(p + 'ImpRows');
     const apply = () => {
@@ -3858,6 +3909,9 @@ function findTextCells(bg, W, H, opt) {
     $(p + 'PickStart').addEventListener('click', () => pickStart(kind));
     $(p + 'PickStop').addEventListener('click', () => pickStop(kind));
     $(p + 'PickDo').addEventListener('click', () => fixMergeSet(kind));
+    $(p + 'Unmerge').addEventListener('click', () => { fixUnmerge(kind); $(p + 'PickHint').textContent = $(p + 'FixMsg').textContent; });
+    $(p + 'Dup').addEventListener('click', () => { fixDup(kind, null, false); $(p + 'PickHint').textContent = $(p + 'FixMsg').textContent; });
+    $(p + 'DupCut').addEventListener('click', () => dupThenCut(kind));
   }
   buildFix('dog', $('fixDog'));
   buildFix('text', $('fixText'));
