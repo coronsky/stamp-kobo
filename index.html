@@ -303,6 +303,7 @@ details[open] > summary { margin-bottom: 6px; }
 .legend { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; display: grid; gap: 4px; }
 .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
 
+.szbtns .btn { padding-inline: 4px; font-size: 14px; }
 .jump { display: none; }
 @media (max-width: 859px) { .jump { display: flex; } }
 .thumb.dropok { outline: 2px dashed var(--accent); }
@@ -499,6 +500,28 @@ select, input[type=number] { border-color: var(--line-strong); }
         <button type="button" class="btn mt" id="dogReset">メイン画像の位置・大きさ・回転をもとに戻す</button>
         <button type="button" class="btn mt" id="dogFit">はみ出した分を枠の中に戻す</button>
         <p class="note" id="dogFitMsg" role="status" aria-live="polite">メイン画像が枠の外にはみ出して切れているとき、位置(必要なら大きさ)を直して、全体が枠に収まるようにします。</p>
+        <p class="sub">大きさ・位置を、ボタン1つで</p>
+        <p class="note">メイン画像を、枠の中で「センター」「拡大」「最大」「少し小さめ」にします。透明な余白は数えず、絵そのものの大きさで合わせます。</p>
+        <div class="chips tgtchips t2" role="radiogroup" aria-label="どれに使うか">
+          <label class="chip"><input type="radio" name="szScope" value="one" checked><span>この1個だけ</span></label>
+          <label class="chip"><input type="radio" name="szScope" value="all"><span>登録している全部</span></label>
+        </div>
+        <div class="field">
+          <label for="szFrame">合わせる枠</label>
+          <select id="szFrame">
+            <option value="cur">いまのプレビューの枠(アニメスタンプ)</option>
+            <option value="still">通常スタンプの枠(370×320)</option>
+            <option value="emoji">絵文字の枠(180×180)</option>
+          </select>
+        </div>
+        <div class="chips tgtchips t4 szbtns" role="group" aria-label="大きさ・位置">
+          <button type="button" class="btn" id="szCenter">センター</button>
+          <button type="button" class="btn" id="szGrow">拡大</button>
+          <button type="button" class="btn" id="szMax">最大</button>
+          <button type="button" class="btn" id="szSmall">少し小さめ</button>
+        </div>
+        <div class="stage-bar"><button type="button" class="btn" id="szUndo" disabled>ひとつ前に戻す</button></div>
+        <p class="note" id="szMsg" role="status" aria-live="polite"></p>
         <p class="sub">動き</p>
         <p class="note">いくつか選ぶと、動きが組み合わさります。「とめる」を押すと全部はずれます。</p>
         <div class="chips" id="chips" role="group" aria-label="メイン画像の動き"></div>
@@ -3896,6 +3919,99 @@ function findTextCells(bg, W, H, opt) {
     chat.frame = r.worst; chat.last = -1;
   });
 
+
+  // ---- 大きさ・位置を、ボタン1つで(センター / 拡大 / 最大 / 少し小さめ) ----
+  const bboxCache = new WeakMap();
+  // 絵の透明でない部分の外枠(canvas の画素)。足りない余白は数えない
+  function opaqueBox(cv) {
+    let b = bboxCache.get(cv);
+    if (b && b.w === cv.width && b.h === cv.height) return b;
+    const w = cv.width, h = cv.height;
+    const d = cv.getContext('2d', { willReadFrequently: true }).getImageData(0, 0, w, h).data;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) if (d[(y * w + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    b = x1 < 0 ? { w, h, x0: 0, y0: 0, x1: w - 1, y1: h - 1 } : { w, h, x0, y0, x1, y1 };
+    bboxCache.set(cv, b);
+    return b;
+  }
+  function szFrameSize() {
+    const v = $('szFrame').value;
+    return v === 'emoji' ? { W: 180, H: 180 } : v === 'still' ? { W: 370, H: 320 } : dims();
+  }
+  // 絵の外枠が、いまの設定で枠のどこに来るか(中心と、回転後の大きさ)
+  function szGeom(it, scale, W, H) {
+    const ob = opaqueBox(it.canvas), cv = it.canvas;
+    const pl = dogPl(W, H, Object.assign({}, it, { dscale: scale }));
+    const sc = pl.dw / cv.width, th = pl.rot, co = Math.cos(th), si = Math.sin(th);
+    const ox = ((ob.x0 + ob.x1 + 1) / 2 - cv.width / 2) * sc, oy = ((ob.y0 + ob.y1 + 1) / 2 - cv.height / 2) * sc;
+    const bw = (ob.x1 - ob.x0 + 1) * sc, bh = (ob.y1 - ob.y0 + 1) * sc;
+    return {
+      off: { x: ox * co - oy * si, y: ox * si + oy * co },
+      bw: bw * Math.abs(co) + bh * Math.abs(si), bh: bw * Math.abs(si) + bh * Math.abs(co), pl
+    };
+  }
+  const SZ_MARGIN = 0.03, SZ_MAX = 250, SZ_MIN = 20;
+  function szMaxScale(it, W, H) {
+    const g = szGeom(it, it.dscale, W, H);
+    const k = Math.min((W * (1 - 2 * SZ_MARGIN)) / g.bw, (H * (1 - 2 * SZ_MARGIN)) / g.bh);
+    return clamp(it.dscale * k, SZ_MIN, SZ_MAX);
+  }
+  // mode: center / grow / max / small
+  function szCompute(it, mode, W, H) {
+    const cur0 = szGeom(it, it.dscale, W, H);
+    // いまの、絵の外枠の中心(枠の中の位置)
+    const bc = { x: cur0.pl.cx + cur0.off.x, y: cur0.pl.cy + cur0.off.y };
+    let scale = it.dscale, target = bc;
+    if (mode === 'center') target = { x: W / 2, y: H / 2 };
+    else if (mode === 'max') { scale = szMaxScale(it, W, H); target = { x: W / 2, y: H / 2 }; }
+    else if (mode === 'grow') scale = Math.min(it.dscale * 1.15, Math.max(it.dscale, szMaxScale(it, W, H)));
+    else if (mode === 'small') scale = Math.max(SZ_MIN, it.dscale * 0.85);
+    const g = szGeom(it, scale, W, H);
+    // 絵の外枠の中心を target に合わせて、絵(canvas)の中心を求める
+    let cx = target.x - g.off.x, cy = target.y - g.off.y;
+    if (mode === 'grow' && g.bw <= W && g.bh <= H) {
+      // 拡大して枠の外に出ないよう、中へ寄せる
+      const bx = cx + g.off.x, by = cy + g.off.y;
+      const nx = clamp(bx, g.bw / 2, W - g.bw / 2), ny = clamp(by, g.bh / 2, H - g.bh / 2);
+      cx += nx - bx; cy += ny - by;
+    }
+    return { dscale: Math.round(scale * 100) / 100, dx: (cx / W) * 100, dy: (cy / H) * 100 };
+  }
+  let szSnap = null;
+  const SZ_LABEL = { center: 'センター', grow: '拡大', max: '最大', small: '少し小さめ' };
+  function szApply(mode) {
+    const msg = $('szMsg');
+    if (!state.items.length) { msg.textContent = '先に画像を追加してください。'; return; }
+    const all = document.querySelector('input[name="szScope"]:checked').value === 'all';
+    const targets = all ? state.items.slice() : [cur()].filter(Boolean);
+    if (!targets.length) { msg.textContent = '先にスタンプを選んでください。'; return; }
+    const { W, H } = szFrameSize();
+    szSnap = state.items.map((it) => ({ it, dscale: it.dscale, dx: it.dx, dy: it.dy }));
+    let n = 0;
+    targets.forEach((it) => {
+      const r = szCompute(it, mode, W, H);
+      if (Math.abs(r.dscale - it.dscale) > 0.005 || Math.abs(r.dx - it.dx) > 0.005 || Math.abs(r.dy - it.dy) > 0.005) n++;
+      Object.assign(it, r);
+    });
+    state.ver++;
+    renderStrip();
+    applyChange(false);
+    syncPanel();
+    $('szUndo').disabled = false;
+    msg.textContent = (all ? '登録している' + targets.length + '個のうち、' + n + '個' : (state.items.indexOf(targets[0]) + 1) + '番') + 'を「' + SZ_LABEL[mode] + '」にしました。' +
+      (mode === 'max' ? '(枠の約' + Math.round((1 - 2 * SZ_MARGIN) * 100) + '%まで大きくしています。他の枠では切れることがあるので、「トーク画面で確認」のはみ出しチェックも見てください)' : '') + '間違えたときは「ひとつ前に戻す」を押してください。';
+  }
+  function szUndo() {
+    if (!szSnap) return;
+    szSnap.forEach((o) => { if (state.items.indexOf(o.it) >= 0) { o.it.dscale = o.dscale; o.it.dx = o.dx; o.it.dy = o.dy; } });
+    szSnap = null;
+    state.ver++;
+    renderStrip(); applyChange(false); syncPanel();
+    $('szUndo').disabled = true;
+    $('szMsg').textContent = 'ひとつ前の大きさ・位置に戻しました。';
+  }
+  [['szCenter', 'center'], ['szGrow', 'grow'], ['szMax', 'max'], ['szSmall', 'small']].forEach(([id, m]) => $(id).addEventListener('click', () => szApply(m)));
+  $('szUndo').addEventListener('click', szUndo);
 
   // ---- 切り出しの直し方(文字が離れた・分かれない・全部1枚になった) ----
   // ・取り込むときの切り出し方(自動 / 列×行を指定)  ・選んでいる画像を列×行に分ける  ・前後の画像をまとめる  ・範囲を選んで切り出す
