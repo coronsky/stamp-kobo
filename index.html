@@ -273,6 +273,36 @@ details[open] > summary { margin-bottom: 6px; }
 .win-bubble[hidden] { display: none; }
 .win-bubble canvas { width: 36px; height: 36px; }
 .win .strip { max-height: 160px; }
+.win-card.wide { max-width: 520px; }
+.chat { margin-top: 12px; border-radius: 14px; overflow: hidden; border: 1px solid var(--line); }
+.chat-in { padding: 12px 10px; display: flex; flex-direction: column; gap: 10px; min-height: 260px; box-sizing: border-box; }
+.chat-day { align-self: center; font-size: 11px; background: rgba(0,0,0,.28); color: #fff; padding: 2px 10px; border-radius: 10px; }
+.crow { display: flex; align-items: flex-end; gap: 6px; max-width: 100%; }
+.crow.r { justify-content: flex-end; }
+.cav { flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; background: #fff; align-self: flex-start; }
+.cav canvas { width: 100%; height: 100%; display: block; }
+.cbub { background: #fff; color: #1c1c1e; border-radius: 16px; padding: 8px 12px; font-size: 15px; line-height: 1.35; display: inline-flex; align-items: center; gap: 4px; max-width: 70%; }
+.cbub.me { background: #8de055; }
+.ctm { font-size: 10px; color: rgba(255,255,255,.85); white-space: nowrap; text-align: right; line-height: 1.2; }
+.chat.bg-white .ctm { color: #6a6a70; }
+.chat.bg-white .chat-day { background: rgba(0,0,0,.15); color: #333; }
+.chat.bg-dark .cbub:not(.me) { background: #2c2c2e; color: #f2f2f7; }
+.chatAnim { display: block; }
+.chatAnim.st { width: 150px; height: auto; }
+.chatAnim.em { height: 24px; width: 24px; }
+.chatAnim.emBig { height: 40px; width: 40px; }
+.chat-in[data-kind="sticker"] .only-em, .chat-in[data-kind="emoji"] .only-st { display: none; }
+.ctray { background: var(--surface); border-top: 1px solid var(--line); padding: 8px; display: flex; gap: 8px; align-items: center; overflow-x: auto; }
+.ctray .tabic { flex: 0 0 auto; border: 2px solid var(--accent); border-radius: 6px; padding: 2px; background: #fff; }
+.ctray .tabic canvas { width: 48px; height: 37px; display: block; }
+.ctray .tbtn { flex: 0 0 auto; width: 56px; height: 48px; padding: 0; border: 2px solid transparent; border-radius: 8px; background: #fff; cursor: pointer; }
+.ctray .tbtn.on { border-color: var(--accent); }
+.ctray .tbtn canvas { width: 100%; height: 100%; object-fit: contain; display: block; }
+.chkwrap { margin-top: 8px; border-radius: 10px; overflow: hidden; border: 1px solid var(--line); background: #d9dbe0; }
+.chkwrap canvas { display: block; width: 100%; height: auto; }
+.legend { list-style: none; margin: 8px 0 0; padding: 0; font-size: 13px; display: grid; gap: 4px; }
+.legend i { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+
 .jump { display: none; }
 @media (max-width: 859px) { .jump { display: flex; } }
 .thumb.dropok { outline: 2px dashed var(--accent); }
@@ -377,6 +407,7 @@ select, input[type=number] { border-color: var(--line-strong); }
         <button type="button" class="btn" id="rotL" aria-label="左に回す">↺ 回す</button>
         <button type="button" class="btn" id="rotR" aria-label="右に回す">↻ 回す</button>
         <button type="button" class="btn primary openWin">LINE風の動作確認</button>
+        <button type="button" class="btn primary openChat">トーク画面で確認(送る・受け取る・切れ目)</button>
       </div>
       <div class="stage-bar">
         <button type="button" class="btn" id="oneStickerBtn">この1個をスタンプ用APNGで保存</button>
@@ -656,6 +687,51 @@ select, input[type=number] { border-color: var(--line-strong); }
     <label class="check" for="cutErase"><input type="checkbox" id="cutErase" checked><span>元の画像からは、その範囲を消す</span></label>
     <div class="stage-bar"><button type="button" class="btn primary" id="cutDo" disabled>この範囲を切り出す</button></div>
     <p class="note" id="cutMsg" role="status" aria-live="polite"></p>
+  </div>
+</div>
+<div class="win" id="chatWin" hidden role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+  <div class="win-card wide">
+    <div class="win-head">
+      <h2 id="chatTitle">トーク画面で確認</h2>
+      <button type="button" class="btn" id="chatClose">閉じる</button>
+    </div>
+    <p class="fine">相手に送ったり、受け取ったりしたときのトーク画面のイメージです(見た目の大きさは目安です)。下には、枠からはみ出して切れる所のチェックがあります。</p>
+    <div class="chips tgtchips t2" role="radiogroup" aria-label="表示の種類">
+      <label class="chip"><input type="radio" name="chatkind" value="sticker" checked><span>スタンプ</span></label>
+      <label class="chip"><input type="radio" name="chatkind" value="emoji"><span>絵文字</span></label>
+    </div>
+    <div class="chips tgtchips" role="radiogroup" aria-label="背景">
+      <label class="chip"><input type="radio" name="chatbg" value="bg-white"><span>白</span></label>
+      <label class="chip"><input type="radio" name="chatbg" value="bg-talk" checked><span>トーク風</span></label>
+      <label class="chip"><input type="radio" name="chatbg" value="bg-dark"><span>暗い</span></label>
+    </div>
+    <div class="chat bg-talk" id="chatBox">
+      <div class="chat-in" id="chatIn" data-kind="sticker">
+        <div class="chat-day">今日</div>
+        <div class="crow l"><div class="cav"><canvas id="chatAv" width="240" height="240" aria-hidden="true"></canvas></div><div class="cbub">今日ひま？</div><span class="ctm">12:30</span></div>
+        <div class="crow r"><span class="ctm">既読<br>12:31</span><div class="cbub me">ひまだよ〜</div></div>
+        <div class="crow l only-st"><div class="cav"><canvas class="chatAv2" width="240" height="240" aria-hidden="true"></canvas></div><canvas class="chatAnim st" aria-label="受け取ったスタンプ"></canvas><span class="ctm">12:32</span></div>
+        <div class="crow r only-st"><span class="ctm">既読<br>12:33</span><canvas class="chatAnim st" aria-label="送ったスタンプ"></canvas></div>
+        <div class="crow l only-em"><div class="cav"><canvas class="chatAv2" width="240" height="240" aria-hidden="true"></canvas></div><div class="cbub">おはよう<canvas class="chatAnim em" aria-label="絵文字"></canvas></div><span class="ctm">12:32</span></div>
+        <div class="crow r only-em"><span class="ctm">既読<br>12:33</span><div class="cbub me">OK<canvas class="chatAnim em" aria-label="絵文字"></canvas><canvas class="chatAnim em" aria-label="絵文字"></canvas></div></div>
+        <div class="crow l only-em"><div class="cav"><canvas class="chatAv2" width="240" height="240" aria-hidden="true"></canvas></div><div class="cbub">拡大<canvas class="chatAnim emBig" aria-label="絵文字を大きく"></canvas></div></div>
+      </div>
+      <div class="ctray" id="chatTray" role="listbox" aria-label="スタンプを選ぶ"></div>
+    </div>
+    <p class="fine" id="chatNote">スタンプのアイコン(丸い画像)は「メイン画像」、下の小さな枠は「タブ画像」(96×74)です。</p>
+    <p class="sub">はみ出しチェック(どこまで映る?どこが切れる?)</p>
+    <div class="chkwrap"><canvas id="chatCut" aria-label="枠からはみ出す部分のチェック"></canvas></div>
+    <p class="note" id="chatCutInfo" role="status" aria-live="polite"></p>
+    <ul class="legend">
+      <li><i style="background:#fff;border:2px solid #1f6fd0"></i>青い枠の中: LINEで映る範囲</li>
+      <li><i style="background:#e5484d"></i>赤い部分: 枠の外(LINEでは、切れて見えなくなる。枠の半分より外は、画面に出ません)</li>
+    </ul>
+    <label class="check" for="chatCutPlay"><input type="checkbox" id="chatCutPlay" checked><span>動かして見る(外すと、コマを選んで見られます)</span></label>
+    <div class="field">
+      <div class="field-head"><label for="chatCutFrame">コマ</label><output id="chatCutFrameOut" for="chatCutFrame"></output></div>
+      <input type="range" id="chatCutFrame" min="1" max="12" step="1" value="1" disabled>
+    </div>
+    <div class="stage-bar"><button type="button" class="btn" id="chatCutWorst">いちばん切れているコマを見る</button></div>
   </div>
 </div>
 <div class="win" id="checkWin" hidden role="dialog" aria-modal="true" aria-labelledby="winTitle">
@@ -3589,6 +3665,236 @@ function findTextCells(bg, W, H, opt) {
     $('winBubble').hidden = win.kind !== 'emoji';
     winReplay();
   }));
+
+
+  // ---- トーク画面で確認(送受信のイメージ + 枠からはみ出して切れる所のチェック) ----
+  const chat = { open: false, item: null, kind: 'sticker', start: 0, last: -1, raf: 0, opener: null, scan: null, frame: -1, B: null, T: null };
+  function chatSize() { return chat.kind === 'emoji' ? { W: 180, H: 180 } : dims(); }
+  function chatBigOff() {
+    const { W, H } = chatSize();
+    if (!chat.B) { chat.B = document.createElement('canvas'); chat.T = document.createElement('canvas'); }
+    [chat.B, chat.T].forEach((c) => { if (c.width !== 3 * W || c.height !== 3 * H) { c.width = 3 * W; c.height = 3 * H; } });
+    return { W, H, B: chat.B, T: chat.T };
+  }
+  // 枠(W×H)の外まで含めて1コマ描く(まわりに W/H ぶんの余白つき)
+  function chatDrawBig(i) {
+    const { W, H, B } = chatBigOff();
+    const g = B.getContext('2d', { willReadFrequently: true });
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, B.width, B.height);
+    g.save(); g.translate(W, H);
+    renderFrame(g, W, H, i, state.frames, chat.item, false);
+    g.restore();
+    return g;
+  }
+  function chatScan() {
+    const { W, H, B } = chatBigOff();
+    const N = state.frames, W3 = 3 * W;
+    const res = { W, H, N, frames: [], worst: -1, worstOut: 0, cutFrames: [] };
+    for (let i = 0; i < N; i++) {
+      const g = chatDrawBig(i);
+      const d = g.getImageData(0, 0, B.width, B.height).data;
+      const f = { inside: 0, out: 0, top: 0, bottom: 0, left: 0, right: 0 };
+      for (let y = 0; y < 3 * H; y++) {
+        const rowIn = y >= H && y < 2 * H;
+        const base = y * W3 * 4;
+        for (let x = 0; x < W3; x++) {
+          if (d[base + x * 4 + 3] <= 8) continue;
+          if (rowIn && x >= W && x < 2 * W) f.inside++;
+          else {
+            f.out++;
+            if (y < H) f.top++; else if (y >= 2 * H) f.bottom++; else if (x < W) f.left++; else f.right++;
+          }
+        }
+      }
+      res.frames.push(f);
+      if (f.out >= 20) res.cutFrames.push(i);
+      if (f.out > res.worstOut) { res.worstOut = f.out; res.worst = i; }
+    }
+    chat.scan = res;
+    return res;
+  }
+  function chatSummary() {
+    const r = chat.scan;
+    if (!r) return '';
+    const parts = [];
+    const f0 = r.frames[0];
+    parts.push(f0 && f0.inside > 0 ? '1コマ目: 枠の中に絵が映っています。' : '1コマ目: 枠の中が空です(LINEで「画像なし」のエラーになることがあります)。');
+    if (!r.cutFrames.length) {
+      parts.push('すべてのコマで、絵が枠の中に収まっています。切れる所はありません。');
+    } else {
+      const w = r.frames[r.worst], tot = w.inside + w.out;
+      const dirs = [['上', w.top], ['下', w.bottom], ['左', w.left], ['右', w.right]].filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).map((x) => x[0]).slice(0, 2).join('・');
+      const list = r.cutFrames.map((i) => i + 1).join('・');
+      parts.push(r.cutFrames.length + 'コマ(' + list + 'コマ目)で、絵の一部が枠の外に出て、切れて見えなくなります。いちばん多いのは' + (r.worst + 1) + 'コマ目(絵の約' + Math.round((w.out / Math.max(1, tot)) * 100) + '%、' + dirs + 'がわ)。');
+      parts.push('「スライドイン・アウト」などで、わざと枠の外へ出る動きなら、そのとおりで問題ありません。そうでないときは、位置・大きさ・動きの強さを小さくしてください。');
+    }
+    return parts.join(' ');
+  }
+  function chatDrawCut(i) {
+    const { W, H, B, T } = chatBigOff();
+    chatDrawBig(i);
+    const cv2 = $('chatCut');
+    // 枠のまわりに、枠の半分ぶんの余白を付けて見せる
+    const mx = Math.round(W / 2), my = Math.round(H / 2);
+    if (cv2.width !== 2 * W || cv2.height !== 2 * H) { cv2.width = 2 * W; cv2.height = 2 * H; }
+    const g = cv2.getContext('2d');
+    g.setTransform(1, 0, 0, 1, 0, 0);
+    g.clearRect(0, 0, cv2.width, cv2.height);
+    g.fillStyle = '#d9dbe0'; g.fillRect(0, 0, cv2.width, cv2.height);
+    g.fillStyle = '#ffffff'; g.fillRect(mx, my, W, H);
+    g.save(); g.translate(mx - W, my - H);
+    g.drawImage(B, 0, 0);
+    // 枠の外の部分だけを、赤い影にして重ねる
+    const tg = T.getContext('2d');
+    tg.globalCompositeOperation = 'source-over';
+    tg.clearRect(0, 0, T.width, T.height);
+    tg.drawImage(B, 0, 0);
+    tg.clearRect(W, H, W, H);
+    tg.globalCompositeOperation = 'source-in';
+    tg.fillStyle = '#e5484d';
+    tg.fillRect(0, 0, T.width, T.height);
+    g.globalAlpha = 0.62; g.drawImage(T, 0, 0); g.globalAlpha = 1;
+    g.restore();
+    // 枠
+    const lw = Math.max(2, Math.round(W / 120));
+    g.lineWidth = lw; g.strokeStyle = '#1f6fd0'; g.strokeRect(mx, my, W, H);
+    g.fillStyle = '#1f6fd0';
+    g.font = '600 ' + Math.max(12, Math.round(W / 16)) + 'px sans-serif';
+    g.textBaseline = 'bottom';
+    g.fillText('LINEで映る範囲(' + W + '×' + H + ')', mx + lw * 2, my - lw * 2);
+  }
+  function chatRenderAnim(idx) {
+    const { W, H } = chatSize();
+    const sel = chat.kind === 'emoji' ? '#chatIn .chatAnim.em, #chatIn .chatAnim.emBig' : '#chatIn .chatAnim.st';
+    document.querySelectorAll(sel).forEach((c) => {
+      if (c.width !== W) c.width = W;
+      if (c.height !== H) c.height = H;
+      renderFrame(c.getContext('2d'), W, H, idx, state.frames, chat.item, false);
+    });
+  }
+  function chatStillTo(c, item, W, H) {
+    if (c.width !== W) c.width = W;
+    if (c.height !== H) c.height = H;
+    renderFrame(c.getContext('2d'), W, H, 0, 1, item, true);
+  }
+  function chatIcons() {
+    const items = state.items;
+    const mainItem = items.find((it) => it.id === state.mainId) || items[0];
+    const tabItem = items.find((it) => it.id === state.tabId) || items[0];
+    // メイン画像(丸いアイコン)
+    const av = $('chatAv');
+    chatStillTo(av, mainItem, 240, 240);
+    document.querySelectorAll('#chatIn .chatAv2').forEach((c) => chatStillTo(c, mainItem, 240, 240));
+    return { mainItem, tabItem };
+  }
+  function chatTray() {
+    const tray = $('chatTray');
+    tray.innerHTML = '';
+    const { tabItem } = chatIcons();
+    const tab = document.createElement('div');
+    tab.className = 'tabic';
+    const tc = document.createElement('canvas');
+    tc.width = 96; tc.height = 74;
+    renderFrame(tc.getContext('2d'), 96, 74, 0, 1, tabItem, true);
+    tab.appendChild(tc);
+    tab.title = 'タブ画像(96×74)';
+    tray.appendChild(tab);
+    const { W, H } = chatSize();
+    state.items.forEach((it, i) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'tbtn' + (it === chat.item ? ' on' : '');
+      b.setAttribute('role', 'option');
+      b.setAttribute('aria-selected', it === chat.item ? 'true' : 'false');
+      b.setAttribute('aria-label', 'スタンプ' + (i + 1));
+      const c = document.createElement('canvas');
+      chatStillTo(c, it, W, H);
+      b.appendChild(c);
+      b.addEventListener('click', () => { chat.item = it; chatReset(); chatTray(); });
+      tray.appendChild(b);
+    });
+  }
+  function chatReset() {
+    chat.start = 0; chat.last = -1;
+    const r = chatScan();
+    const sl = $('chatCutFrame');
+    sl.max = String(Math.max(1, r.N));
+    if (Number(sl.value) > r.N) sl.value = String(r.N);
+    $('chatCutInfo').textContent = chatSummary();
+    $('chatCutWorst').disabled = r.worst < 0;
+    if (chat.frame >= r.N) chat.frame = r.N - 1;
+  }
+  function chatTick(ts) {
+    if (!chat.open) return;
+    chat.raf = requestAnimationFrame(chatTick);
+    if (!chat.start) chat.start = ts;
+    const dur = state.duration * 1000, total = dur * state.loops;
+    const el = ts - chat.start;
+    let idx = 0;
+    if (el < total) {
+      const t = el % dur;
+      let acc = 0;
+      const ds = frameDelays(state.frames, dur);
+      idx = ds.length - 1;
+      for (let i = 0; i < ds.length; i++) { acc += ds[i]; if (t < acc) { idx = i; break; } }
+    }
+    const cutIdx = chat.frame >= 0 ? chat.frame : idx;
+    const key = idx + ':' + cutIdx;
+    if (key !== chat.last) {
+      chat.last = key;
+      chatRenderAnim(idx);
+      chatDrawCut(cutIdx);
+      $('chatCutFrameOut').textContent = (cutIdx + 1) + ' / ' + state.frames;
+    }
+  }
+  function openChat(opener) {
+    const it = cur();
+    if (!it) { note('先にスタンプを選んでください。'); return; }
+    chat.item = it; chat.opener = opener || null; chat.open = true; chat.frame = -1;
+    $('chatWin').hidden = false;
+    $('chatCutPlay').checked = true; $('chatCutFrame').disabled = true;
+    $('chatIn').setAttribute('data-kind', chat.kind);
+    chatReset(); chatTray();
+    cancelAnimationFrame(chat.raf);
+    chat.raf = requestAnimationFrame(chatTick);
+    $('chatClose').focus();
+  }
+  function closeChat() {
+    chat.open = false;
+    cancelAnimationFrame(chat.raf);
+    $('chatWin').hidden = true;
+    if (chat.opener && chat.opener.focus) chat.opener.focus();
+  }
+  document.querySelectorAll('.openChat').forEach((b) => b.addEventListener('click', () => openChat(b)));
+  $('chatClose').addEventListener('click', closeChat);
+  $('chatWin').addEventListener('click', (e) => { if (e.target === $('chatWin')) closeChat(); });
+  document.addEventListener('keydown', (e) => { if (chat.open && e.key === 'Escape') closeChat(); });
+  document.querySelectorAll('input[name="chatbg"]').forEach((r) => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    $('chatBox').className = 'chat ' + r.value;
+  }));
+  document.querySelectorAll('input[name="chatkind"]').forEach((r) => r.addEventListener('change', () => {
+    if (!r.checked) return;
+    chat.kind = r.value;
+    $('chatIn').setAttribute('data-kind', chat.kind);
+    chatReset(); chatTray();
+  }));
+  $('chatCutPlay').addEventListener('change', () => {
+    const on = $('chatCutPlay').checked;
+    $('chatCutFrame').disabled = on;
+    chat.frame = on ? -1 : Number($('chatCutFrame').value) - 1;
+    chat.last = -1;
+  });
+  $('chatCutFrame').addEventListener('input', () => { chat.frame = Number($('chatCutFrame').value) - 1; chat.last = -1; });
+  $('chatCutWorst').addEventListener('click', () => {
+    const r = chat.scan;
+    if (!r || r.worst < 0) return;
+    $('chatCutPlay').checked = false;
+    $('chatCutFrame').disabled = false;
+    $('chatCutFrame').value = String(r.worst + 1);
+    chat.frame = r.worst; chat.last = -1;
+  });
 
 
   // ---- 切り出しの直し方(文字が離れた・分かれない・全部1枚になった) ----
