@@ -382,6 +382,10 @@ select, input[type=number] { border-color: var(--line-strong); }
         <button type="button" class="btn" id="oneStickerBtn">この1個をスタンプ用APNGで保存</button>
         <button type="button" class="btn" id="oneEmojiBtn">この1個を絵文字用APNGで保存</button>
       </div>
+      <div class="stage-bar">
+        <button type="button" class="btn" id="oneStillStickerBtn">この1個を通常スタンプ(静止画PNG)で保存</button>
+        <button type="button" class="btn" id="oneStillEmojiBtn">この1個を通常絵文字(静止画PNG)で保存</button>
+      </div>
       <p class="note" id="oneMsg" role="status" aria-live="polite"></p>
       <a class="btn" id="oneLink" href="#" download="sticker.png" hidden>保存ファイルをダウンロード</a>
       <div class="chips tgtchips t4" role="radiogroup" aria-label="操作する対象">
@@ -593,11 +597,18 @@ select, input[type=number] { border-color: var(--line-strong); }
         <p class="fine">スタンプ(01.png〜)、メイン画像(main.png、240×240)、タブ画像(tab.png、96×74)を入れます。メイン・タブは「メイン画像・タブ画像」で設定したスタンプを使います(未設定なら1番目)。大きさは「キャンバスサイズ」の設定です。</p>
         <button type="button" class="btn primary" id="emojiZipBtn">アニメーション絵文字用ZIPにする</button>
         <p class="fine">絵文字(001.png〜、180×180)とタブ画像(tab.png、96×74)を入れます。一覧の先頭から最大40個までです。再生時間・コマ数・ループはスタンプと共通です。</p>
+        <p class="sub">通常(動かない)スタンプ・絵文字用ZIP</p>
+        <button type="button" class="btn primary" id="zipStillBtn">通常スタンプ用ZIPにする(静止画)</button>
+        <p class="fine">動かない画像(PNG)で、スタンプ(01.png〜、370×320)、メイン画像(main.png、240×240)、タブ画像(tab.png、96×74)を入れます。一覧の先頭から最大40個までです。動き・再生時間・コマ数は関係なく、1コマ目の絵になります。文字・エフェクトを付けていれば、それも重ねます。</p>
+        <button type="button" class="btn primary" id="emojiStillZipBtn">通常絵文字用ZIPにする(静止画)</button>
+        <p class="fine">動かない画像(PNG)で、絵文字(001.png〜、180×180)とタブ画像(tab.png、96×74)を入れます。一覧の先頭から最大40個までです。</p>
         <p id="zipMsg" role="status" aria-live="polite"></p>
         <a class="btn" id="zipLink" href="#" download="mon-chein-stickers.zip" hidden>ZIPを保存する</a>
         <p class="sub">選んでいる1個だけ(LINEにそのままアップロードできるAPNG)</p>
         <button type="button" class="btn primary" id="exportBtn">スタンプ用APNGを1個だけ保存</button>
         <button type="button" class="btn primary" id="exportEmojiBtn">絵文字用APNG(180×180)を1個だけ保存</button>
+        <button type="button" class="btn primary" id="exportStillBtn">通常スタンプ(静止画PNG・370×320)を1個だけ保存</button>
+        <button type="button" class="btn primary" id="exportStillEmojiBtn">通常絵文字(静止画PNG・180×180)を1個だけ保存</button>
         <p class="fine">ZIPではなく、いま選んでいるスタンプの動く画像(.png)を1つだけ保存します。スタンプ用は「キャンバスサイズ」の大きさ、絵文字用は180×180で、再生時間・コマ数・ループは今の設定のままです。</p>
         <p class="sub">作業の保存(あとで続きから作れます)</p>
         <div class="stage-bar">
@@ -3147,22 +3158,25 @@ function findTextCells(bg, W, H, opt) {
   // kind: 'sticker'(アニメーションスタンプ用) / 'emoji'(アニメーション絵文字用)
   const ZIPS = {
     sticker: { btn: 'zipBtn', file: 'mon-chein-stickers.zip', digits: 2, size: null, counts: [8, 16, 24], max: 60, main: true, label: 'スタンプ' },
-    emoji: { btn: 'emojiZipBtn', file: 'mon-chein-emoji.zip', digits: 3, size: [180, 180], counts: null, min: 8, max: 40, main: false, label: '絵文字' }
+    emoji: { btn: 'emojiZipBtn', file: 'mon-chein-emoji.zip', digits: 3, size: [180, 180], counts: null, min: 8, max: 40, main: false, label: '絵文字' },
+    stillSticker: { still: true, file: 'mon-chein-stickers-still.zip', digits: 2, size: [370, 320], counts: [8, 16, 24, 32, 40], max: 40, main: true, label: '通常スタンプ' },
+    stillEmoji: { still: true, file: 'mon-chein-emoji-still.zip', digits: 3, size: [180, 180], counts: null, min: 8, max: 40, main: false, label: '通常絵文字' }
   };
+  const STILL_LIMIT = 1024 * 1024;
   async function runZip(kind) {
     const Z = ZIPS[kind];
     const msg = $('zipMsg');
     if (!state.items.length) { msg.textContent = 'スタンプがありません。画像を追加してください。'; return; }
     const items = state.items.slice(0, Z.max);
-    const btns = [$('zipBtn'), $('emojiZipBtn')];
+    const btns = [$('zipBtn'), $('emojiZipBtn'), $('zipStillBtn'), $('emojiStillZipBtn')];
     btns.forEach((b) => { b.disabled = true; });
     $('zipLink').hidden = true;
     try {
       const files = [], big = [], same = [], blank = [], light = [];
       for (let i = 0; i < items.length; i++) {
         msg.textContent = Z.label + 'を作成中… ' + (i + 1) + ' / ' + items.length;
-        const r = Z.size ? await buildApngFor(items[i], Z.size[0], Z.size[1]) : await buildApngFor(items[i]);
-        if (r.bytes.length > LIMIT_BYTES) big.push(i + 1);
+        const r = Z.still ? { bytes: await stillPng(items[i], Z.size[0], Z.size[1]) } : Z.size ? await buildApngFor(items[i], Z.size[0], Z.size[1]) : await buildApngFor(items[i]);
+        if (r.bytes.length > (Z.still ? STILL_LIMIT : LIMIT_BYTES)) big.push(i + 1);
         if (r.light) light.push((i + 1) + '番(' + r.light.colors + '色' + (r.light.frames !== state.frames ? '・' + r.light.frames + 'コマ' : '') + ')');
         if (r.same) same.push(i + 1);
         if (r.blank0) blank.push(i + 1);
@@ -3179,7 +3193,8 @@ function findTextCells(bg, W, H, opt) {
       if (Z.min && items.length < Z.min) notes.push(Z.label + 'は' + items.length + '個です(LINEの1セットは' + Z.min + '〜' + Z.max + '個)。');
       if (state.items.length > Z.max) notes.push('上限の' + Z.max + '個までを入れました。');
       if (light.length) notes.push('自動で軽くしたもの: ' + light.join('・') + '。');
-      if (big.length) notes.push((state.autoLight ? '軽くしても' : '') + '300KBを超えているもの: ' + big.join('・') + '番(' + (state.autoLight ? 'キャンバスサイズを小さくするか、動き・エフェクトを減らしてください' : '「自動で軽くする」をオンにするか、コマ数を減らしてください') + ')。');
+      if (big.length && Z.still) notes.push('1MBを超えているもの: ' + big.join('・') + '番。');
+      else if (big.length) notes.push((state.autoLight ? '軽くしても' : '') + '300KBを超えているもの: ' + big.join('・') + '番(' + (state.autoLight ? 'キャンバスサイズを小さくするか、動き・エフェクトを減らしてください' : '「自動で軽くする」をオンにするか、コマ数を減らしてください') + ')。');
       if (same.length) notes.push('全コマが同じ絵のもの: ' + same.join('・') + '番(動きを付けないと登録できません)。');
       if (blank.length) notes.push('1コマ目が空のもの: ' + blank.join('・') + '番(「ぽんっ」などの登場の動きは、1コマ目が静止画になるため注意)。');
       const kb = Math.round(blob.size / 1024);
@@ -3209,20 +3224,25 @@ function findTextCells(bg, W, H, opt) {
   }
   $('zipBtn').addEventListener('click', () => runZip('sticker'));
   $('emojiZipBtn').addEventListener('click', () => runZip('emoji'));
+  $('zipStillBtn').addEventListener('click', () => runZip('stillSticker'));
+  $('emojiStillZipBtn').addEventListener('click', () => runZip('stillEmoji'));
   // 選んでいる1個だけを、APNG(.png)1つで保存する。kind: 'sticker' / 'emoji'
-  const ONE_BTNS = ['oneStickerBtn', 'oneEmojiBtn', 'exportBtn', 'exportEmojiBtn'];
+  const ONE_BTNS = ['oneStickerBtn', 'oneEmojiBtn', 'exportBtn', 'exportEmojiBtn', 'oneStillStickerBtn', 'oneStillEmojiBtn', 'exportStillBtn', 'exportStillEmojiBtn'];
   async function saveOne(kind) {
     const say = (t) => { $('oneMsg').textContent = t; $('msg').textContent = t; };
     const it = cur();
     if (!it) { say('保存するスタンプを選んでください。'); return; }
-    const emoji = kind === 'emoji';
-    const label = emoji ? '絵文字' : 'スタンプ';
+    const still = kind.indexOf('still') === 0;
+    const emoji = kind === 'emoji' || kind === 'stillEmoji';
+    const label = (still ? '通常' : '') + (emoji ? '絵文字' : 'スタンプ');
+    const kindName = still ? '静止画PNG' : 'APNG';
     ONE_BTNS.forEach((id) => { $(id).disabled = true; });
-    say(label + '用APNGを作成中…');
+    say(label + '用の' + kindName + 'を作成中…');
     $('oneLink').hidden = true;
     try {
       let res;
-      if (emoji) res = await buildApngFor(it, 180, 180);
+      if (still) res = { bytes: await stillPng(it, emoji ? 180 : 370, emoji ? 180 : 320) };
+      else if (emoji) res = await buildApngFor(it, 180, 180);
       else { res = await buildApng(); cache = res; sizeBytes = res.bytes.length; lightInfo = res.light; updateChecks(); }
       const blob = new Blob([res.bytes], { type: 'image/png' });
       const img = $('result');
@@ -3232,18 +3252,19 @@ function findTextCells(bg, W, H, opt) {
       img.src = url;
       $('resultBoard').hidden = false;
       const no = state.items.indexOf(it) + 1;
-      const fname = (emoji ? 'emoji_' : 'sticker_') + String(no).padStart(2, '0') + '.png';
+      const fname = (emoji ? 'emoji_' : 'sticker_') + String(no).padStart(2, '0') + (still ? '_still' : '') + '.png';
       const kb = Math.round(blob.size / 1024);
       const notes = [];
-      if (res.light) notes.push('自動で軽くしました(' + res.light.colors + '色' + (res.light.frames !== state.frames ? '・' + res.light.frames + 'コマ' : '') + ')。');
-      if (res.bytes.length > LIMIT_BYTES) notes.push('300KBを超えています(' + (state.autoLight ? 'キャンバスサイズを小さくするか、動き・エフェクトを減らしてください' : '「自動で軽くする」をオンにするか、コマ数を減らしてください') + ')。');
-      if (res.same) notes.push('全コマが同じ絵です(動きを付けないと登録できません)。');
-      if (res.blank0) notes.push('1コマ目が空です(登場の動きは、1コマ目が静止画になるため注意)。');
+      if (still) { if (res.bytes.length > STILL_LIMIT) notes.push('1MBを超えています。'); }
+      else if (res.light) notes.push('自動で軽くしました(' + res.light.colors + '色' + (res.light.frames !== state.frames ? '・' + res.light.frames + 'コマ' : '') + ')。');
+      if (!still && res.bytes.length > LIMIT_BYTES) notes.push('300KBを超えています(' + (state.autoLight ? 'キャンバスサイズを小さくするか、動き・エフェクトを減らしてください' : '「自動で軽くする」をオンにするか、コマ数を減らしてください') + ')。');
+      if (!still && res.same) notes.push('全コマが同じ絵です(動きを付けないと登録できません)。');
+      if (!still && res.blank0) notes.push('1コマ目が空です(登場の動きは、1コマ目が静止画になるため注意)。');
       let head;
       if (downloads) {
         try {
           await downloads.save({ filename: fname, data: blob });
-          head = label + 'のAPNGを保存しました(スタンプ' + no + '番、' + kb + ' KB、' + fname + ')。';
+          head = label + 'の' + kindName + 'を保存しました(スタンプ' + no + '番、' + kb + ' KB、' + fname + ')。';
         } catch (e) {
           head = (e && e.code === 'declined') ? '保存をキャンセルしました。もう一度押すと保存できます。' : 'この画面からは保存できませんでした。下の画像を長押し(右クリック)で保存してください。';
         }
@@ -3254,7 +3275,7 @@ function findTextCells(bg, W, H, opt) {
         link.href = link.dataset.url;
         link.download = fname;
         link.hidden = false;
-        head = label + 'のAPNGができました(スタンプ' + no + '番、' + kb + ' KB)。下のボタンから保存してください。';
+        head = label + 'の' + kindName + 'ができました(スタンプ' + no + '番、' + kb + ' KB)。下のボタンから保存してください。';
       }
       say([head].concat(notes).join(' '));
     } catch (e) {
@@ -3265,6 +3286,8 @@ function findTextCells(bg, W, H, opt) {
   }
   ['oneStickerBtn', 'exportBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('sticker')));
   ['oneEmojiBtn', 'exportEmojiBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('emoji')));
+  ['oneStillStickerBtn', 'exportStillBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('stillSticker')));
+  ['oneStillEmojiBtn', 'exportStillEmojiBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('stillEmoji')));
 
   // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
   const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
