@@ -687,7 +687,8 @@ select, input[type=number] { border-color: var(--line-strong); }
         <div class="field"><div class="field-head"><label for="frmScale">絵の大きさ</label><output id="frmScaleOut" for="frmScale">100%</output></div><input type="range" id="frmScale" min="30" max="150" step="1" value="100"></div>
         <div class="field"><div class="field-head"><label for="frmX">絵の位置(左右)</label><output id="frmXOut" for="frmX">0</output></div><input type="range" id="frmX" min="-50" max="50" step="1" value="0"></div>
         <div class="field"><div class="field-head"><label for="frmY">絵の位置(上下)</label><output id="frmYOut" for="frmY">0</output></div><input type="range" id="frmY" min="-50" max="50" step="1" value="0"></div>
-        <div class="stage-bar"><button type="button" class="btn" id="frmReset">絵の大きさ・位置をもとに戻す</button></div>
+        <div class="stage-bar"><button type="button" class="btn" id="frmFit" disabled>フレームの中に、絵を合わせる</button><button type="button" class="btn" id="frmReset">絵の大きさ・位置をもとに戻す</button></div>
+        <p class="note" id="frmFitMsg" role="status" aria-live="polite"></p>
         <figure class="minisec"><canvas id="frmCv" class="mini" width="240" height="240" role="img" aria-label="フレームを重ねたメイン画像のプレビュー"></canvas><figcaption>プレビュー(240×240)</figcaption></figure>
         <label class="check" for="frmZip"><input type="checkbox" id="frmZip"><span>スタンプ用ZIPのメイン画像(main.png)にも、このフレームを重ねる</span></label>
         <div class="stage-bar"><button type="button" class="btn primary" id="frmSave" disabled>フレームを重ねたメイン画像を保存</button></div>
@@ -3506,8 +3507,9 @@ function findTextCells(bg, W, H, opt) {
       URL.revokeObjectURL(url);
       frm.img = im; frm.name = f.name;
       $('frmName').textContent = 'フレーム: ' + f.name + '(' + im.width + '×' + im.height + ')';
-      $('frmSave').disabled = false; $('frmClear').disabled = false;
+      $('frmSave').disabled = false; $('frmClear').disabled = false; $('frmFit').disabled = false;
       frmPreview();
+      frmFit(true);
     };
     im.onerror = () => { URL.revokeObjectURL(url); $('frmName').textContent = 'この画像は読み込めませんでした。PNGなどの画像を選んでください。'; };
     im.src = url;
@@ -3515,7 +3517,7 @@ function findTextCells(bg, W, H, opt) {
   $('frmClear').addEventListener('click', () => {
     frm.img = null; frm.name = '';
     $('frmName').textContent = 'フレームは、まだ選んでいません。';
-    $('frmSave').disabled = true; $('frmClear').disabled = true; $('frmZip').checked = false;
+    $('frmSave').disabled = true; $('frmClear').disabled = true; $('frmFit').disabled = true; $('frmZip').checked = false; $('frmFitMsg').textContent = '';
     frmPreview();
   });
   ['frmOrder', 'frmScale', 'frmX', 'frmY'].forEach((id) => $(id).addEventListener('input', frmPreview));
@@ -3545,6 +3547,56 @@ function findTextCells(bg, W, H, opt) {
     } catch (e) { say('書き出しに失敗しました。もう一度お試しください。'); }
     finally { $('frmSave').disabled = !frm.img; }
   });
+
+  // フレームの透明な窓(真ん中から続く透明な部分)に、絵がちょうど収まるように合わせる
+  function frmWindow() {
+    const im = frm.img;
+    const c = document.createElement('canvas'); c.width = 240; c.height = 240;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    const r = Math.min(240 / im.width, 240 / im.height), w = im.width * r, h = im.height * r;
+    g.drawImage(im, (240 - w) / 2, (240 - h) / 2, w, h);
+    const d = g.getImageData(0, 0, 240, 240).data;
+    const T = (x, y) => d[(y * 240 + x) * 4 + 3] < 16;
+    if (!T(120, 120)) return null;
+    const seen = new Uint8Array(240 * 240), st = [120 * 240 + 120];
+    seen[120 * 240 + 120] = 1;
+    let x0 = 240, y0 = 240, x1 = -1, y1 = -1;
+    while (st.length) {
+      const p = st.pop(), x = p % 240, y = (p - x) / 240;
+      if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+      [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(([dx, dy]) => {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= 240 || ny >= 240) return;
+        const q = ny * 240 + nx;
+        if (seen[q] || !T(nx, ny)) return;
+        seen[q] = 1; st.push(q);
+      });
+    }
+    return { x0, y0, x1: x1 + 1, y1: y1 + 1 };
+  }
+  function frmFit(auto) {
+    const msg = $('frmFitMsg');
+    const { it } = frmItem();
+    if (!it || !frm.img) { msg.textContent = ''; return; }
+    const win = frmWindow();
+    if (!win || win.x1 - win.x0 < 20 || win.y1 - win.y0 < 20) { msg.textContent = 'このフレームには、真ん中に透明な窓が見つからなかったため、自動では合わせられません。スライダーで合わせてください。'; return; }
+    const base = document.createElement('canvas'); base.width = 240; base.height = 240;
+    renderFrame(base.getContext('2d', { willReadFrequently: true }), 240, 240, 0, 1, it, true);
+    const d = base.getContext('2d').getImageData(0, 0, 240, 240).data;
+    let a0 = 240, b0 = 240, a1 = -1, b1 = -1;
+    for (let y = 0; y < 240; y++) for (let x = 0; x < 240; x++) if (d[(y * 240 + x) * 4 + 3] > 8) { if (x < a0) a0 = x; if (x > a1) a1 = x; if (y < b0) b0 = y; if (y > b1) b1 = y; }
+    if (a1 < 0) return;
+    const bw = a1 - a0 + 1, bh = b1 - b0 + 1, ww = win.x1 - win.x0, wh = win.y1 - win.y0, m = 0.98;
+    const k = clamp(Math.min((ww * m) / bw, (wh * m) / bh), 0.3, 1.5);
+    const cx = (a0 + a1 + 1) / 2, cy = (b0 + b1 + 1) / 2, wcx = (win.x0 + win.x1) / 2, wcy = (win.y0 + win.y1) / 2;
+    const dx = wcx - 120 - k * (cx - 120), dy = wcy - 120 - k * (cy - 120);
+    $('frmScale').value = Math.round(k * 100);
+    $('frmX').value = clamp(Math.round(dx / 2.4), -50, 50);
+    $('frmY').value = clamp(Math.round(dy / 2.4), -50, 50);
+    frmPreview();
+    msg.textContent = (auto ? 'フレームの窓(' + ww + '×' + wh + ')に合わせました。' : 'フレームの窓(' + ww + '×' + wh + ')に、絵を合わせました。') + '絵が変わったときは、もう一度押してください。';
+  }
+  $('frmFit').addEventListener('click', () => frmFit(false));
   frmPreview();
 
   // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
