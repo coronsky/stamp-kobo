@@ -84,6 +84,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .mchip canvas{width:26px;height:26px}
 body:not(.anim) .animbox{display:none}
 body:not(.deco) .decobox{display:none}
+body:not(.emo) .emobox{display:none}
+body:not(.selemo) .selemobox{display:none}
+body.selemo .notemo{display:none}
 .cell.nofont span::after{content:" ⚠";color:var(--ng)}
 .cell b{white-space:nowrap;font-size:.62rem;font-weight:500;color:var(--accent);line-height:1}
 body:not(.anim) .cell b{display:none}
@@ -94,7 +97,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-2(パッケージ切り替え・英数字対応)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-3(＋絵文字・絵文字だけのタイプに対応)</span></p>
 </header>
 
 <div class="wrap">
@@ -105,9 +108,26 @@ body:not(.anim) .cell b{display:none}
         <option value="kana">デコ文字(かなカナ) 161個</option>
         <option value="alnum">デコ文字(英数字) 104個</option>
         <option value="both">デコ文字(かなカナ/英数字) 265個</option>
+        <option value="kana_e">デコ文字(かなカナ)+絵文字 169〜201個</option>
+        <option value="alnum_e">デコ文字(英数字)+絵文字 112〜144個</option>
+        <option value="both_e">デコ文字(かなカナ/英数字)+絵文字 273〜305個</option>
+        <option value="emoji">絵文字 8〜40個</option>
       </select>
       <span class="note" id="pkgInfo"></span>
-      <span class="note">デコ文字は登録したあと個数を変えられません。「＋絵文字」のタイプは次の版で対応します。</span>
+      <span class="note">デコ文字は登録したあと個数を変えられません。絵文字は販売を始めるまで個数を変えられます。</span>
+    </div>
+    <div class="field emobox" style="gap:12px">
+      <span class="lbl">絵文字の枠 <span id="emoRange"></span></span>
+      <div class="field">
+        <label for="emojiCount">絵文字の数</label>
+        <div class="row"><input type="range" id="emojiCount" min="8" max="40" step="1"><span class="val" id="emojiCountV"></span></div>
+      </div>
+      <div class="field">
+        <span class="lbl">ランダムに入れる絵のジャンル</span>
+        <div class="seg" id="emoGenre"></div>
+      </div>
+      <button class="btn2" id="emoShuffleBtn" type="button" style="font-weight:900">🎲 絵文字の絵を選び直す(同じ絵は使いません)</button>
+      <span class="note">一覧で絵文字(後ろのほうの番号)を選ぶと、1つずつ絵を変えたり、手持ちの画像を読み込んだりできます。画像は透過PNGがおすすめです。</span>
     </div>
     <div class="field">
       <label for="font">フォント</label>
@@ -255,7 +275,7 @@ body:not(.anim) .cell b{display:none}
 
     <div class="field">
       <label for="tabChar">タブ画像(96×74)にする文字</label>
-      <div class="row"><input type="text" id="tabChar" maxlength="1" style="width:4em;text-align:center"><canvas id="tabCv" width="96" height="74" class="checker" style="border-radius:6px;border:1px solid var(--line)"></canvas></div>
+      <div class="row"><input type="text" id="tabChar" maxlength="3" style="width:4em;text-align:center" placeholder="あ"><canvas id="tabCv" width="96" height="74" class="checker" style="border-radius:6px;border:1px solid var(--line)"></canvas></div>
     </div>
 
     <div class="field">
@@ -285,7 +305,14 @@ body:not(.anim) .cell b{display:none}
         <button class="btn2" id="selRandBtn" type="button">この字だけランダム</button>
         <button class="btn2" id="selStopBtn" type="button">この字を止める</button>
       </div>
-      <div class="row decobox" style="margin-top:8px">
+      <div class="row selemobox" style="margin-top:8px">
+        <label for="selEmoji" class="lbl">この絵文字の絵</label>
+        <select id="selEmoji" style="width:auto"></select>
+        <button class="btn2" id="emoImgBtn" type="button">🖼 画像を読み込む</button>
+        <button class="btn2" id="emoImgClear" type="button">画像をはずす</button>
+        <input type="file" id="emoImgFile" class="hidden-file" accept="image/png,image/*">
+      </div>
+      <div class="row decobox notemo" style="margin-top:8px">
         <label for="selDeco" class="lbl">この字の絵</label>
         <select id="selDeco" style="width:auto"></select>
         <span class="animbox row"><label for="selDecoMotion" class="lbl">絵の動き</label><select id="selDecoMotion" style="width:auto"></select></span>
@@ -333,14 +360,23 @@ const ALNUM = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","
 "/","<",">","_","-","¥","・","「","」","、","…","♡","♪","↑","↓","→","←",
 "○","〒"];
 // 全部の字(かな161 + 英数字104)。動き・絵の振り分けはこの通し番号で覚える
-const ALL = KANA.concat(ALNUM);
+// 絵文字の枠は最大40個。通し番号 265〜304 を使う
+const EMO_BASE = KANA.length + ALNUM.length, EMO_MAX = 40;
+const ALL = KANA.concat(ALNUM, Array.from({length:EMO_MAX},(_,k)=>`絵${k+1}`));
+const isEmo = g => g >= EMO_BASE;
 const range = (a,n) => Array.from({length:n},(_,k)=>a+k);
 const PKGS = {
-  kana:  {label:"デコ文字(かなカナ) 161個", short:"kana161", list: range(0,161)},
-  alnum: {label:"デコ文字(英数字) 104個", short:"alnum104", list: range(161,104)},
-  both:  {label:"デコ文字(かなカナ/英数字) 265個", short:"kana_alnum265", list: range(0,265)},
+  kana:    {label:"デコ文字(かなカナ) 161個", short:"kana161", base: range(0,161)},
+  alnum:   {label:"デコ文字(英数字) 104個", short:"alnum104", base: range(161,104)},
+  both:    {label:"デコ文字(かなカナ/英数字) 265個", short:"kana_alnum265", base: range(0,265)},
+  kana_e:  {label:"デコ文字(かなカナ)+絵文字", short:"kana_emoji", base: range(0,161), emo:1},
+  alnum_e: {label:"デコ文字(英数字)+絵文字", short:"alnum_emoji", base: range(161,104), emo:1},
+  both_e:  {label:"デコ文字(かなカナ/英数字)+絵文字", short:"kana_alnum_emoji", base: range(0,265), emo:1},
+  emoji:   {label:"絵文字", short:"emoji", base: [], emo:1},
 };
-const LIST = () => (PKGS[S.pkg] || PKGS.kana).list;
+const PK = () => PKGS[S.pkg] || PKGS.kana;
+const emoCount = () => Math.max(8, Math.min(EMO_MAX, +S.emojiCount || 16));
+const LIST = () => { const p = PK(); return p.emo ? p.base.concat(range(EMO_BASE, emoCount())) : p.base; };
 const num = i => String(i+1).padStart(3,"0");
 const numOf = g => num(LIST().indexOf(g));
 
@@ -431,7 +467,7 @@ const DECO_MOTIONS = [{id:"follow",label:"文字といっしょ"},{id:"still",la
 const DMID = Object.fromEntries(DECO_MOTIONS.map(m=>[m.id,m]));
 
 const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", line1:8, lc2:"#ffffff", line2:0,
-  bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana",
+  bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
   decoMotions:null, decoMpool:null};
@@ -445,14 +481,14 @@ function shuffleAll(){
 }
 // 前の版(161個)で決めた分は残して、足りない分だけ足す
 function extendTo(arr, gen){ const a = arr.slice(0, ALL.length); for (let i=a.length;i<ALL.length;i++) a.push(gen(i, a[i-1])); return a; }
-if (Array.isArray(S.motions) && S.motions.length===161 && S.motions.every(m=>MID[m])) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
+if (Array.isArray(S.motions) && S.motions.length<ALL.length && S.motions.every(m=>MID[m])) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
 if (!Array.isArray(S.motions) || S.motions.length!==ALL.length || S.motions.some(m=>!MID[m])) shuffleAll();
 if (!Array.isArray(S.decoMpool) || !S.decoMpool.length) S.decoMpool = MOTIONS.map(m=>m.id);
 function shuffleDecoMotions(){
   const pool = S.decoMpool.filter(id=>DMID[id]); const use = pool.length ? pool : ["follow"];
   S.decoMotions = []; for (let i=0;i<ALL.length;i++) S.decoMotions.push(pick(use, S.decoMotions[i-1]));
 }
-if (Array.isArray(S.decoMotions) && S.decoMotions.length===161 && S.decoMotions.every(m=>DMID[m])) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
+if (Array.isArray(S.decoMotions) && S.decoMotions.length<ALL.length && S.decoMotions.every(m=>DMID[m])) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
 if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==ALL.length || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
 const save = () => { try { localStorage.setItem("decomoji-v1", JSON.stringify(S)); } catch(e){} };
 
@@ -466,7 +502,8 @@ const fontOf = () => fontList[S.font] || fontList[0];
 const fontStr = px => `${fontOf().w} ${px}px ${fontOf().fam}, "Hiragino Maru Gothic ProN", sans-serif`;
 
 async function computeMetrics(){
-  const chars = LIST().map(g=>ALL[g]);
+  const chars = LIST().filter(g=>!isEmo(g)).map(g=>ALL[g]);
+  if (!chars.length) chars.push("あ");
   try { await document.fonts.load(fontStr(100), ALL.join("")); } catch(e){}
   mctx.font = fontStr(100);
   let asc=0, desc=0, w=0;
@@ -518,6 +555,32 @@ function drawChar(ctx, ch, W, H, idx, noDeco=false){
   if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
   return {place};
 }
+
+// ---- 絵文字の枠を描く(ツールの絵 or 読み込んだ画像) ----
+const emojiImgs = [];
+function loadEmojiImgs(){
+  (S.emojis||[]).forEach((e,k)=>{
+    if (e && e.img){ if (!emojiImgs[k] || emojiImgs[k].src !== e.img){ const im = new Image(); im.onload = ()=>redraw(); im.src = e.img; emojiImgs[k] = im; } }
+    else emojiImgs[k] = null;
+  });
+}
+function drawEmoji(ctx, g, W, H){
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  const e = (S.emojis||[])[g-EMO_BASE]; if (!e) return {place:null};
+  const f = Math.min(W,H)/180, pad = S.margin*f;
+  if (e.img){
+    const im = emojiImgs[g-EMO_BASE];
+    if (im && im.complete && im.naturalWidth){
+      const sc = Math.min((W-2*pad)/im.naturalWidth, (H-2*pad)/im.naturalHeight), w = im.naturalWidth*sc, h = im.naturalHeight*sc;
+      ctx.imageSmoothingQuality = "high"; ctx.drawImage(im, (W-w)/2, (H-h)/2, w, h);
+    }
+  } else if (MOTIFS[e.m]){
+    const lw = Math.max(2, S.line1*0.7)*f, half = Math.min(W,H)/2 - pad - lw;
+    ctx.save(); ctx.translate(W/2, H/2); renderMotif(ctx, e.m, half/0.44, lw); ctx.restore();
+  }
+  return {place:null};
+}
+const drawItem = (ctx, g, W, H, noDeco=false) => isEmo(g) ? drawEmoji(ctx, g, W, H) : drawChar(ctx, ALL[g], W, H, g, noDeco);
 
 // ---- 飾りの絵(ツールが描く) ----
 // 座標は半径1くらいの単位。shapes は ふち→塗り の順で重ねて描き、detail はふちの色で目や線を描く
@@ -905,7 +968,7 @@ const cornerPool = () => { const p = (S.decoCorners||[]).filter(c=>CORNERS.inclu
 function shuffleDeco(){
   const pool = S.decoPool.filter(id=>MOTIFS[id]);
   const use = pool.length ? pool : GENRES["犬"];
-  S.decoMap = ALL.map((_,i)=> Math.random()*100 < S.decoRate ? {m: pick(use), c: pick(cornerPool())} : null);
+  S.decoMap = ALL.map((_,i)=> !isEmo(i) && Math.random()*100 < S.decoRate ? {m: pick(use), c: pick(cornerPool())} : null);
 }
 
 // ---- 一覧 ----
@@ -927,11 +990,13 @@ function refreshPackage(){
   cellBtns.forEach((b,g)=>{ b.hidden = !on.has(g); });
   list.forEach((g,k)=>{ numTags[g].textContent = num(k); cellBtns[g].setAttribute("aria-label", `${num(k)} ${ALL[g]}`); });
   if (!on.has(S.sel)) S.sel = list[0];
-  const n = list.length, p = PKGS[S.pkg] || PKGS.kana;
+  const n = list.length, p = PK();
+  document.body.classList.toggle("emo", !!p.emo);
   $("gridTitle").textContent = `${n}個の一覧`;
   $("pkgInfo").textContent = `001.png〜${num(n-1)}.png の ${n}個 + tab.png を書き出します`;
   $("shuffleBtn").textContent = `🎲 ${n}個を一括でランダムに動かす`;
   $("subTitle").textContent = `LINEの${p.label.replace(/ \d+個$/,"")} ${n}個を、180×180の透過PNGで番号どおりに書き出します`;
+  if (p.emo){ const first = EMO_BASE; $("emoRange").textContent = `絵文字は ${num(list.indexOf(first))}〜${num(n-1)} 番(${emoCount()}個)です`; }
   if (!ALL.includes(S.tab) || !on.has(ALL.indexOf(S.tab))) { S.tab = ALL[list[0]]; $("tabChar").value = S.tab; }
 }
 // フォントにない字を調べる(ない字はほかのフォントで描かれてしまう)
@@ -944,6 +1009,7 @@ function checkGlyphs(){
   const same = (a,b) => { for (let k=3;k<a.length;k+=16) if (a[k]!==b[k]) return false; return true; };
   missing = new Set();
   for (const g of LIST()){
+    if (isEmo(g)) continue;
     const ch = ALL[g];
     if (same(shot(ch, `${f.fam}, monospace`), shot(ch, "monospace")) && same(shot(ch, `${f.fam}, serif`), shot(ch, "serif"))) missing.add(g);
   }
@@ -956,6 +1022,8 @@ function applyGridBg(){ cells.forEach(cv=>{ cv.className = S.gridBg; }); }
 
 function drawSel(){
   const ch = ALL[S.sel];
+  document.body.classList.toggle("selemo", isEmo(S.sel));
+  if (isEmo(S.sel)){ const e = S.emojis[S.sel-EMO_BASE]; $("selEmoji").value = e && e.m ? e.m : ""; $("emoImgClear").hidden = !(e && e.img); }
   $("selLabel").textContent = `${numOf(S.sel)}.png ／ ${ch}`;
   $("selMotion").value = S.motions[S.sel];
   $("selDeco").value = (S.decoMap[S.sel] && S.decoMap[S.sel].m) || "";
@@ -963,7 +1031,7 @@ function drawSel(){
   for (const id of ["bigA","bigB","bigC"]){
     const ctx = $(id).getContext("2d");
     if (S.mode==="anim"){ ctx.clearRect(0,0,180,180); ctx.drawImage(cells[S.sel],0,0); }
-    else drawChar(ctx, ch, 180, 180, S.sel);
+    else drawItem(ctx, S.sel, 180, 180);
   }
 }
 
@@ -995,7 +1063,7 @@ function buildRests(){
   for (const i of LIST()){
     if (!rests[i]){ rests[i]=document.createElement("canvas"); rests[i].width=360; rests[i].height=360; }
     const ctx = rests[i].getContext("2d", {willReadFrequently:true});
-    const res = drawChar(ctx, ALL[i], 360, 360, i, true);     // 文字だけ(絵は別に動かす)
+    const res = drawItem(ctx, i, 360, 360, true);     // 文字だけ(絵は別に動かす)
     const pl = res && res.place;
     places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m} : null;
     const d = ctx.getImageData(0,0,360,360).data;
@@ -1073,9 +1141,8 @@ function startAnim(){
 function labelMotions(){ motionTags.forEach((t,i)=>{ t.textContent = MID[S.motions[i]].label; }); }
 
 function drawTab(){
-  const ch = (S.tab || "あ");
-  const i = Math.max(0, ALL.indexOf(ch));
-  drawChar($("tabCv").getContext("2d"), ch, 96, 74, i);
+  const i = Math.max(0, ALL.indexOf(S.tab || "あ"));
+  drawItem($("tabCv").getContext("2d"), i, 96, 74);
 }
 
 let raf = 0;
@@ -1091,7 +1158,7 @@ function redraw(){
     if (S.mode==="anim"){ buildRests(); computeFit(); drawTab(); buildBubble(); startAnim(); }
     else {
       clearInterval(timer);
-      for (const i of LIST()) drawChar(cells[i].getContext("2d"), ALL[i], 180, 180, i);
+      for (const i of LIST()) drawItem(cells[i].getContext("2d"), i, 180, 180);
       drawSel(); drawTab(); buildBubble();
     }
   });
@@ -1174,9 +1241,9 @@ MOTIONS.forEach(m=>{
 if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
 S.decoPool = S.decoPool.filter(id=>MOTIFS[id]);
 if (!GENRES[S.decoView]) S.decoView = "犬";
-if (Array.isArray(S.decoMap) && S.decoMap.length===161 && !S.decoMap.some(e=>e && !MOTIFS[e.m])){
+if (Array.isArray(S.decoMap) && S.decoMap.length<ALL.length && !S.decoMap.some(e=>e && !MOTIFS[e.m])){
   const pool = S.decoPool.filter(id=>MOTIFS[id]);
-  S.decoMap = extendTo(S.decoMap, ()=> pool.length && Math.random()*100 < S.decoRate ? {m: pick(pool), c: pick(cornerPool())} : null);
+  S.decoMap = extendTo(S.decoMap, (i)=> !isEmo(i) && pool.length && Math.random()*100 < S.decoRate ? {m: pick(pool), c: pick(cornerPool())} : null);
 }
 if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length || S.decoMap.some(e=>e && !MOTIFS[e.m])) shuffleDeco();
 syncers.push(bindSeg("decoOn","decoOn",redraw));
@@ -1291,7 +1358,7 @@ $("fontFile").addEventListener("change", async e=>{
   e.target.value = "";
 });
 $("tabChar").value = S.tab;
-$("tabChar").addEventListener("input", e=>{ S.tab = Array.from(e.target.value)[0] || "あ"; save(); drawTab(); });
+$("tabChar").addEventListener("input", e=>{ const v = e.target.value.trim(); S.tab = ALL.includes(v) ? v : (Array.from(v)[0] || "あ"); save(); drawTab(); });
 $("sample").addEventListener("input", drawBubble);
 
 // ---- ZIP(無圧縮・外部ライブラリなし) ----
@@ -1399,7 +1466,7 @@ $("exportBtn").addEventListener("click", async ()=>{
         data = r.data; if (r.same) sameList.push(`${num(k)}(${ALL[i]})`);
         if (k%10===0) rep.textContent = `書き出し中… ${k+1}/${total}`;
       } else {
-        drawChar(ctx, ALL[i], 180, 180, i);
+        drawItem(ctx, i, 180, 180);
         data = await toBytes(cv);
       }
       const kb = data.length/1024; if (kb>maxKB){ maxKB=kb; maxName=num(k)+".png"; }
@@ -1409,15 +1476,15 @@ $("exportBtn").addEventListener("click", async ()=>{
     files.push({name:"tab.png", data: await toBytes($("tabCv"))});
     const zip = makeZip(files);
     const mb = zip.size/1024/1024;
-    const okCount = files.length===total+1, okKB = maxKB<=1024, okMB = mb<=20;
+    const okCount = files.length===total+1 && (!PK().emo || (emoCount()>=8 && emoCount()<=40)), okKB = maxKB<=1024, okMB = mb<=20;
     rep.innerHTML =
-      `<span class="${okCount?"ok":"ng"}">${okCount?"✓":"✕"} 001〜${num(total-1)}.png と tab.png(計${files.length}ファイル)・${(PKGS[S.pkg]||PKGS.kana).label}</span>`+
+      `<span class="${okCount?"ok":"ng"}">${okCount?"✓":"✕"} 001〜${num(total-1)}.png と tab.png(計${files.length}ファイル)・${PK().label}${PK().emo?`(絵文字${emoCount()}個)`:""}</span>`+
       (missing.size ? `<span class="ng">⚠ フォントにない字:${[...missing].map(g=>ALL[g]).join(" ")}(ほかのフォントで描かれています)</span>` : "")+
       `<span class="${okKB?"ok":"ng"}">${okKB?"✓":"✕"} いちばん重い画像 ${maxName}:${maxKB.toFixed(1)}KB(上限1MB)</span>`+
       `<span class="${okMB?"ok":"ng"}">${okMB?"✓":"✕"} ZIP ${mb.toFixed(2)}MB(上限20MB)</span>`+
       (anim ? `<span class="ok">✓ ${S.frames}コマ・${S.sec}秒×${S.loops}回(合計${+S.sec*+S.loops}秒)・縮小${Math.round(fitS*100)}%</span>`+
         (sameList.length ? `<span class="ng">✕ 前と同じコマがある字:${sameList.join(", ")}(動きを強くするか変えてください)</span>` : `<span class="ok">✓ どの字も全コマ動いています</span>`) : "");
-    const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = `decomoji_${(PKGS[S.pkg]||PKGS.kana).short}${anim?"_anim":""}.zip`;
+    const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = `decomoji_${PK().short}${PK().emo?emoCount():""}${anim?"_anim":""}.zip`;
     document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
   }catch(err){ rep.innerHTML = `<span class="ng">保存できませんでした:${err.message}</span>`; }
   btn.disabled = false;
@@ -1426,6 +1493,56 @@ $("exportBtn").addEventListener("click", async ()=>{
 
 $("pkg").value = PKGS[S.pkg] ? S.pkg : "kana";
 $("pkg").addEventListener("change", async e=>{ S.pkg = e.target.value; save(); refreshPackage(); markSel(); await computeMetrics(); redraw(); });
+
+// ---- 絵文字の枠のUI ----
+function fixEmojis(){
+  if (!Array.isArray(S.emojis) || S.emojis.length!==EMO_MAX || S.emojis.some(e=>!e || (!e.img && !MOTIFS[e.m]))) shuffleEmojis(true);
+}
+function shuffleEmojis(fillOnlyBroken=false){
+  const pool = (GENRES[S.emojiGenre] || GENRES["犬"]).slice();
+  for (let k=pool.length-1;k>0;k--){ const j=Math.floor(Math.random()*(k+1)); [pool[k],pool[j]]=[pool[j],pool[k]]; }
+  const old = Array.isArray(S.emojis) ? S.emojis : [];
+  S.emojis = range(0,EMO_MAX).map(k=>{
+    const e = old[k];
+    if (fillOnlyBroken && e && (e.img || MOTIFS[e.m])) return e;
+    if (!fillOnlyBroken && e && e.img) return e;          // 読み込んだ画像は残す
+    return {m: pool[k % pool.length]};
+  });
+}
+fixEmojis(); loadEmojiImgs();
+const emoGenreBox = $("emoGenre");
+Object.keys(GENRES).forEach(g=>{ const b=document.createElement("button"); b.type="button"; b.dataset.v=g; b.textContent=g; emoGenreBox.append(b); });
+function syncEmoUI(){
+  emoGenreBox.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===S.emojiGenre));
+  $("emojiCount").value = emoCount(); $("emojiCountV").textContent = emoCount()+"個";
+}
+emoGenreBox.addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; S.emojiGenre=b.dataset.v; shuffleEmojis(); syncEmoUI(); save(); redraw(); });
+$("emojiCount").addEventListener("input", e=>{ S.emojiCount = +e.target.value; syncEmoUI(); save(); refreshPackage(); markSel(); redraw(); });
+$("emoShuffleBtn").addEventListener("click", ()=>{ shuffleEmojis(); save(); redraw(); });
+syncEmoUI();
+{ const sel = $("selEmoji");
+  const o=document.createElement("option"); o.value=""; o.textContent="(読み込んだ画像)"; sel.append(o);
+  for (const [g,list] of Object.entries(GENRES)){ if (g==="ミックス") continue;
+    const og=document.createElement("optgroup"); og.label=g;
+    for (const id of list){ const op=document.createElement("option"); op.value=id; op.textContent=MOTIFS[id].label; og.append(op); }
+    sel.append(og); }
+  sel.addEventListener("change", e=>{ if (!isEmo(S.sel) || !e.target.value) return; S.emojis[S.sel-EMO_BASE] = {m:e.target.value}; loadEmojiImgs(); save(); redraw(); });
+}
+$("emoImgBtn").addEventListener("click", ()=>$("emoImgFile").click());
+$("emoImgFile").addEventListener("change", async e=>{
+  const file = e.target.files[0]; e.target.value = ""; if (!file || !isEmo(S.sel)) return;
+  try{
+    const url = URL.createObjectURL(file); const im = new Image();
+    await new Promise((ok,ng)=>{ im.onload=ok; im.onerror=()=>ng(new Error("画像を開けませんでした")); im.src=url; });
+    // 保存しやすいよう、最大360pxに縮めてPNGで覚える
+    const sc = Math.min(1, 360/Math.max(im.naturalWidth, im.naturalHeight));
+    const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth*sc); c.height = Math.round(im.naturalHeight*sc);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
+    S.emojis[S.sel-EMO_BASE] = {img: c.toDataURL("image/png")};
+    loadEmojiImgs(); save(); redraw();
+  }catch(err){ $("report").innerHTML = `<span class="ng">${err.message}</span>`; }
+});
+$("emoImgClear").addEventListener("click", ()=>{ if (!isEmo(S.sel)) return; const pool = GENRES[S.emojiGenre]||GENRES["犬"]; S.emojis[S.sel-EMO_BASE] = {m: pick(pool)}; loadEmojiImgs(); save(); redraw(); });
 
 // ---- 途中の作業を保存・読み込み ----
 function downloadBlob(blob, name){
@@ -1449,15 +1566,16 @@ $("projFile").addEventListener("change", async e=>{
     const st = Object.assign({}, DEF, data.state);
     if (data.userFont){ st.font = 0; }
     S = st;
-    if (Array.isArray(S.motions) && S.motions.length===161) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
-    if (Array.isArray(S.decoMotions) && S.decoMotions.length===161) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
-    if (Array.isArray(S.decoMap) && S.decoMap.length===161) S.decoMap = extendTo(S.decoMap, ()=>null);
+    if (Array.isArray(S.motions) && S.motions.length<ALL.length) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
+    if (Array.isArray(S.decoMotions) && S.decoMotions.length<ALL.length) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
+    if (Array.isArray(S.decoMap) && S.decoMap.length<ALL.length) S.decoMap = extendTo(S.decoMap, ()=>null);
     if (!PKGS[S.pkg]) S.pkg = "kana";
     if (!Array.isArray(S.motions) || S.motions.length!==ALL.length || S.motions.some(m=>!MID[m])) shuffleAll();
     if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==ALL.length || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
     if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
     if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length) shuffleDeco();
     $("pkg").value = S.pkg;
+    fixEmojis(); loadEmojiImgs(); syncEmoUI();
     if (!GENRES[S.decoView]) S.decoView = "犬";
     save();
     fillFontSelect(); syncers.forEach(fn=>fn()); fillNote(); fixLoops(); applyGridBg(); markSel();
