@@ -14,7 +14,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&family=M+PLUS+Rounded+1c:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yusei+Magic&family=Kosugi+Maru&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&family=M+PLUS+Rounded+1c:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yusei+Magic&family=Kosugi+Maru&family=Yuji+Syuku&family=Yuji+Boku&family=Yuji+Mai&family=Zen+Kurenaido&family=Kaisei+Tokumin:wght@800&family=Shippori+Mincho+B1:wght@800&family=Zen+Antique&family=Klee+One:wght@600&family=Yomogi&family=Slackside+One&family=Darumadrop+One&family=DotGothic16&family=Rampart+One&family=Train+One&family=Stick&family=Chokokutai&family=Palette+Mosaic&family=Rock+3D&family=Kaisei+Decol:wght@700&family=Cherry+Bomb+One&family=Shizuru&family=Reggae+One&family=Potta+One&family=Mochiy+Pop+P+One&family=M+PLUS+1:wght@900&family=Murecho:wght@900&family=Zen+Kaku+Gothic+New:wght@900&family=Kiwi+Maru:wght@500&display=swap">
 <style>
 /* Layout: 左に設定パネル、右に161マスの一覧。スマホでは縦に積む */
 :root{
@@ -105,7 +105,7 @@ body:not(.anim) .cell b{display:none}
         <button class="btn2" id="fontUpBtn" type="button">手持ちのフォントを読み込む</button>
         <input type="file" id="fontFile" class="hidden-file" accept=".ttf,.otf,.woff,.woff2">
       </div>
-      <span class="note">一覧のフォントはGoogle Fontsの無料・商用利用OKのものです。手持ちのフォントは販売利用OKか確認してから使ってください。</span>
+      <span class="note">一覧のフォント(36種類)はすべてGoogle Fontsのオープンフォントライセンスで、LINEスタンプなどの販売にも使えます。手持ちのフォントは販売利用OKか確認してから使ってください。</span>
     </div>
 
     <div class="field">
@@ -315,7 +315,7 @@ const KANA = ["あ","い","う","え","お","か","き","く","け","こ","さ",
 const num = i => String(i+1).padStart(3,"0");
 
 const FONTS = [
-  {label:"Zen丸ゴシック(極太)", fam:'"Zen Maru Gothic"', w:"900"},
+  {label:"Zen丸ゴシック(極太)", fam:'"Zen Maru Gothic"', w:"900", g:"丸・ポップ"},
   {label:"M PLUS Rounded(極太)", fam:'"M PLUS Rounded 1c"', w:"900"},
   {label:"モッチーポップ", fam:'"Mochiy Pop One"', w:"400"},
   {label:"デラゴシック", fam:'"Dela Gothic One"', w:"400"},
@@ -323,6 +323,35 @@ const FONTS = [
   {label:"はちまるポップ", fam:'"Hachi Maru Pop"', w:"400"},
   {label:"油性マジック", fam:'"Yusei Magic"', w:"400"},
   {label:"小杉丸ゴシック", fam:'"Kosugi Maru"', w:"400"},
+  // ここから追加(すべてGoogle Fontsのオープンフォントライセンス=商用利用OK)
+  {label:"佑字 祝(筆)", fam:'"Yuji Syuku"', w:"400", g:"筆文字"},
+  {label:"佑字 朴(筆)", fam:'"Yuji Boku"', w:"400", g:"筆文字"},
+  {label:"佑字 舞(筆)", fam:'"Yuji Mai"', w:"400", g:"筆文字"},
+  {label:"Zen紅道(筆ペン)", fam:'"Zen Kurenaido"', w:"400", g:"筆文字"},
+  {label:"解星 特ミン(極太明朝)", fam:'"Kaisei Tokumin"', w:"800", g:"筆文字"},
+  {label:"しっぽり明朝B1(太)", fam:'"Shippori Mincho B1"', w:"800", g:"筆文字"},
+  {label:"Zenアンチック(レトロ)", fam:'"Zen Antique"', w:"400", g:"筆文字"},
+  {label:"クレー(ペン字)", fam:'"Klee One"', w:"600", g:"手書き"},
+  {label:"よもぎ(手書き)", fam:'"Yomogi"', w:"400", g:"手書き"},
+  {label:"スラックサイド(ゆる手書き)", fam:'"Slackside One"', w:"400", g:"手書き"},
+  {label:"だるまドロップ(太手書き)", fam:'"Darumadrop One"', w:"400", g:"手書き"},
+  {label:"ドットゴシック(ゲーム風)", fam:'"DotGothic16"', w:"400", g:"変わった文字"},
+  {label:"ランパート(立体)", fam:'"Rampart One"', w:"400", g:"変わった文字"},
+  {label:"トレイン(ふち文字)", fam:'"Train One"', w:"400", g:"変わった文字"},
+  {label:"ステッキ(棒)", fam:'"Stick"', w:"400", g:"変わった文字"},
+  {label:"彫刻体(石ほり)", fam:'"Chokokutai"', w:"400", g:"変わった文字"},
+  {label:"パレットモザイク", fam:'"Palette Mosaic"', w:"400", g:"変わった文字"},
+  {label:"ロック3D", fam:'"Rock 3D"', w:"400", g:"変わった文字"},
+  {label:"解星 デコール", fam:'"Kaisei Decol"', w:"700", g:"変わった文字"},
+  {label:"チェリーボム(ぷっくり)", fam:'"Cherry Bomb One"', w:"400", g:"変わった文字"},
+  {label:"しずる(くるくる)", fam:'"Shizuru"', w:"400", g:"変わった文字"},
+  {label:"レゲエ(テロップ)", fam:'"Reggae One"', w:"400", g:"YouTube・テロップ風"},
+  {label:"ポッタ(テロップ)", fam:'"Potta One"', w:"400", g:"YouTube・テロップ風"},
+  {label:"モッチーポップP", fam:'"Mochiy Pop P One"', w:"400", g:"YouTube・テロップ風"},
+  {label:"M PLUS 1(極太)", fam:'"M PLUS 1"', w:"900", g:"YouTube・テロップ風"},
+  {label:"ムレチョ(極太)", fam:'"Murecho"', w:"900", g:"YouTube・テロップ風"},
+  {label:"Zen角ゴシック(極太)", fam:'"Zen Kaku Gothic New"', w:"900", g:"YouTube・テロップ風"},
+  {label:"キウイ丸", fam:'"Kiwi Maru"', w:"500", g:"YouTube・テロップ風"},
 ];
 const CYCLE = ["#f07fa6","#7fd8ec","#d58cf0","#f2a184","#f6e27a","#8fdcae"];
 const PRESETS = {
@@ -1003,7 +1032,12 @@ function reanim(){ if (S.mode!=="anim") return; labelMotions(); computeFit(); st
 // ---- UI ----
 function fillFontSelect(){
   const sel = $("font"); sel.textContent = "";
-  fontList.forEach((f,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=f.label; sel.append(o); });
+  let grp = null, gname = null;
+  fontList.forEach((f,i)=>{
+    const g = f.g || (i < 8 ? "丸・ポップ" : "手持ちのフォント");
+    if (g !== gname){ grp = document.createElement("optgroup"); grp.label = g; sel.append(grp); gname = g; }
+    const o=document.createElement("option"); o.value=i; o.textContent=f.label; grp.append(o);
+  });
   if (S.font >= fontList.length) S.font = 0;
   sel.value = S.font;
 }
