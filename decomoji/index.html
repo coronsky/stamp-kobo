@@ -16,7 +16,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&family=M+PLUS+Rounded+1c:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yusei+Magic&family=Kosugi+Maru&family=Yuji+Syuku&family=Yuji+Boku&family=Yuji+Mai&family=Zen+Kurenaido&family=Kaisei+Tokumin:wght@800&family=Shippori+Mincho+B1:wght@800&family=Zen+Antique&family=Klee+One:wght@600&family=Yomogi&family=Slackside+One&family=Darumadrop+One&family=DotGothic16&family=Rampart+One&family=Train+One&family=Stick&family=Chokokutai&family=Palette+Mosaic&family=Rock+3D&family=Kaisei+Decol:wght@700&family=Cherry+Bomb+One&family=Shizuru&family=Reggae+One&family=Potta+One&family=Mochiy+Pop+P+One&family=M+PLUS+1:wght@900&family=Murecho:wght@900&family=Zen+Kaku+Gothic+New:wght@900&family=Kiwi+Maru:wght@500&display=swap">
 <style>
-/* Layout: 左に設定パネル、右に161マスの一覧。スマホでは縦に積む */
+/* Layout: 左に設定パネル、右にデコ文字の一覧。スマホでは縦に積む */
 :root{
   --bg:#f3f5f7; --panel:#ffffff; --ink:#22262b; --muted:#68717c; --line:#dde2e8;
   --accent:#d6336c; --accent-ink:#ffffff; --ok:#2b8a3e; --ng:#c92a2a; --chip:#eef1f4;
@@ -84,6 +84,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .mchip canvas{width:26px;height:26px}
 body:not(.anim) .animbox{display:none}
 body:not(.deco) .decobox{display:none}
+.cell.nofont span::after{content:" ⚠";color:var(--ng)}
 .cell b{white-space:nowrap;font-size:.62rem;font-weight:500;color:var(--accent);line-height:1}
 body:not(.anim) .cell b{display:none}
 .bubble canvas{width:26px;height:26px;display:block}
@@ -93,14 +94,25 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub">LINEデコ文字(かなカナ)161個を、180×180の透過PNGで番号どおりに書き出します <span style="opacity:.7">／ 版 2026.10.22-1(フォント36種類)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-2(パッケージ切り替え・英数字対応)</span></p>
 </header>
 
 <div class="wrap">
   <section class="panel side" aria-label="設定">
     <div class="field">
+      <label for="pkg">パッケージタイプ(LINEの登録画面で選ぶものと同じにします)</label>
+      <select id="pkg">
+        <option value="kana">デコ文字(かなカナ) 161個</option>
+        <option value="alnum">デコ文字(英数字) 104個</option>
+        <option value="both">デコ文字(かなカナ/英数字) 265個</option>
+      </select>
+      <span class="note" id="pkgInfo"></span>
+      <span class="note">デコ文字は登録したあと個数を変えられません。「＋絵文字」のタイプは次の版で対応します。</span>
+    </div>
+    <div class="field">
       <label for="font">フォント</label>
       <select id="font"></select>
+      <span class="note" id="fontWarn"></span>
       <div class="row">
         <button class="btn2" id="fontUpBtn" type="button">手持ちのフォントを読み込む</button>
         <input type="file" id="fontFile" class="hidden-file" accept=".ttf,.otf,.woff,.woff2">
@@ -287,7 +299,7 @@ body:not(.anim) .cell b{display:none}
     </div>
 
     <div class="gridhead">
-      <h2>161個の一覧</h2>
+      <h2 id="gridTitle">161個の一覧</h2>
       <div class="seg" id="gridBg">
         <button type="button" data-v="checker">透過</button>
         <button type="button" data-v="bgA">白</button>
@@ -312,7 +324,25 @@ const KANA = ["あ","い","う","え","お","か","き","く","け","こ","さ",
 "リ","ル","レ","ロ","ワ","ヲ","ン","ァ","ィ","ゥ","ェ","ォ","ッ","ャ","ュ","ョ","ガ",
 "ギ","グ","ゲ","ゴ","ザ","ジ","ズ","ゼ","ゾ","ダ","ヂ","ヅ","デ","ド","バ","ビ","ブ",
 "ベ","ボ","パ","ピ","プ","ペ","ポ","ー"];
+// ---- LINE公式 デコ文字(英数字) 001〜104 ----
+const ALNUM = ["A","B","C","D","E","F","G","H","I","J","K","L","M","N","O","P","Q",
+"R","S","T","U","V","W","X","Y","Z","a","b","c","d","e","f","g","h",
+"i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y",
+"z","1","2","3","4","5","6","7","8","9","0","~","!","?","@","#","$",
+"%","^","&","*","(",")","+","÷","×","=","[","]","|",";",":",",",".",
+"/","<",">","_","-","¥","・","「","」","、","…","♡","♪","↑","↓","→","←",
+"○","〒"];
+// 全部の字(かな161 + 英数字104)。動き・絵の振り分けはこの通し番号で覚える
+const ALL = KANA.concat(ALNUM);
+const range = (a,n) => Array.from({length:n},(_,k)=>a+k);
+const PKGS = {
+  kana:  {label:"デコ文字(かなカナ) 161個", short:"kana161", list: range(0,161)},
+  alnum: {label:"デコ文字(英数字) 104個", short:"alnum104", list: range(161,104)},
+  both:  {label:"デコ文字(かなカナ/英数字) 265個", short:"kana_alnum265", list: range(0,265)},
+};
+const LIST = () => (PKGS[S.pkg] || PKGS.kana).list;
 const num = i => String(i+1).padStart(3,"0");
+const numOf = g => num(LIST().indexOf(g));
 
 const FONTS = [
   {label:"Zen丸ゴシック(極太)", fam:'"Zen Maru Gothic"', w:"900", g:"丸・ポップ"},
@@ -401,7 +431,7 @@ const DECO_MOTIONS = [{id:"follow",label:"文字といっしょ"},{id:"still",la
 const DMID = Object.fromEntries(DECO_MOTIONS.map(m=>[m.id,m]));
 
 const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", line1:8, lc2:"#ffffff", line2:0,
-  bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0,
+  bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
   decoMotions:null, decoMpool:null};
@@ -411,15 +441,19 @@ try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if 
 const pick = (arr, avoid) => { const c = arr.length>1 ? arr.filter(x=>x!==avoid) : arr; return c[Math.floor(Math.random()*c.length)]; };
 function shuffleAll(){
   const pool = S.pool.length ? S.pool : MOTIONS.map(m=>m.id);
-  S.motions = []; for (let i=0;i<161;i++) S.motions.push(pick(pool, S.motions[i-1]));
+  S.motions = []; for (let i=0;i<ALL.length;i++) S.motions.push(pick(pool, S.motions[i-1]));
 }
-if (!Array.isArray(S.motions) || S.motions.length!==161 || S.motions.some(m=>!MID[m])) shuffleAll();
+// 前の版(161個)で決めた分は残して、足りない分だけ足す
+function extendTo(arr, gen){ const a = arr.slice(0, ALL.length); for (let i=a.length;i<ALL.length;i++) a.push(gen(i, a[i-1])); return a; }
+if (Array.isArray(S.motions) && S.motions.length===161 && S.motions.every(m=>MID[m])) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
+if (!Array.isArray(S.motions) || S.motions.length!==ALL.length || S.motions.some(m=>!MID[m])) shuffleAll();
 if (!Array.isArray(S.decoMpool) || !S.decoMpool.length) S.decoMpool = MOTIONS.map(m=>m.id);
 function shuffleDecoMotions(){
   const pool = S.decoMpool.filter(id=>DMID[id]); const use = pool.length ? pool : ["follow"];
-  S.decoMotions = []; for (let i=0;i<161;i++) S.decoMotions.push(pick(use, S.decoMotions[i-1]));
+  S.decoMotions = []; for (let i=0;i<ALL.length;i++) S.decoMotions.push(pick(use, S.decoMotions[i-1]));
 }
-if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==161 || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
+if (Array.isArray(S.decoMotions) && S.decoMotions.length===161 && S.decoMotions.every(m=>DMID[m])) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
+if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==ALL.length || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
 const save = () => { try { localStorage.setItem("decomoji-v1", JSON.stringify(S)); } catch(e){} };
 
 const $ = id => document.getElementById(id);
@@ -432,16 +466,18 @@ const fontOf = () => fontList[S.font] || fontList[0];
 const fontStr = px => `${fontOf().w} ${px}px ${fontOf().fam}, "Hiragino Maru Gothic ProN", sans-serif`;
 
 async function computeMetrics(){
-  try { await document.fonts.load(fontStr(100), KANA.join("")+"あ"); } catch(e){}
+  const chars = LIST().map(g=>ALL[g]);
+  try { await document.fonts.load(fontStr(100), ALL.join("")); } catch(e){}
   mctx.font = fontStr(100);
   let asc=0, desc=0, w=0;
-  for (const ch of KANA){
+  for (const ch of chars){
     const m = mctx.measureText(ch);
     asc = Math.max(asc, m.actualBoundingBoxAscent);
     desc = Math.max(desc, m.actualBoundingBoxDescent);
     w = Math.max(w, m.actualBoundingBoxLeft + m.actualBoundingBoxRight);
   }
   metrics = {asc, desc, w};
+  checkGlyphs();
 }
 
 function drawChar(ctx, ch, W, H, idx, noDeco=false){
@@ -869,27 +905,58 @@ const cornerPool = () => { const p = (S.decoCorners||[]).filter(c=>CORNERS.inclu
 function shuffleDeco(){
   const pool = S.decoPool.filter(id=>MOTIFS[id]);
   const use = pool.length ? pool : GENRES["犬"];
-  S.decoMap = KANA.map((_,i)=> Math.random()*100 < S.decoRate ? {m: pick(use), c: pick(cornerPool())} : null);
+  S.decoMap = ALL.map((_,i)=> Math.random()*100 < S.decoRate ? {m: pick(use), c: pick(cornerPool())} : null);
 }
 
 // ---- 一覧 ----
 const grid = $("grid"), cells = [], motionTags = [];
-KANA.forEach((ch,i)=>{
+const cellBtns = [], numTags = [];
+ALL.forEach((ch,i)=>{
   const b = document.createElement("button");
-  b.className = "cell"; b.type = "button"; b.setAttribute("aria-label", `${num(i)} ${ch}`);
+  b.className = "cell"; b.type = "button";
   const cv = document.createElement("canvas"); cv.width = 180; cv.height = 180;
-  const sp = document.createElement("span"); sp.textContent = num(i);
+  const sp = document.createElement("span");
   const mb = document.createElement("b");
-  b.append(cv, sp, mb); grid.append(b); motionTags.push(mb);
+  b.append(cv, sp, mb); grid.append(b); motionTags.push(mb); numTags.push(sp); cellBtns.push(b);
   b.addEventListener("click", ()=>{ S.sel=i; save(); drawSel(); markSel(); });
   cells.push(cv);
 });
+// パッケージに合わせて、見せる字と番号を切り替える
+function refreshPackage(){
+  const list = LIST(), on = new Set(list);
+  cellBtns.forEach((b,g)=>{ b.hidden = !on.has(g); });
+  list.forEach((g,k)=>{ numTags[g].textContent = num(k); cellBtns[g].setAttribute("aria-label", `${num(k)} ${ALL[g]}`); });
+  if (!on.has(S.sel)) S.sel = list[0];
+  const n = list.length, p = PKGS[S.pkg] || PKGS.kana;
+  $("gridTitle").textContent = `${n}個の一覧`;
+  $("pkgInfo").textContent = `001.png〜${num(n-1)}.png の ${n}個 + tab.png を書き出します`;
+  $("shuffleBtn").textContent = `🎲 ${n}個を一括でランダムに動かす`;
+  $("subTitle").textContent = `LINEの${p.label.replace(/ \d+個$/,"")} ${n}個を、180×180の透過PNGで番号どおりに書き出します`;
+  if (!ALL.includes(S.tab) || !on.has(ALL.indexOf(S.tab))) { S.tab = ALL[list[0]]; $("tabChar").value = S.tab; }
+}
+// フォントにない字を調べる(ない字はほかのフォントで描かれてしまう)
+let missing = new Set();
+function checkGlyphs(){
+  const c = document.createElement("canvas"); c.width = c.height = 64;
+  const x = c.getContext("2d", {willReadFrequently:true});
+  const f = fontOf();
+  const shot = (ch, fam) => { x.clearRect(0,0,64,64); x.font = `${f.w} 48px ${fam}`; x.textBaseline="middle"; x.fillText(ch, 8, 32); return x.getImageData(0,0,64,64).data; };
+  const same = (a,b) => { for (let k=3;k<a.length;k+=16) if (a[k]!==b[k]) return false; return true; };
+  missing = new Set();
+  for (const g of LIST()){
+    const ch = ALL[g];
+    if (same(shot(ch, `${f.fam}, monospace`), shot(ch, "monospace")) && same(shot(ch, `${f.fam}, serif`), shot(ch, "serif"))) missing.add(g);
+  }
+  cellBtns.forEach((b,g)=>b.classList.toggle("nofont", missing.has(g)));
+  const list = [...missing].map(g=>ALL[g]);
+  $("fontWarn").innerHTML = list.length ? `<span class="ng">⚠ このフォントにない字(${list.length}個):${list.join(" ")}</span><br>ほかのフォントで代わりに描かれるので、形がそろいません。` : "";
+}
 function markSel(){ grid.querySelectorAll(".cell").forEach((c,i)=>c.setAttribute("aria-current", i===S.sel)); }
 function applyGridBg(){ cells.forEach(cv=>{ cv.className = S.gridBg; }); }
 
 function drawSel(){
-  const ch = KANA[S.sel];
-  $("selLabel").textContent = `${num(S.sel)}.png ／ ${ch}`;
+  const ch = ALL[S.sel];
+  $("selLabel").textContent = `${numOf(S.sel)}.png ／ ${ch}`;
   $("selMotion").value = S.motions[S.sel];
   $("selDeco").value = (S.decoMap[S.sel] && S.decoMap[S.sel].m) || "";
   $("selDecoMotion").value = S.decoMotions[S.sel];
@@ -904,10 +971,11 @@ let bubbleCvs = [];
 function buildBubble(){
   const chars = Array.from($("sample").value);
   const bub = $("bubble"); bub.textContent = ""; bubbleCvs = [];
-  const allDeco = chars.length>0 && chars.every(c=>KANA.includes(c));
+  const inPkg = c => { const g = ALL.indexOf(c); return g >= 0 && LIST().includes(g) ? g : -1; };
+  const allDeco = chars.length>0 && chars.every(c=>inPkg(c)>=0);
   bub.classList.toggle("solo", allDeco && chars.length===1);
   for (const c of chars){
-    const i = KANA.indexOf(c);
+    const i = inPkg(c);
     if (i < 0){ bub.append(document.createTextNode(c)); continue; }
     const cv = document.createElement("canvas"); cv.width=180; cv.height=180; cv.setAttribute("aria-label", c);
     bub.append(cv); bubbleCvs.push([cv,i]);
@@ -924,10 +992,10 @@ const rests = [], boxes = [];
 let fitS = 1;
 const places = [];
 function buildRests(){
-  for (let i=0;i<KANA.length;i++){
+  for (const i of LIST()){
     if (!rests[i]){ rests[i]=document.createElement("canvas"); rests[i].width=360; rests[i].height=360; }
     const ctx = rests[i].getContext("2d", {willReadFrequently:true});
-    const res = drawChar(ctx, KANA[i], 360, 360, i, true);     // 文字だけ(絵は別に動かす)
+    const res = drawChar(ctx, ALL[i], 360, 360, i, true);     // 文字だけ(絵は別に動かす)
     const pl = res && res.place;
     places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m} : null;
     const d = ctx.getImageData(0,0,360,360).data;
@@ -965,7 +1033,7 @@ function computeFit(){
   const n = S.frames;
   const inside = (m, pts) => pts.every(([x,y])=>{ const q = m.transformPoint({x,y}); return q.x>=1 && q.y>=1 && q.x<=179 && q.y<=179; });
   const fits = s => {
-    for (let i=0;i<KANA.length;i++){
+    for (const i of LIST()){
       const b = boxes[i], pts = [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];
       const pl = places[i], h = pl ? decoHalf(pl) : 0, dpts = [[-h,-h],[h,-h],[-h,h],[h,h]];
       for (let f=0; f<n; f++){
@@ -997,7 +1065,7 @@ function startAnim(){
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const step = ()=>{
     const f = reduce ? 0 : tick % n;
-    for (let i=0;i<KANA.length;i++) drawFrame(cells[i].getContext("2d"), i, f);
+    for (const i of LIST()) drawFrame(cells[i].getContext("2d"), i, f);
     drawSel(); paintBubble(); tick++;
   };
   step(); if (!reduce) timer = setInterval(step, Math.max(per, 50));
@@ -1006,7 +1074,7 @@ function labelMotions(){ motionTags.forEach((t,i)=>{ t.textContent = MID[S.motio
 
 function drawTab(){
   const ch = (S.tab || "あ");
-  const i = Math.max(0, KANA.indexOf(ch));
+  const i = Math.max(0, ALL.indexOf(ch));
   drawChar($("tabCv").getContext("2d"), ch, 96, 74, i);
 }
 
@@ -1016,12 +1084,14 @@ function redraw(){
   raf = requestAnimationFrame(()=>{
     document.body.classList.toggle("anim", S.mode==="anim");
     document.body.classList.toggle("deco", S.decoOn==="on");
-    $("exportBtn").textContent = S.mode==="anim" ? "動く161個 + tab をZIPで保存" : "161個 + tab をZIPで保存";
+    refreshPackage();
+    const n = LIST().length;
+    $("exportBtn").textContent = S.mode==="anim" ? `動く${n}個 + tab をZIPで保存` : `${n}個 + tab をZIPで保存`;
     labelMotions();
     if (S.mode==="anim"){ buildRests(); computeFit(); drawTab(); buildBubble(); startAnim(); }
     else {
       clearInterval(timer);
-      KANA.forEach((ch,i)=>drawChar(cells[i].getContext("2d"), ch, 180, 180, i));
+      for (const i of LIST()) drawChar(cells[i].getContext("2d"), ALL[i], 180, 180, i);
       drawSel(); drawTab(); buildBubble();
     }
   });
@@ -1104,7 +1174,11 @@ MOTIONS.forEach(m=>{
 if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
 S.decoPool = S.decoPool.filter(id=>MOTIFS[id]);
 if (!GENRES[S.decoView]) S.decoView = "犬";
-if (!Array.isArray(S.decoMap) || S.decoMap.length!==161 || S.decoMap.some(e=>e && !MOTIFS[e.m])) shuffleDeco();
+if (Array.isArray(S.decoMap) && S.decoMap.length===161 && !S.decoMap.some(e=>e && !MOTIFS[e.m])){
+  const pool = S.decoPool.filter(id=>MOTIFS[id]);
+  S.decoMap = extendTo(S.decoMap, ()=> pool.length && Math.random()*100 < S.decoRate ? {m: pick(pool), c: pick(cornerPool())} : null);
+}
+if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length || S.decoMap.some(e=>e && !MOTIFS[e.m])) shuffleDeco();
 syncers.push(bindSeg("decoOn","decoOn",redraw));
 syncers.push(bindSeg("decoPos","decoPos",()=>{ syncCorners(); redraw(); }));
 function syncCorners(){
@@ -1309,41 +1383,49 @@ $("exportBtn").addEventListener("click", async ()=>{
   const btn=$("exportBtn"), rep=$("report");
   btn.disabled = true; rep.textContent = "書き出し中…";
   const anim = S.mode==="anim";
+  clearInterval(timer);   // 書き出し中はプレビューの動きを止めて速くする
   try{
     const files=[]; let maxKB=0, maxName="", sameList=[];
     const cv=document.createElement("canvas"); cv.width=180; cv.height=180; const ctx=cv.getContext("2d",{willReadFrequently:true});
     if (anim){ buildRests(); computeFit(); }
-    for (let i=0;i<KANA.length;i++){
+    const list = LIST(), total = list.length;
+    for (let k=0;k<total;k++){
+      const i = list[k];
       let data;
       if (anim){
         const fr = [];
         for (let f=0; f<S.frames; f++){ drawFrame(ctx, i, f); fr.push(ctx.getImageData(0,0,180,180).data); }
         const r = await encodeAPNG(fr, 180, 180, +S.sec*1000, +S.loops);
-        data = r.data; if (r.same) sameList.push(num(i));
-        if (i%10===0) rep.textContent = `書き出し中… ${i+1}/161`;
+        data = r.data; if (r.same) sameList.push(`${num(k)}(${ALL[i]})`);
+        if (k%10===0) rep.textContent = `書き出し中… ${k+1}/${total}`;
       } else {
-        drawChar(ctx, KANA[i], 180, 180, i);
+        drawChar(ctx, ALL[i], 180, 180, i);
         data = await toBytes(cv);
       }
-      const kb = data.length/1024; if (kb>maxKB){ maxKB=kb; maxName=num(i)+".png"; }
-      files.push({name:num(i)+".png", data});
+      const kb = data.length/1024; if (kb>maxKB){ maxKB=kb; maxName=num(k)+".png"; }
+      files.push({name:num(k)+".png", data});
     }
     drawTab();
     files.push({name:"tab.png", data: await toBytes($("tabCv"))});
     const zip = makeZip(files);
     const mb = zip.size/1024/1024;
-    const okCount = files.length===162, okKB = maxKB<=1024, okMB = mb<=20;
+    const okCount = files.length===total+1, okKB = maxKB<=1024, okMB = mb<=20;
     rep.innerHTML =
-      `<span class="${okCount?"ok":"ng"}">${okCount?"✓":"✕"} 001〜161.png と tab.png(計${files.length}ファイル)</span>`+
+      `<span class="${okCount?"ok":"ng"}">${okCount?"✓":"✕"} 001〜${num(total-1)}.png と tab.png(計${files.length}ファイル)・${(PKGS[S.pkg]||PKGS.kana).label}</span>`+
+      (missing.size ? `<span class="ng">⚠ フォントにない字:${[...missing].map(g=>ALL[g]).join(" ")}(ほかのフォントで描かれています)</span>` : "")+
       `<span class="${okKB?"ok":"ng"}">${okKB?"✓":"✕"} いちばん重い画像 ${maxName}:${maxKB.toFixed(1)}KB(上限1MB)</span>`+
       `<span class="${okMB?"ok":"ng"}">${okMB?"✓":"✕"} ZIP ${mb.toFixed(2)}MB(上限20MB)</span>`+
       (anim ? `<span class="ok">✓ ${S.frames}コマ・${S.sec}秒×${S.loops}回(合計${+S.sec*+S.loops}秒)・縮小${Math.round(fitS*100)}%</span>`+
         (sameList.length ? `<span class="ng">✕ 前と同じコマがある字:${sameList.join(", ")}(動きを強くするか変えてください)</span>` : `<span class="ok">✓ どの字も全コマ動いています</span>`) : "");
-    const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = anim ? "decomoji_kana161_anim.zip" : "decomoji_kana161.zip";
+    const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = `decomoji_${(PKGS[S.pkg]||PKGS.kana).short}${anim?"_anim":""}.zip`;
     document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
   }catch(err){ rep.innerHTML = `<span class="ng">保存できませんでした:${err.message}</span>`; }
   btn.disabled = false;
+  if (anim) startAnim();
 });
+
+$("pkg").value = PKGS[S.pkg] ? S.pkg : "kana";
+$("pkg").addEventListener("change", async e=>{ S.pkg = e.target.value; save(); refreshPackage(); markSel(); await computeMetrics(); redraw(); });
 
 // ---- 途中の作業を保存・読み込み ----
 function downloadBlob(blob, name){
@@ -1367,10 +1449,15 @@ $("projFile").addEventListener("change", async e=>{
     const st = Object.assign({}, DEF, data.state);
     if (data.userFont){ st.font = 0; }
     S = st;
-    if (!Array.isArray(S.motions) || S.motions.length!==161 || S.motions.some(m=>!MID[m])) shuffleAll();
-    if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==161 || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
+    if (Array.isArray(S.motions) && S.motions.length===161) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
+    if (Array.isArray(S.decoMotions) && S.decoMotions.length===161) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
+    if (Array.isArray(S.decoMap) && S.decoMap.length===161) S.decoMap = extendTo(S.decoMap, ()=>null);
+    if (!PKGS[S.pkg]) S.pkg = "kana";
+    if (!Array.isArray(S.motions) || S.motions.length!==ALL.length || S.motions.some(m=>!MID[m])) shuffleAll();
+    if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==ALL.length || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
     if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
-    if (!Array.isArray(S.decoMap) || S.decoMap.length!==161) shuffleDeco();
+    if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length) shuffleDeco();
+    $("pkg").value = S.pkg;
     if (!GENRES[S.decoView]) S.decoView = "犬";
     save();
     fillFontSelect(); syncers.forEach(fn=>fn()); fillNote(); fixLoops(); applyGridBg(); markSel();
