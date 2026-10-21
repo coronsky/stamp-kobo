@@ -672,6 +672,28 @@ select, input[type=number] { border-color: var(--line-strong); }
         <p class="fine">動かない画像(PNG)で、LINEのスタンプ申請にそのまま使えます。「メイン画像・タブ画像」で決めたスタンプを使います(決めていないときは、いま選んでいるスタンプです)。文字・エフェクトも重ねます。</p>
         <p id="mtMsg" role="status" aria-live="polite"></p>
         <a class="btn" id="mtLink" href="#" download="main.png" hidden>保存ファイルをダウンロード</a>
+        <p class="sub">特集用フレームを重ねたメイン画像</p>
+        <p class="note">LINEの特集企画で、メイン画像に専用フレームを重ねる必要があるときに使います。特集のページから保存したフレーム画像(PNG)を選ぶと、メイン画像(240×240)に重ねて保存できます。</p>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="frmPick">フレーム画像を選ぶ</button>
+          <input type="file" id="frmFile" accept="image/*" hidden>
+          <button type="button" class="btn" id="frmClear" disabled>フレームをはずす</button>
+        </div>
+        <p class="note" id="frmName" role="status" aria-live="polite">フレームは、まだ選んでいません。</p>
+        <div class="field">
+          <label for="frmOrder">重ねる順</label>
+          <select id="frmOrder"><option value="front">フレームを手前に(絵の上にフレーム)</option><option value="back">フレームを奥に(フレームの上に絵)</option></select>
+        </div>
+        <div class="field"><div class="field-head"><label for="frmScale">絵の大きさ</label><output id="frmScaleOut" for="frmScale">100%</output></div><input type="range" id="frmScale" min="30" max="150" step="1" value="100"></div>
+        <div class="field"><div class="field-head"><label for="frmX">絵の位置(左右)</label><output id="frmXOut" for="frmX">0</output></div><input type="range" id="frmX" min="-50" max="50" step="1" value="0"></div>
+        <div class="field"><div class="field-head"><label for="frmY">絵の位置(上下)</label><output id="frmYOut" for="frmY">0</output></div><input type="range" id="frmY" min="-50" max="50" step="1" value="0"></div>
+        <div class="stage-bar"><button type="button" class="btn" id="frmReset">絵の大きさ・位置をもとに戻す</button></div>
+        <figure class="minisec"><canvas id="frmCv" class="mini" width="240" height="240" role="img" aria-label="フレームを重ねたメイン画像のプレビュー"></canvas><figcaption>プレビュー(240×240)</figcaption></figure>
+        <label class="check" for="frmZip"><input type="checkbox" id="frmZip"><span>スタンプ用ZIPのメイン画像(main.png)にも、このフレームを重ねる</span></label>
+        <div class="stage-bar"><button type="button" class="btn primary" id="frmSave" disabled>フレームを重ねたメイン画像を保存</button></div>
+        <p class="fine">使うスタンプは、「メイン画像・タブ画像」で決めたもの(決めていないときは、いま選んでいるもの)です。フレームが正方形でないときは、240×240の中に収めて真ん中に置きます。LINEの特集の細かい決まり(フレームの置き方など)は確認できていないので、ページの案内どおりになっているか、申請前に見てください。</p>
+        <p id="frmMsg" role="status" aria-live="polite"></p>
+        <a class="btn" id="frmLink" href="#" download="main.png" hidden>保存ファイルをダウンロード</a>
         <p class="sub">作業の保存(あとで続きから作れます)</p>
         <div class="stage-bar">
           <button type="button" class="btn primary" id="projSave">作業を保存する</button>
@@ -3292,7 +3314,7 @@ function findTextCells(bg, W, H, opt) {
       msg.textContent = 'タブ画像を作成中…';
       const notes = [];
       const mainItem = items.find((it) => it.id === state.mainId), tabItem = items.find((it) => it.id === state.tabId);
-      if (Z.main) files.push({ name: 'main.png', data: await stillPng(mainItem || items[0], 240, 240) });
+      if (Z.main) files.push({ name: 'main.png', data: (frm.img && $('frmZip').checked) ? await composeMainBytes(mainItem || items[0], true) : await stillPng(mainItem || items[0], 240, 240) });
       files.push({ name: 'tab.png', data: await stillPng(tabItem || items[0], 96, 74) });
       if ((Z.main && !mainItem) || !tabItem) notes.push((Z.main ? 'メイン/タブ画像' : 'タブ画像') + 'が未設定のため、1番目を使いました。');
       const blob = new Blob([makeZip(files)], { type: 'application/zip' });
@@ -3430,6 +3452,100 @@ function findTextCells(bg, W, H, opt) {
   }
   $('saveMainBtn').addEventListener('click', () => saveMainTab('main'));
   $('saveTabBtn').addEventListener('click', () => saveMainTab('tab'));
+
+  // ---- 特集用フレームを重ねたメイン画像 ----
+  const frm = { img: null, name: '' };
+  function frmItem() {
+    let it = state.items.find((x) => x.id === state.mainId), fromSel = false;
+    if (!it) { it = cur(); fromSel = true; }
+    return { it, fromSel };
+  }
+  // メイン画像(240×240)を作る。フレームがあり、使う指定のときは重ねる
+  function composeMain(it, withFrame) {
+    const c = document.createElement('canvas');
+    c.width = 240; c.height = 240;
+    const g = c.getContext('2d');
+    const base = document.createElement('canvas');
+    base.width = 240; base.height = 240;
+    renderFrame(base.getContext('2d'), 240, 240, 0, 1, it, true);
+    const drawFrame = () => {
+      const im = frm.img, r = Math.min(240 / im.width, 240 / im.height), w = im.width * r, h = im.height * r;
+      g.drawImage(im, (240 - w) / 2, (240 - h) / 2, w, h);
+    };
+    const drawArt = () => {
+      const k = Number($('frmScale').value) / 100, dx = Number($('frmX').value) * 2.4, dy = Number($('frmY').value) * 2.4;
+      g.save(); g.translate(120 + dx, 120 + dy); g.scale(k, k); g.translate(-120, -120);
+      g.imageSmoothingQuality = 'high'; g.drawImage(base, 0, 0); g.restore();
+    };
+    if (withFrame && frm.img) {
+      if ($('frmOrder').value === 'back') { drawFrame(); drawArt(); } else { drawArt(); drawFrame(); }
+    } else g.drawImage(base, 0, 0);
+    return c;
+  }
+  async function composeMainBytes(it, withFrame) {
+    const c = composeMain(it, withFrame);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/png'));
+    return new Uint8Array(await blob.arrayBuffer());
+  }
+  function frmPreview() {
+    $('frmScaleOut').textContent = $('frmScale').value + '%';
+    $('frmXOut').textContent = $('frmX').value;
+    $('frmYOut').textContent = $('frmY').value;
+    const { it } = frmItem();
+    const cv2 = $('frmCv'), g = cv2.getContext('2d');
+    g.clearRect(0, 0, 240, 240);
+    if (!it) return;
+    g.drawImage(composeMain(it, true), 0, 0);
+  }
+  $('frmPick').addEventListener('click', () => $('frmFile').click());
+  $('frmFile').addEventListener('change', (e) => {
+    const f = e.target.files[0]; e.target.value = '';
+    if (!f) return;
+    const url = URL.createObjectURL(f), im = new Image();
+    im.onload = () => {
+      URL.revokeObjectURL(url);
+      frm.img = im; frm.name = f.name;
+      $('frmName').textContent = 'フレーム: ' + f.name + '(' + im.width + '×' + im.height + ')';
+      $('frmSave').disabled = false; $('frmClear').disabled = false;
+      frmPreview();
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); $('frmName').textContent = 'この画像は読み込めませんでした。PNGなどの画像を選んでください。'; };
+    im.src = url;
+  });
+  $('frmClear').addEventListener('click', () => {
+    frm.img = null; frm.name = '';
+    $('frmName').textContent = 'フレームは、まだ選んでいません。';
+    $('frmSave').disabled = true; $('frmClear').disabled = true; $('frmZip').checked = false;
+    frmPreview();
+  });
+  ['frmOrder', 'frmScale', 'frmX', 'frmY'].forEach((id) => $(id).addEventListener('input', frmPreview));
+  $('frmOrder').addEventListener('change', frmPreview);
+  $('frmReset').addEventListener('click', () => { $('frmScale').value = 100; $('frmX').value = 0; $('frmY').value = 0; frmPreview(); });
+  $('frmSave').addEventListener('click', async () => {
+    const say = (t) => { $('frmMsg').textContent = t; };
+    const { it, fromSel } = frmItem();
+    if (!it) { say('スタンプがありません。画像を追加してから押してください。'); return; }
+    if (!frm.img) { say('先にフレーム画像を選んでください。'); return; }
+    $('frmSave').disabled = true; $('frmLink').hidden = true;
+    try {
+      const bytes = await composeMainBytes(it, true);
+      const blob = new Blob([bytes], { type: 'image/png' });
+      const no = state.items.indexOf(it) + 1;
+      const note = '(' + (fromSel ? '決めていないため、選んでいる' : '決めてある') + 'スタンプ' + no + '番、240×240、' + Math.round(blob.size / 1024) + ' KB)';
+      if (downloads) {
+        try { await downloads.save({ filename: 'main.png', data: blob }); say('フレームを重ねたメイン画像を保存しました' + note + '。'); }
+        catch (e) { say((e && e.code === 'declined') ? '保存をキャンセルしました。もう一度押すと保存できます。' : 'この画面からは保存できませんでした。'); }
+      } else {
+        const link = $('frmLink');
+        if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+        link.dataset.url = URL.createObjectURL(blob);
+        link.href = link.dataset.url; link.hidden = false;
+        say('フレームを重ねたメイン画像ができました' + note + '。下のボタンから保存してください。');
+      }
+    } catch (e) { say('書き出しに失敗しました。もう一度お試しください。'); }
+    finally { $('frmSave').disabled = !frm.img; }
+  });
+  frmPreview();
 
   // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
   const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
