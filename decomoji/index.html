@@ -1,0 +1,1354 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>Mon Chein デコ文字工房</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&family=M+PLUS+Rounded+1c:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yusei+Magic&family=Kosugi+Maru&display=swap">
+<style>
+/* Layout: 左に設定パネル、右に161マスの一覧。スマホでは縦に積む */
+:root{
+  --bg:#f3f5f7; --panel:#ffffff; --ink:#22262b; --muted:#68717c; --line:#dde2e8;
+  --accent:#d6336c; --accent-ink:#ffffff; --ok:#2b8a3e; --ng:#c92a2a; --chip:#eef1f4;
+  --ui:"Zen Maru Gothic",system-ui,-apple-system,"Hiragino Sans","Noto Sans JP",sans-serif;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#16191d; --panel:#1f2328; --ink:#e9ecef; --muted:#9aa3ad; --line:#323840;
+  --accent:#f06595; --accent-ink:#1a0710; --ok:#69db7c; --ng:#ff8787; --chip:#2a3037; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#16191d; --panel:#1f2328; --ink:#e9ecef; --muted:#9aa3ad; --line:#323840;
+  --accent:#f06595; --accent-ink:#1a0710; --ok:#69db7c; --ng:#ff8787; --chip:#2a3037; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--ui);font-weight:500;line-height:1.6;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 40px}
+h1{font-weight:900;font-size:1.5rem;margin:0;text-wrap:balance}
+h2{font-weight:900;font-size:1rem;margin:0 0 10px}
+.sub{color:var(--muted);font-size:.85rem;margin:2px 0 0}
+header{max-width:1200px;margin:0 auto 16px}
+.wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:340px 1fr;gap:16px;align-items:start}
+@media (max-width:700px){.wrap{grid-template-columns:1fr}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px;display:grid;gap:18px;min-width:0}
+.side{position:sticky;top:12px}
+@media (max-width:700px){.side{position:static}}
+@media (max-width:900px) and (min-width:701px){.wrap{grid-template-columns:300px 1fr}}
+.field{display:grid;gap:6px}
+.field label,.lbl{font-size:.8rem;color:var(--muted);letter-spacing:.02em}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+select,input[type=text],input[type=number]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:7px 9px;min-width:0}
+select{width:100%}
+input[type=range]{flex:1;min-width:120px;accent-color:var(--accent)}
+input[type=color]{width:40px;height:32px;border:1px solid var(--line);border-radius:8px;background:none;padding:2px;cursor:pointer}
+.val{font-variant-numeric:tabular-nums;font-size:.85rem;min-width:3.2em;text-align:right}
+.seg{display:flex;flex-wrap:wrap;gap:6px}
+.seg button,.chip{font:inherit;font-size:.82rem;border:1px solid var(--line);background:var(--chip);color:var(--ink);border-radius:999px;padding:5px 11px;cursor:pointer}
+.seg button[aria-pressed=true]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.btn{font:inherit;font-weight:900;border:0;border-radius:10px;padding:12px 16px;background:var(--accent);color:var(--accent-ink);cursor:pointer;width:100%;font-size:1rem}
+.btn:disabled{opacity:.5;cursor:wait}
+.btn2{font:inherit;border:1px solid var(--line);border-radius:10px;padding:8px 12px;background:var(--chip);color:var(--ink);cursor:pointer}
+.sep{border:0;border-top:1px solid var(--line);margin:0}
+.big{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.big canvas{width:120px;height:120px;border-radius:10px;border:1px solid var(--line)}
+.bgA{background:#ffffff}.bgB{background:#8cabd9}.bgC{background:#2b2b2b}
+.bgA,.bgB,.bgC{background-image:none}
+.checker{background-color:#fff;background-image:linear-gradient(45deg,#e5e5e5 25%,transparent 25%,transparent 75%,#e5e5e5 75%),linear-gradient(45deg,#e5e5e5 25%,transparent 25%,transparent 75%,#e5e5e5 75%);background-size:16px 16px;background-position:0 0,8px 8px}
+.talk{border-radius:12px;padding:14px;min-height:64px;display:flex;justify-content:flex-end}
+.bubble{background:#a3e57c;color:#111;border-radius:16px;padding:6px 10px;display:flex;flex-wrap:wrap;align-items:center;gap:0;max-width:100%;font-family:system-ui,sans-serif;font-size:15px}
+.bubble img{width:26px;height:26px;display:block}
+.bubble.solo{background:none;padding:0}
+.bubble.solo img{width:72px;height:72px}
+.gridhead{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(66px,1fr));gap:8px}
+.cell{display:grid;gap:2px;justify-items:center;cursor:pointer;border:1px solid transparent;border-radius:10px;padding:4px;background:none;font:inherit;color:inherit}
+.cell canvas{width:100%;max-width:72px;aspect-ratio:1;border-radius:8px}
+.cell span{font-size:.7rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.cell[aria-current=true]{border-color:var(--accent)}
+.report{font-size:.85rem;display:grid;gap:4px}
+.ok{color:var(--ok)}.ng{color:var(--ng)}
+.note{font-size:.75rem;color:var(--muted)}
+.hidden-file{display:none}
+[hidden]{display:none!important}
+.chips-scroll{max-height:230px;overflow-y:auto;padding:2px}
+.mchip{display:inline-flex;align-items:center;gap:4px}
+.mchip canvas{width:26px;height:26px}
+body:not(.anim) .animbox{display:none}
+body:not(.deco) .decobox{display:none}
+.cell b{white-space:nowrap;font-size:.62rem;font-weight:500;color:var(--accent);line-height:1}
+body:not(.anim) .cell b{display:none}
+.bubble canvas{width:26px;height:26px;display:block}
+.bubble.solo canvas{width:72px;height:72px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<header>
+  <h1>Mon Chein デコ文字工房</h1>
+  <p class="sub">LINEデコ文字(かなカナ)161個を、180×180の透過PNGで番号どおりに書き出します</p>
+</header>
+
+<div class="wrap">
+  <section class="panel side" aria-label="設定">
+    <div class="field">
+      <label for="font">フォント</label>
+      <select id="font"></select>
+      <div class="row">
+        <button class="btn2" id="fontUpBtn" type="button">手持ちのフォントを読み込む</button>
+        <input type="file" id="fontFile" class="hidden-file" accept=".ttf,.otf,.woff,.woff2">
+      </div>
+      <span class="note">一覧のフォントはGoogle Fontsの無料・商用利用OKのものです。手持ちのフォントは販売利用OKか確認してから使ってください。</span>
+    </div>
+
+    <div class="field">
+      <span class="lbl">色のプリセット</span>
+      <div class="seg" id="presets"></div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">塗り方</span>
+      <div class="seg" id="fillMode">
+        <button type="button" data-v="solid">単色</button>
+        <button type="button" data-v="grad">グラデ</button>
+        <button type="button" data-v="cycle">1文字ずつ色替え</button>
+      </div>
+      <div class="row">
+        <input type="color" id="c1" aria-label="文字の色1"><input type="color" id="c2" aria-label="文字の色2(グラデ用)">
+        <span class="note" id="fillNote"></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="line1">ふち(内側)</label>
+      <div class="row"><input type="color" id="lc1" aria-label="内側のふちの色"><input type="range" id="line1" min="0" max="16" step="1"><span class="val" id="line1V"></span></div>
+    </div>
+    <div class="field">
+      <label for="line2">ふち(外側)</label>
+      <div class="row"><input type="color" id="lc2" aria-label="外側のふちの色"><input type="range" id="line2" min="0" max="16" step="1"><span class="val" id="line2V"></span></div>
+    </div>
+    <div class="field">
+      <label for="bold">文字を太らせる</label>
+      <div class="row"><input type="range" id="bold" min="0" max="8" step="1"><span class="val" id="boldV"></span></div>
+    </div>
+    <div class="field">
+      <label for="margin">まわりの余白</label>
+      <div class="row"><input type="range" id="margin" min="0" max="30" step="1"><span class="val" id="marginV"></span></div>
+      <span class="note">ガイドラインでは、文字の絵文字は上下左右に少しすき間があると隣とくっつかず読みやすい、とされています。</span>
+    </div>
+    <div class="field">
+      <span class="lbl">大きさのそろえ方</span>
+      <div class="seg" id="fitMode">
+        <button type="button" data-v="common">フォントどおり</button>
+        <button type="button" data-v="each">1文字ずつ最大</button>
+      </div>
+      <span class="note">「フォントどおり」は ぁ・っ などの小さい字が小さいまま、並べたときの高さがそろいます。</span>
+    </div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <span class="lbl">飾りの絵</span>
+      <div class="seg" id="decoOn"><button type="button" data-v="off">なし</button><button type="button" data-v="on">文字に添える</button></div>
+    </div>
+    <div class="field decobox" style="gap:14px">
+      <div class="field">
+        <span class="lbl">ジャンル(押すとそのジャンルの絵を全部使います)</span>
+        <div class="seg" id="genre"></div>
+      </div>
+      <div class="field">
+        <span class="lbl">使う絵(タップで入れる/外す)<span id="poolCount"></span></span>
+        <div class="seg chips-scroll" id="decoPool"></div>
+        <div class="row"><button class="btn2" id="poolAllBtn" type="button">このジャンルを全部入れる</button><button class="btn2" id="poolNoneBtn" type="button">全部外す</button></div>
+      </div>
+      <div class="field">
+        <span class="lbl">位置</span>
+        <div class="seg" id="decoPos"><button type="button" data-v="tr">右上</button><button type="button" data-v="tl">左上</button><button type="button" data-v="br">右下</button><button type="button" data-v="bl">左下</button><button type="button" data-v="rand">ランダム</button></div>
+        <div class="field" id="cornerBox">
+          <span class="lbl">ランダムに使う位置(タップで入れる/外す)</span>
+          <div class="seg" id="decoCorners"><button type="button" data-v="tl">左上</button><button type="button" data-v="tr">右上</button><button type="button" data-v="bl">左下</button><button type="button" data-v="br">右下</button></div>
+        </div>
+      </div>
+      <div class="field">
+        <label for="decoSize">絵の大きさ</label>
+        <div class="row"><input type="range" id="decoSize" min="20" max="50" step="2"><span class="val" id="decoSizeV"></span></div>
+      </div>
+      <div class="field">
+        <label for="decoRate">絵を付ける字の割合</label>
+        <div class="row"><input type="range" id="decoRate" min="10" max="100" step="10"><span class="val" id="decoRateV"></span></div>
+      </div>
+      <button class="btn2" id="decoShuffleBtn" type="button" style="font-weight:900">🎲 絵を振り分け直す</button>
+      <span class="note">ガイドラインでは、絵文字は小さく表示されるので飾りはシンプルに、とされています。文字が読めるよう、大きくしすぎないのがおすすめです。</span>
+    </div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <span class="lbl">作るもの</span>
+      <div class="seg" id="mode">
+        <button type="button" data-v="still">静止画</button>
+        <button type="button" data-v="anim">動く(アニメ)</button>
+      </div>
+    </div>
+
+    <div class="field animbox" id="animBox">
+      <span class="lbl">ランダムに使う動き(タップで入れる/外す)</span>
+      <div class="seg" id="pool"></div>
+      <button class="btn2" id="shuffleBtn" type="button" style="font-weight:900">🎲 161個を一括でランダムに動かす</button>
+      <div class="row"><select id="allMotion" aria-label="全部に付ける動き" style="width:auto;flex:1"></select><button class="btn2" id="allSameBtn" type="button">全部この動きに</button></div>
+      <div class="field">
+        <span class="lbl">文字だけ・絵だけ振り直す</span>
+        <div class="row"><button class="btn2" id="shuffleTextBtn" type="button">文字の動き</button><button class="btn2" id="shuffleDecoMBtn" type="button">絵の動き</button></div>
+      </div>
+      <div class="field decobox">
+        <span class="lbl">絵に使う動き(文字とは別に動きます。下の段は絵だけの大きな動き)</span>
+        <div class="seg" id="decoMpool"></div>
+        <div class="seg" id="decoMpoolBig"></div>
+      </div>
+      <div class="field decobox">
+        <label for="decoAmp">絵の動きの大きさ</label>
+        <div class="row"><input type="range" id="decoAmp" min="50" max="300" step="10"><span class="val" id="decoAmpV"></span></div>
+      </div>
+      <div class="field">
+        <button class="btn2" id="stopAllBtn" type="button" style="font-weight:900">⏸ 全部の動きを止める</button>
+        <span class="note">文字も絵も止まった状態になります。全部止めたままではアニメとして提出できないので、動かしたい字に動きを付け直してください。</span>
+      </div>
+      <div class="field">
+        <label for="amp">動きの強さ</label>
+        <div class="row"><input type="range" id="amp" min="40" max="160" step="10"><span class="val" id="ampV"></span></div>
+      </div>
+      <div class="field">
+        <span class="lbl">再生時間</span>
+        <div class="seg" id="sec"><button type="button" data-v="1">1秒</button><button type="button" data-v="2">2秒</button><button type="button" data-v="3">3秒</button><button type="button" data-v="4">4秒</button></div>
+      </div>
+      <div class="field">
+        <label for="frames">コマ数</label>
+        <div class="row"><input type="range" id="frames" min="5" max="20" step="1"><span class="val" id="framesV"></span></div>
+      </div>
+      <div class="field">
+        <span class="lbl">ループ回数</span>
+        <div class="seg" id="loops"><button type="button" data-v="1">1回</button><button type="button" data-v="2">2回</button><button type="button" data-v="3">3回</button><button type="button" data-v="4">4回</button></div>
+        <span class="note">LINEの決まり:コマは5〜20、再生時間×ループは4秒まで。1コマ目は止まった形(文字が読める状態)になります。はみ出さないよう、動きに合わせて全部の字を同じ割合で少し小さくします。</span>
+      </div>
+    </div>
+
+    <hr class="sep">
+
+    <div class="field">
+      <label for="tabChar">タブ画像(96×74)にする文字</label>
+      <div class="row"><input type="text" id="tabChar" maxlength="1" style="width:4em;text-align:center"><canvas id="tabCv" width="96" height="74" class="checker" style="border-radius:6px;border:1px solid var(--line)"></canvas></div>
+    </div>
+
+    <div class="field">
+      <span class="lbl">途中の作業</span>
+      <div class="row">
+        <button class="btn2" id="projSaveBtn" type="button">💾 作業を保存</button>
+        <button class="btn2" id="projLoadBtn" type="button">📂 作業を読み込む</button>
+        <input type="file" id="projFile" class="hidden-file" accept=".json,application/json">
+      </div>
+      <span class="note">設定・動き・絵の振り分けを1つのファイルに保存します。このブラウザでは自動でも覚えていますが、iPadとパソコンの間で続きをするときや、いくつかのセットを作り分けるときに使ってください。</span>
+    </div>
+
+    <button class="btn" id="exportBtn" type="button">161個 + tab をZIPで保存</button>
+    <div class="report" id="report" aria-live="polite"></div>
+  </section>
+
+  <section class="panel" aria-label="プレビュー">
+    <div>
+      <h2>選んでいる文字 <span id="selLabel" style="color:var(--muted);font-weight:500"></span></h2>
+      <div class="big">
+        <canvas id="bigA" width="180" height="180" class="checker" title="透過"></canvas>
+        <canvas id="bigB" width="180" height="180" class="bgB" title="トーク背景"></canvas>
+        <canvas id="bigC" width="180" height="180" class="bgC" title="暗い背景"></canvas>
+      </div>
+      <div class="row animbox" style="margin-top:10px">
+        <select id="selMotion" aria-label="この字の動き" style="width:auto"></select>
+        <button class="btn2" id="selRandBtn" type="button">この字だけランダム</button>
+        <button class="btn2" id="selStopBtn" type="button">この字を止める</button>
+      </div>
+      <div class="row decobox" style="margin-top:8px">
+        <label for="selDeco" class="lbl">この字の絵</label>
+        <select id="selDeco" style="width:auto"></select>
+        <span class="animbox row"><label for="selDecoMotion" class="lbl">絵の動き</label><select id="selDecoMotion" style="width:auto"></select></span>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="sample">トークでの見え方(セットにない字はふつうの文字で出ます)</label>
+      <input type="text" id="sample" value="ありがとう！">
+      <div class="talk bgB"><div class="bubble" id="bubble"></div></div>
+    </div>
+
+    <div class="gridhead">
+      <h2>161個の一覧</h2>
+      <div class="seg" id="gridBg">
+        <button type="button" data-v="checker">透過</button>
+        <button type="button" data-v="bgA">白</button>
+        <button type="button" data-v="bgB">トーク</button>
+        <button type="button" data-v="bgC">黒</button>
+      </div>
+    </div>
+    <div class="grid" id="grid"></div>
+  </section>
+</div>
+
+<script>
+"use strict";
+// ---- LINE公式「パッケージタイプとファイル名」デコ文字(かなカナ) 001〜161 ----
+const KANA = ["あ","い","う","え","お","か","き","く","け","こ","さ","し","す","せ","そ","た","ち",
+"つ","て","と","な","に","ぬ","ね","の","は","ひ","ふ","へ","ほ","ま","み","む","め",
+"も","や","ゆ","よ","ら","り","る","れ","ろ","わ","を","ん","ぁ","ぃ","ぅ","ぇ","ぉ",
+"っ","ゃ","ゅ","ょ","が","ぎ","ぐ","げ","ご","ざ","じ","ず","ぜ","ぞ","だ","ぢ","づ",
+"で","ど","ば","び","ぶ","べ","ぼ","ぱ","ぴ","ぷ","ぺ","ぽ","ア","イ","ウ","エ","オ",
+"カ","キ","ク","ケ","コ","サ","シ","ス","セ","ソ","タ","チ","ツ","テ","ト","ナ","ニ",
+"ヌ","ネ","ノ","ハ","ヒ","フ","ヘ","ホ","マ","ミ","ム","メ","モ","ヤ","ユ","ヨ","ラ",
+"リ","ル","レ","ロ","ワ","ヲ","ン","ァ","ィ","ゥ","ェ","ォ","ッ","ャ","ュ","ョ","ガ",
+"ギ","グ","ゲ","ゴ","ザ","ジ","ズ","ゼ","ゾ","ダ","ヂ","ヅ","デ","ド","バ","ビ","ブ",
+"ベ","ボ","パ","ピ","プ","ペ","ポ","ー"];
+const num = i => String(i+1).padStart(3,"0");
+
+const FONTS = [
+  {label:"Zen丸ゴシック(極太)", fam:'"Zen Maru Gothic"', w:"900"},
+  {label:"M PLUS Rounded(極太)", fam:'"M PLUS Rounded 1c"', w:"900"},
+  {label:"モッチーポップ", fam:'"Mochiy Pop One"', w:"400"},
+  {label:"デラゴシック", fam:'"Dela Gothic One"', w:"400"},
+  {label:"ロックンロール", fam:'"RocknRoll One"', w:"400"},
+  {label:"はちまるポップ", fam:'"Hachi Maru Pop"', w:"400"},
+  {label:"油性マジック", fam:'"Yusei Magic"', w:"400"},
+  {label:"小杉丸ゴシック", fam:'"Kosugi Maru"', w:"400"},
+];
+const CYCLE = ["#f07fa6","#7fd8ec","#d58cf0","#f2a184","#f6e27a","#8fdcae"];
+const PRESETS = {
+  "ポップ": {fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", line1:8, lc2:"#ffffff", line2:0},
+  "ゴールド": {fill:"grad", c1:"#fff0a8", c2:"#c8901c", lc1:"#5a3a0a", line1:6, lc2:"#ffffff", line2:5},
+  "ピンク": {fill:"solid", c1:"#ff8fb5", c2:"#ff8fb5", lc1:"#ffffff", line1:7, lc2:"#7a2d4a", line2:4},
+  "モノクロ": {fill:"solid", c1:"#2b2b2b", c2:"#2b2b2b", lc1:"#ffffff", line1:7, lc2:"#2b2b2b", line2:0},
+  "わんこ茶": {fill:"grad", c1:"#d9a46c", c2:"#8a5a2e", lc1:"#3b2414", line1:6, lc2:"#ffffff", line2:4},
+};
+// ---- 動き(p=0 で必ず止まった形。p は 0〜1 未満) ----
+const ease = p => p<.5 ? 2*p*p : 1-2*(1-p)*(1-p);
+const TAU = Math.PI*2;
+const MOTIONS = [
+  {id:"hop",   label:"ぴょん",     pivot:"b", f:(p,A)=>{const s=Math.sin(Math.PI*p); return {dy:-16*A*s, sy:1+0.06*A*s};}},
+  {id:"sway",  label:"ゆらゆら",   pivot:"b", f:(p,A)=>({rot:10*A*Math.sin(TAU*p)})},
+  {id:"shake", label:"ぷるぷる",   pivot:"c", f:(p,A)=>({dx:4*A*Math.sin(TAU*3*p), rot:2*A*Math.sin(TAU*2*p)})},
+  {id:"beat",  label:"どきどき",   pivot:"c", f:(p,A)=>({s:1+0.12*A*Math.abs(Math.sin(TAU*p))})},
+  {id:"float", label:"ふわふわ",   pivot:"c", f:(p,A)=>({dy:-8*A*Math.sin(TAU*p), rot:3*A*Math.sin(TAU*2*p)})},
+  {id:"spin",  label:"ぐるん",     pivot:"c", f:p=>({rot:360*ease(p)})},
+  {id:"boing", label:"びよーん",   pivot:"b", f:(p,A)=>{const s=Math.sin(TAU*p); return {sx:1+0.12*A*s, sy:1-0.12*A*s};}},
+  {id:"skew",  label:"くねくね",   pivot:"b", f:(p,A)=>({k:0.22*A*Math.sin(TAU*p)})},
+  {id:"flip",  label:"くるっ",     pivot:"c", f:p=>({sx:Math.cos(TAU*p)})},
+  {id:"slide", label:"よこゆれ",   pivot:"c", f:(p,A)=>({dx:10*A*Math.sin(TAU*p)})},
+  {id:"pop",   label:"ぽよん",     pivot:"b", f:(p,A)=>({s:1+0.16*A*Math.sin(TAU*2*p)*(1-p)})},
+  {id:"jspin", label:"くるりんぱ", pivot:"c", f:(p,A)=>({dy:-14*A*Math.sin(Math.PI*p), rot:360*ease(p)})},
+];
+const NONE = {id:"none", label:"止まる", pivot:"c", f:()=>({})};
+const LETTER_MOTIONS = [...MOTIONS, NONE];
+const MID = Object.fromEntries(LETTER_MOTIONS.map(m=>[m.id,m]));
+// 絵だけの大きな動き(枠の外まで出てよい。1コマ目は必ず元の位置)
+const wrapPos = (v, lo, span) => { while (v < lo) v += span; while (v > lo+span) v -= span; return v; };
+const BIG = [
+  {id:"b_left",  label:"左へ抜ける",   big:1, pos:(p,A,pl,h)=>({x: wrapPos(pl.cx - p*(180+2*h), -h, 180+2*h), y: pl.cy})},
+  {id:"b_right", label:"右へ抜ける",   big:1, pos:(p,A,pl,h)=>({x: wrapPos(pl.cx + p*(180+2*h), -h, 180+2*h), y: pl.cy})},
+  {id:"b_up",    label:"上へ抜ける",   big:1, pos:(p,A,pl,h)=>({x: pl.cx, y: wrapPos(pl.cy - p*(180+2*h), -h, 180+2*h)})},
+  {id:"b_down",  label:"下へ落ちる",   big:1, pos:(p,A,pl,h)=>({x: pl.cx, y: wrapPos(pl.cy + p*(180+2*h), -h, 180+2*h), rot: 90*Math.sin(TAU*p)})},
+  {id:"b_orbit", label:"まわりをくるくる", big:1, pos:(p,A,pl)=>{ const a=TAU*p, dx=pl.cx-90, dy=pl.cy-90; return {x:90+dx*Math.cos(a)-dy*Math.sin(a), y:90+dx*Math.sin(a)+dy*Math.cos(a)}; }},
+  {id:"b_orbit2",label:"回りながら一周", big:1, pos:(p,A,pl)=>{ const a=TAU*p, dx=pl.cx-90, dy=pl.cy-90; return {x:90+dx*Math.cos(a)-dy*Math.sin(a), y:90+dx*Math.sin(a)+dy*Math.cos(a), rot:720*p}; }},
+  {id:"b_rorbit",label:"逆まわり",     big:1, pos:(p,A,pl)=>{ const a=-TAU*p, dx=pl.cx-90, dy=pl.cy-90; return {x:90+dx*Math.cos(a)-dy*Math.sin(a), y:90+dx*Math.sin(a)+dy*Math.cos(a)}; }},
+  {id:"b_eight", label:"8の字",        big:1, pos:(p,A,pl)=>({x: pl.cx + 40*A*Math.sin(TAU*p), y: pl.cy + 22*A*Math.sin(2*TAU*p)})},
+  {id:"b_jump",  label:"大ジャンプ",   big:1, pos:(p,A,pl)=>({x: pl.cx, y: pl.cy - 70*A*Math.sin(Math.PI*p), rot: 360*ease(p)})},
+  {id:"b_zoom",  label:"ズームどーん", big:1, pos:(p,A,pl)=>({x: pl.cx, y: pl.cy, sc: 1 + 1.0*A*Math.sin(Math.PI*p)})},
+  {id:"b_swing", label:"ふりこ",       big:1, pos:(p,A,pl)=>{ const a=0.6*A*Math.sin(TAU*p), r=60; return {x: pl.cx + r*Math.sin(a), y: pl.cy - r + r*Math.cos(a), rot: -a*57.3}; }},
+  {id:"b_zigzag",label:"ジグザグ",     big:1, pos:(p,A,pl,h)=>{ const x = wrapPos(pl.cx - p*(180+2*h), -h, 180+2*h); return {x, y: pl.cy + 18*A*Math.sin(TAU*4*p)}; }},
+];
+const DECO_MOTIONS = [{id:"follow",label:"文字といっしょ"},{id:"still",label:"止まったまま"},...MOTIONS,...BIG];
+const DMID = Object.fromEntries(DECO_MOTIONS.map(m=>[m.id,m]));
+
+const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", line1:8, lc2:"#ffffff", line2:0,
+  bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0,
+  mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
+  decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
+  decoMotions:null, decoMpool:null};
+
+let S = Object.assign({}, DEF);
+try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
+const pick = (arr, avoid) => { const c = arr.length>1 ? arr.filter(x=>x!==avoid) : arr; return c[Math.floor(Math.random()*c.length)]; };
+function shuffleAll(){
+  const pool = S.pool.length ? S.pool : MOTIONS.map(m=>m.id);
+  S.motions = []; for (let i=0;i<161;i++) S.motions.push(pick(pool, S.motions[i-1]));
+}
+if (!Array.isArray(S.motions) || S.motions.length!==161 || S.motions.some(m=>!MID[m])) shuffleAll();
+if (!Array.isArray(S.decoMpool) || !S.decoMpool.length) S.decoMpool = MOTIONS.map(m=>m.id);
+function shuffleDecoMotions(){
+  const pool = S.decoMpool.filter(id=>DMID[id]); const use = pool.length ? pool : ["follow"];
+  S.decoMotions = []; for (let i=0;i<161;i++) S.decoMotions.push(pick(use, S.decoMotions[i-1]));
+}
+if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==161 || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
+const save = () => { try { localStorage.setItem("decomoji-v1", JSON.stringify(S)); } catch(e){} };
+
+const $ = id => document.getElementById(id);
+const fontList = FONTS.slice();
+
+// ---- 描画 ----
+const mcv = document.createElement("canvas"), mctx = mcv.getContext("2d");
+let metrics = null;
+const fontOf = () => fontList[S.font] || fontList[0];
+const fontStr = px => `${fontOf().w} ${px}px ${fontOf().fam}, "Hiragino Maru Gothic ProN", sans-serif`;
+
+async function computeMetrics(){
+  try { await document.fonts.load(fontStr(100), KANA.join("")+"あ"); } catch(e){}
+  mctx.font = fontStr(100);
+  let asc=0, desc=0, w=0;
+  for (const ch of KANA){
+    const m = mctx.measureText(ch);
+    asc = Math.max(asc, m.actualBoundingBoxAscent);
+    desc = Math.max(desc, m.actualBoundingBoxDescent);
+    w = Math.max(w, m.actualBoundingBoxLeft + m.actualBoundingBoxRight);
+  }
+  metrics = {asc, desc, w};
+}
+
+function drawChar(ctx, ch, W, H, idx, noDeco=false){
+  ctx.clearRect(0,0,W,H);
+  const f = Math.min(W,H)/180;                       // タブ画像用に線と余白を縮める
+  const bold=S.bold*f, l1=S.line1*f, l2=S.line2*f, pad=S.margin*f;
+  const ol = bold + l1 + l2;
+  const availW = W - 2*pad - 2*ol, availH = H - 2*pad - 2*ol;
+  if (availW <= 4 || availH <= 4) return null;
+  mctx.font = fontStr(100);
+  const m = mctx.measureText(ch);
+  const gl = m.actualBoundingBoxLeft, gr = m.actualBoundingBoxRight;
+  const ga = m.actualBoundingBoxAscent, gd = m.actualBoundingBoxDescent;
+  const gw = gl+gr, gh = ga+gd;
+  let k, y, top, bot;
+  if (S.fit === "each" || W !== H){
+    k = Math.min(availW/Math.max(gw,1), availH/Math.max(gh,1));
+    y = H/2 + (ga-gd)/2*k; top = y-ga*k; bot = y+gd*k;
+  } else {
+    k = Math.min(availW/metrics.w, availH/(metrics.asc+metrics.desc));
+    y = H/2 + (metrics.asc-metrics.desc)/2*k; top = y-metrics.asc*k; bot = y+metrics.desc*k;
+  }
+  const x = W/2 - (gr-gl)/2*k;
+  ctx.font = fontStr(100*k);
+  ctx.textAlign = "left"; ctx.textBaseline = "alphabetic";
+  ctx.lineJoin = "round"; ctx.lineCap = "round"; ctx.miterLimit = 2;
+
+  let fill;
+  if (S.fill === "grad"){ fill = ctx.createLinearGradient(0, top, 0, bot); fill.addColorStop(0,S.c1); fill.addColorStop(1,S.c2); }
+  else if (S.fill === "cycle"){ fill = CYCLE[idx % CYCLE.length]; }
+  else fill = S.c1;
+
+  if (l2 > 0){ ctx.strokeStyle=S.lc2; ctx.lineWidth=2*(bold+l1+l2); ctx.strokeText(ch,x,y); }
+  if (l1 > 0){ ctx.strokeStyle=S.lc1; ctx.lineWidth=2*(bold+l1); ctx.strokeText(ch,x,y); }
+  if (bold > 0){ ctx.strokeStyle=fill; ctx.lineWidth=2*bold; ctx.strokeText(ch,x,y); }
+  ctx.fillStyle = fill; ctx.fillText(ch,x,y);
+  const place = decoPlace(idx, {l:x-gl*k, r:x+gr*k, t:y-ga*k, b:y+gd*k}, W, H);
+  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  return {place};
+}
+
+// ---- 飾りの絵(ツールが描く) ----
+// 座標は半径1くらいの単位。shapes は ふち→塗り の順で重ねて描き、detail はふちの色で目や線を描く
+let INK = "#3a1f1a";
+const E = (x,y,rx,ry,rot=0) => c => c.ellipse(x,y,rx,ry,rot,0,TAU);
+const C = (x,y,rr) => c => c.arc(x,y,rr,0,TAU);
+const P = (...a) => c => { c.moveTo(a[0],a[1]); for (let k=2;k<a.length;k+=2) c.lineTo(a[k],a[k+1]); c.closePath(); };
+const R = (x,y,w,h,rad) => c => c.roundRect(x,y,w,h,rad);
+const K = (x1,y1,x2,y2,w) => c => { const a=Math.atan2(y2-y1,x2-x1), len=Math.hypot(x2-x1,y2-y1); c.save(); c.translate(x1,y1); c.rotate(a); c.roundRect(-w/2,-w/2,len+w,w,w/2); c.restore(); };
+const RING = (x,y,ro,ri) => c => { c.arc(x,y,ro,0,TAU); c.moveTo(x+ri,y); c.arc(x,y,ri,0,TAU,true); };
+const HP = (x,y,s) => c => { c.moveTo(x,y+s*0.85); c.bezierCurveTo(x-s*1.35,y+s*0.05,x-s*0.85,y-s*0.95,x,y-s*0.35); c.bezierCurveTo(x+s*0.85,y-s*0.95,x+s*1.35,y+s*0.05,x,y+s*0.85); c.closePath(); };
+const ST = (x,y,ro,ri,n=5,rot=0) => c => { for (let k=0;k<n*2;k++){ const a=-Math.PI/2+rot+k*Math.PI/n, rr=k%2?ri:ro; k?c.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr):c.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr); } c.closePath(); };
+const DROP = (x,y,s) => c => { c.moveTo(x,y-s); c.bezierCurveTo(x+s*0.2,y-s*0.5,x+s*0.65,y,x+s*0.65,y+s*0.35); c.arc(x,y+s*0.35,s*0.65,0,Math.PI); c.bezierCurveTo(x-s*0.65,y,x-s*0.2,y-s*0.5,x,y-s); c.closePath(); };
+const TUBE = (col, pts, w) => { const out=[]; for (let k=0;k+3<pts.length;k+=2) out.push([col, K(pts[k],pts[k+1],pts[k+2],pts[k+3],w)]); return out; };
+const arcPts = (cx,cy,rr,a0,a1,n=8) => { const o=[]; for (let k=0;k<=n;k++){ const a=a0+(a1-a0)*k/n; o.push(cx+Math.cos(a)*rr, cy+Math.sin(a)*rr); } return o; };
+const both = f => [f(1), f(-1)];
+
+// 細部用
+const fillP = (c,col,p) => { c.beginPath(); p(c); c.fillStyle=col; c.fill(); c.fillStyle=INK; };
+const dot = (c,x,y,rr) => { c.beginPath(); c.arc(x,y,rr,0,TAU); c.fill(); };
+const ln = (c,...a) => { c.beginPath(); c.moveTo(a[0],a[1]); for (let k=2;k<a.length;k+=2) c.lineTo(a[k],a[k+1]); c.stroke(); };
+const arcS = (c,x,y,rr,a0,a1) => { c.beginPath(); c.arc(x,y,rr,a0,a1); c.stroke(); };
+const withLine = (c,col,w,fn) => { c.save(); c.strokeStyle=col; c.lineWidth*=w; fn(); c.restore(); };
+
+// 目(表情)
+function eyes(c, ex, ey, rr, expr, bg){
+  if (bg && !["smile","sleep"].includes(expr)) for (const s of [-1,1]) fillP(c,bg,C(s*ex,ey,rr*1.6));
+  const L = c.lineWidth;
+  const smile = x => { c.lineWidth=L*1.6; arcS(c,x,ey+rr*0.7,rr*1.3,Math.PI*1.18,Math.PI*1.82); c.lineWidth=L; };
+  switch (expr){
+    case "smile": smile(-ex); smile(ex); break;
+    case "wink": dot(c,-ex,ey,rr); smile(ex); break;
+    case "sleep": c.lineWidth=L*1.6; for (const s of [-1,1]) arcS(c,s*ex,ey-rr*0.9,rr*1.3,Math.PI*0.2,Math.PI*0.8); c.lineWidth=L; break;
+    case "heart": for (const s of [-1,1]) fillP(c,"#ff5c7a",HP(s*ex,ey,rr*1.7)); break;
+    case "cry": dot(c,-ex,ey,rr); dot(c,ex,ey,rr); for (const s of [-1,1]) fillP(c,"#7cc6f2",DROP(s*ex,ey+rr*2.6,rr*1.3)); break;
+    case "kit": for (const s of [-1,1]){ dot(c,s*ex,ey,rr*1.45); fillP(c,"#ffffff",C(s*ex-rr*0.45,ey-rr*0.45,rr*0.45)); } break;
+    case "wow": for (const s of [-1,1]){ dot(c,s*ex,ey,rr*1.45); fillP(c,"#ffffff",C(s*ex-rr*0.45,ey-rr*0.45,rr*0.45)); } break;
+    case "angry": dot(c,-ex,ey+rr*0.3,rr); dot(c,ex,ey+rr*0.3,rr); c.lineWidth=L*1.5; ln(c,-ex-rr*1.4,ey-rr*1.6,-ex+rr*1.2,ey-rr*0.6); ln(c,ex+rr*1.4,ey-rr*1.6,ex-rr*1.2,ey-rr*0.6); c.lineWidth=L; break;
+    default: dot(c,-ex,ey,rr); dot(c,ex,ey,rr);
+  }
+}
+const blush = (c,x,y) => { for (const s of [-1,1]) fillP(c,"#ffb3c1",E(s*x,y,0.15,0.09)); };
+function omega(c, y, w){ arcS(c,-w,y,w,0.1,Math.PI-0.1); arcS(c,w,y,w,0.1,Math.PI-0.1); }
+
+// ---- 野菜 ----
+const LEAF = "#5cb85c";
+const VEG = {
+  v_carrot:["にんじん", ()=>({shapes:[[LEAF,E(-0.25,-0.78,0.16,0.36,-0.5)],[LEAF,E(0,-0.85,0.16,0.4)],[LEAF,E(0.25,-0.78,0.16,0.36,0.5)],["#f28a2e",P(-0.45,-0.5,0.45,-0.5,0,1.05)]], detail:c=>{ ln(c,-0.2,-0.15,0.02,-0.15); ln(c,-0.02,0.25,0.15,0.25); }})],
+  v_tomato:["トマト", ()=>({shapes:[["#e8473b",E(0,0.12,0.95,0.85)],["#4caf50",ST(0,-0.6,0.42,0.16,5)]], detail:c=>withLine(c,"#ff9a8f",1.6,()=>arcS(c,0,0.12,0.65,-2.6,-2.0))})],
+  v_eggplant:["なす", ()=>({shapes:[["#7b4fa3",E(0.1,0.2,0.5,0.85,-0.45)],["#4caf50",E(-0.25,-0.55,0.32,0.2,-0.45)],["#4caf50",K(-0.42,-0.7,-0.55,-1.0,0.14)]], detail:c=>withLine(c,"#b48ad6",1.4,()=>arcS(c,0.1,0.2,0.32,2.2,3.0))})],
+  v_broccoli:["ブロッコリー", ()=>({shapes:[["#a6d785",P(-0.22,0,0.22,0,0.3,1.0,-0.3,1.0)],["#5aa84a",C(-0.5,-0.2,0.42)],["#5aa84a",C(0.5,-0.2,0.42)],["#5aa84a",C(0,-0.55,0.45)]]})],
+  v_pumpkin:["かぼちゃ", ()=>({shapes:[["#6b8e23",K(0,-0.6,0.12,-0.95,0.18)],["#f29b38",E(-0.45,0.12,0.5,0.7)],["#f29b38",E(0.45,0.12,0.5,0.7)],["#f29b38",E(0,0.12,0.48,0.75)]], detail:c=>withLine(c,"#d97a1c",1.2,()=>{ arcS(c,-0.9,0.12,0.75,-0.7,0.7); arcS(c,0.9,0.12,0.75,Math.PI-0.7,Math.PI+0.7); })})],
+  v_corn:["とうもろこし", ()=>({shapes:[["#f6d743",E(0,-0.15,0.42,0.85)],["#7cc04a",P(-0.7,1.0,-0.15,-0.1,0.05,1.0)],["#7cc04a",P(0.7,1.0,0.15,-0.1,-0.05,1.0)]], detail:c=>{ c.fillStyle="#d9b520"; for (let y=-0.75;y<0.2;y+=0.22) for (let x=-0.2;x<=0.21;x+=0.2) dot(c,x,y,0.05); c.fillStyle=INK; }})],
+  v_pepper:["ピーマン", ()=>({shapes:[["#3e8e3e",K(0,-0.6,0.15,-0.95,0.14)],["#4caf50",E(-0.3,0.15,0.45,0.75)],["#4caf50",E(0.3,0.15,0.45,0.75)]], detail:c=>withLine(c,"#9be09b",1.6,()=>ln(c,-0.45,-0.2,-0.4,0.3))})],
+  v_onion:["たまねぎ", ()=>({shapes:[["#d9a35b",c=>{ c.moveTo(0,-0.95); c.bezierCurveTo(0.15,-0.6,0.95,-0.3,0.85,0.25); c.bezierCurveTo(0.75,0.85,-0.75,0.85,-0.85,0.25); c.bezierCurveTo(-0.95,-0.3,-0.15,-0.6,0,-0.95); c.closePath(); }]], detail:c=>withLine(c,"#b37a35",1.2,()=>{ arcS(c,1.1,0.15,0.95,2.4,3.6); arcS(c,-1.1,0.15,0.95,-0.45,0.75); ln(c,-0.15,0.72,-0.2,0.95); ln(c,0.15,0.72,0.2,0.95); })})],
+  v_cucumber:["きゅうり", ()=>({shapes:[["#3f8f3a",E(0,0,1.0,0.32,-0.6)]], detail:c=>{ c.fillStyle="#9be09b"; for (const [x,y] of [[-0.4,0.25],[0,0.05],[0.4,-0.25],[-0.15,0.35],[0.25,-0.05]]) dot(c,x,y,0.05); c.fillStyle=INK; }})],
+  v_daikon:["だいこん", ()=>({shapes:[[LEAF,E(-0.2,-0.72,0.15,0.35,-0.4)],[LEAF,E(0.2,-0.72,0.15,0.35,0.4)],[LEAF,E(0,-0.8,0.15,0.4)],["#ffffff",E(0,0.25,0.38,0.85)]], detail:c=>withLine(c,"#c9d9c0",1.2,()=>{ ln(c,-0.15,0.1,0.05,0.1); ln(c,0,0.5,0.18,0.5); })})],
+  v_cabbage:["キャベツ", ()=>({shapes:[["#a8d56f",C(0,0.05,0.9)]], detail:c=>withLine(c,"#6fa83a",1.2,()=>{ ln(c,0,0.9,0,-0.3); ln(c,0,0.4,-0.5,0); ln(c,0,0.2,0.5,-0.2); arcS(c,0,0.05,0.62,-2.8,-0.4); })})],
+  v_potato:["じゃがいも", ()=>({shapes:[["#d9b77a",E(0,0.05,0.95,0.7,0.2)]], detail:c=>{ c.fillStyle="#a07c42"; for (const [x,y] of [[-0.4,-0.1],[0.2,-0.3],[0.45,0.25],[-0.1,0.35]]) dot(c,x,y,0.06); c.fillStyle=INK; }})],
+  v_sweet:["さつまいも", ()=>({shapes:[["#a8466b",E(0,0,1.0,0.45,-0.4)]], detail:c=>withLine(c,"#d47a9c",1.2,()=>{ ln(c,-0.3,0.05,0,0.15); ln(c,0.1,-0.25,0.35,-0.15); })})],
+  v_shiitake:["しいたけ", ()=>({shapes:[["#f1e3c8",R(-0.18,0,0.36,0.85,0.12)],["#8b5a2b",c=>{ c.ellipse(0,0.08,0.95,0.72,0,Math.PI,TAU); c.closePath(); }]], detail:c=>withLine(c,"#ffffff",1.6,()=>{ ln(c,-0.25,-0.45,0.25,-0.15); ln(c,0.25,-0.45,-0.25,-0.15); })})],
+  v_edamame:["えだまめ", ()=>({shapes:[["#8bc34a",K(-0.8,0.38,0.8,-0.38,0.62)]], detail:c=>{ for (const t of [-0.55,0,0.55]) fillP(c,"#b5e07a",C(t,-t*0.47,0.2)); }})],
+  v_negi:["ねぎ", ()=>({shapes:[[LEAF,K(-0.05,0.1,-0.4,-1.0,0.24)],[LEAF,K(-0.05,0.1,0.3,-0.95,0.24)],["#ffffff",K(-0.2,1.0,-0.05,0.05,0.3)]], detail:c=>withLine(c,"#d9e8cf",1.2,()=>ln(c,-0.15,0.85,-0.08,0.35))})],
+  v_turnip:["かぶ", ()=>({shapes:[[LEAF,E(-0.22,-0.75,0.15,0.35,-0.4)],[LEAF,E(0.22,-0.75,0.15,0.35,0.4)],[LEAF,E(0,-0.82,0.15,0.4)],["#ffffff",K(0,0.6,0,1.05,0.08)],["#ffffff",C(0,0.2,0.68)]], detail:c=>withLine(c,"#e3c6e8",1.4,()=>arcS(c,0,0.2,0.45,-2.6,-1.9))})],
+  v_mini:["ミニトマト", ()=>({shapes:[["#e8473b",C(-0.42,0.28,0.48)],["#e8473b",C(0.45,0.12,0.48)],["#4caf50",ST(-0.42,-0.15,0.22,0.08,5)],["#4caf50",ST(0.45,-0.31,0.22,0.08,5)]]})],
+  v_paprika:["パプリカ", ()=>({shapes:[["#3e8e3e",K(0,-0.6,0.15,-0.95,0.14)],["#f6c744",E(-0.3,0.15,0.45,0.75)],["#f6c744",E(0.3,0.15,0.45,0.75)]], detail:c=>withLine(c,"#fff0a8",1.6,()=>ln(c,-0.45,-0.2,-0.4,0.3))})],
+  v_asparagus:["アスパラ", ()=>({shapes:[["#6fbf4a",K(-0.12,1.0,0.05,-0.55,0.3)],["#6fbf4a",E(0.08,-0.72,0.2,0.32)]], detail:c=>{ ln(c,-0.1,0.4,0.05,0.3); ln(c,-0.05,-0.05,0.1,-0.15); }})],
+  v_okra:["オクラ", ()=>({shapes:[["#6fbf4a",ST(0,0,0.95,0.72,5)]], detail:c=>{ fillP(c,"#c9e8a8",ST(0,0,0.6,0.42,5)); c.fillStyle="#ffffff"; for (let k=0;k<5;k++){ const a=-Math.PI/2+k*TAU/5; dot(c,Math.cos(a)*0.3,Math.sin(a)*0.3,0.08); } c.fillStyle=INK; }})],
+  v_lotus:["レンコン", ()=>({shapes:[["#f3dfbf",C(0,0,0.92)]], detail:c=>{ fillP(c,"#c9a77a",C(0,0,0.14)); for (let k=0;k<7;k++){ const a=k*TAU/7; fillP(c,"#c9a77a",C(Math.cos(a)*0.55,Math.sin(a)*0.55,0.16)); } }})],
+  v_chili:["とうがらし", ()=>({shapes:[["#4caf50",K(-0.3,-0.6,-0.5,-0.95,0.14)],["#e8473b",E(0.12,0.12,0.3,0.85,-0.5)]], detail:c=>withLine(c,"#ff9a8f",1.4,()=>ln(c,-0.15,-0.25,0.1,0.15))})],
+  v_garlic:["にんにく", ()=>({shapes:[["#f7f1e6",c=>{ c.moveTo(0,-0.95); c.bezierCurveTo(0.1,-0.6,0.9,-0.3,0.85,0.25); c.bezierCurveTo(0.8,0.85,-0.8,0.85,-0.85,0.25); c.bezierCurveTo(-0.9,-0.3,-0.1,-0.6,0,-0.95); c.closePath(); }]], detail:c=>withLine(c,"#c9b9a0",1.2,()=>{ arcS(c,0.9,0.2,0.8,2.5,3.7); arcS(c,-0.9,0.2,0.8,-0.55,0.65); ln(c,0,-0.5,0,0.7); })})],
+};
+
+const stripes = col => c => withLine(c,col,2.4,()=>{ ln(c,0,-0.78,0,-0.52); ln(c,-0.22,-0.74,-0.16,-0.5); ln(c,0.22,-0.74,0.16,-0.5); ln(c,-1,0.02,-0.72,0.06); ln(c,1,0.02,0.72,0.06); ln(c,-1,0.22,-0.74,0.2); ln(c,1,0.22,0.74,0.2); });
+// ---- 犬(顔だけ・種類と色) ----
+const all = (...fs) => c => fs.forEach(f=>f(c));
+const outlined = (c, col, p) => { c.beginPath(); p(c); c.save(); c.lineWidth*=1.4; c.stroke(); c.restore(); c.fillStyle=col; c.fill(); c.fillStyle=INK; };
+const mBlaze = col => c => fillP(c,col,E(0,-0.42,0.14,0.55));
+const mWide = col => c => fillP(c,col,P(-0.1,-0.95,0.1,-0.95,0.5,0.95,-0.5,0.95));
+const mPatch = (col, sides) => c => { for (const s of sides) fillP(c,col,E(s*0.44,-0.14,0.32,0.34,s*0.3)); };
+const mMask = col => c => fillP(c,col,P(0,-0.38,-0.98,0.08,-0.98,1,0.98,1,0.98,0.08));
+const mTop = col => c => fillP(c,col,E(0,-0.78,0.9,0.45));
+const mSpots = col => c => { for (const [x,y,rr] of [[-0.5,-0.45,0.18],[0.45,-0.55,0.14],[0.62,0.1,0.16],[-0.66,0.18,0.12],[0.1,-0.72,0.1]]) fillP(c,col,C(x,y,rr)); };
+
+function dogFace(o){
+  const head=o.head, ear=o.ear||head, mz=o.muzzle||head, s=[];
+  const pair = f => s.push(...both(m=>[ear,f(m)]));
+  switch (o.ears){
+    case "flop": pair(m=>E(-0.82*m,-0.05,0.3,0.6,0.4*m)); break;
+    case "long": pair(m=>E(-0.86*m,0.22,0.28,0.74,0.15*m)); break;
+    case "gold": pair(m=>E(-0.86*m,0.1,0.33,0.62,0.25*m)); break;
+    case "point": pair(m=>P(-0.88*m,-0.3,-0.72*m,-1.1,-0.22*m,-0.78)); break;
+    case "big": pair(m=>P(-0.92*m,-0.12,-1.08*m,-1.12,-0.28*m,-0.72)); break;
+    case "small": pair(m=>P(-0.88*m,-0.4,-0.78*m,-0.95,-0.4*m,-0.78)); break;
+    case "fold": pair(m=>P(-0.88*m,-0.5,-0.3*m,-0.82,-0.78*m,0.0)); break;
+    case "bat": pair(m=>E(-0.6*m,-0.78,0.3,0.48,-0.35*m)); break;
+    case "pap": pair(m=>E(-0.8*m,-0.72,0.42,0.6,-0.6*m)); break;
+    case "curly": pair(m=>C(-0.85*m,-0.2,0.33)); pair(m=>C(-0.88*m,0.22,0.3)); break;
+    case "fluff": pair(m=>P(-0.62*m,-0.55,-0.5*m,-1.02,-0.18*m,-0.72)); break;
+    case "teddy": pair(m=>C(-0.86*m,0.02,0.3)); pair(m=>C(-0.9*m,0.36,0.29)); pair(m=>C(-0.8*m,0.66,0.24)); break;
+  }
+  // トイプー:頭のてっぺんがとがらないよう、まん丸のもこもこ輪郭にする
+  if (o.poodle) for (let k=0;k<14;k++){ const a=k*TAU/14; s.push([head, C(Math.cos(a)*0.72, 0.0+Math.sin(a)*0.68, 0.24)]); }
+  if (o.tuft) s.push([head, C(0,-0.8,0.36)]);
+  if (o.fluffy) for (let k=0;k<12;k++){ const a=k*TAU/12; s.push([head, C(Math.cos(a)*0.8, 0.05+Math.sin(a)*0.74, 0.22)]); }
+  const headP = E(0,0.05,0.88,0.82);
+  s.push([head, headP]);
+  const mzP = o.wide ? E(0,0.42,0.6,0.36) : E(0,0.4,0.46,0.32);
+  return {shapes:s, detail:c=>{
+    if (o.ears==="point"||o.ears==="big") for (const m of [-1,1]) fillP(c,o.inner||"#f8d3c5",P(-0.78*m,-0.42,-0.7*m,-0.9,-0.4*m,-0.72));
+    if (o.mark){ c.save(); c.beginPath(); headP(c); c.clip(); o.mark(c); c.restore(); }
+    if (o.beard) fillP(c,o.beard,E(0,0.56,0.52,0.4));
+    fillP(c,mz,mzP);
+    if (o.brows) for (const m of [-1,1]) fillP(c,o.brows,E(m*0.3,-0.34,0.08,0.06));
+    if (o.bow){ outlined(c,o.bow,P(0.55,-0.75,0.28,-0.95,0.28,-0.55)); outlined(c,o.bow,P(0.55,-0.75,0.82,-0.95,0.82,-0.55)); outlined(c,o.bow,C(0.55,-0.75,0.08)); }
+    eyes(c,0.36,-0.06,0.1,o.expr||"n",o.eyeBg);
+    omega(c,0.36,0.12); dot(c,0,0.24,0.13);
+  }};
+}
+const W="#ffffff", EYEW="#ffffff";
+const DOG_LIST = [
+  ["柴犬(赤)",{ears:"point",head:"#e8a253",muzzle:"#fff3e0",wide:1,brows:"#fff3e0",inner:"#fff3e0"}],
+  ["黒柴",{ears:"point",head:"#3d3532",muzzle:"#f3e2cf",wide:1,brows:"#e8b27a",inner:"#f3e2cf",eyeBg:"#f3e2cf"}],
+  ["白柴",{ears:"point",head:"#fbf6ee",muzzle:W,wide:1,inner:"#ffe3d3"}],
+  ["胡麻柴",{ears:"point",head:"#e0a05a",muzzle:"#fff3e0",wide:1,brows:"#fff3e0",inner:"#fff3e0",mark:mTop("#9a5f2c")}],
+  ["秋田犬",{ears:"point",head:"#f3bd7a",muzzle:W,wide:1,inner:W,mark:mMask("#fff3e0")}],
+  ["トイプー(アプリコット)",{ears:"teddy",poodle:1,ear:"#d99a5e",head:"#eab27a",muzzle:"#f3c796"}],
+  ["トイプー(レッド)",{ears:"teddy",poodle:1,ear:"#a84f22",head:"#c0602e",muzzle:"#d47a45"}],
+  ["トイプー(ブラウン)",{ears:"teddy",poodle:1,ear:"#5f3820",head:"#7b4a2a",muzzle:"#946040",eyeBg:EYEW}],
+  ["トイプー(ホワイト)",{ears:"teddy",poodle:1,ear:"#ece4d8",head:W,muzzle:W}],
+  ["トイプー(ブラック)",{ears:"teddy",poodle:1,ear:"#262626",head:"#3a3a3a",muzzle:"#4a4a4a",eyeBg:EYEW}],
+  ["トイプー(シルバー)",{ears:"teddy",poodle:1,ear:"#8f949b",head:"#a9adb3",muzzle:"#c3c6ca"}],
+  ["トイプー(クリーム)",{ears:"teddy",poodle:1,ear:"#e6cb9e",head:"#f4dfbd",muzzle:"#f9ead2"}],
+  ["チワワ(クリーム)",{ears:"big",head:"#f3d9a8",muzzle:"#fff4df",inner:"#ffd9c9"}],
+  ["チワワ(フォーン)",{ears:"big",head:"#d9a066",muzzle:"#f3d3a8"}],
+  ["チワワ(ブラックタン)",{ears:"big",head:"#3a3330",muzzle:"#d9a066",brows:"#d9a066",eyeBg:EYEW,inner:"#6a5a55"}],
+  ["チワワ(チョコタン)",{ears:"big",head:"#6b4027",muzzle:"#d9a066",brows:"#d9a066",eyeBg:EYEW,inner:"#8a5a40"}],
+  ["チワワ(ホワイト)",{ears:"big",head:W,muzzle:W}],
+  ["ダックス(レッド)",{ears:"long",head:"#b5652b",ear:"#9a5222",muzzle:"#c9844a",eyeBg:EYEW}],
+  ["ダックス(ブラックタン)",{ears:"long",head:"#3a3330",ear:"#2e2826",muzzle:"#c98a4a",brows:"#c98a4a",eyeBg:EYEW}],
+  ["ダックス(チョコ)",{ears:"long",head:"#6b4027",ear:"#58331f",muzzle:"#c98a4a",brows:"#c98a4a",eyeBg:EYEW}],
+  ["ダックス(クリーム)",{ears:"long",head:"#eccf9a",ear:"#ddb97f",muzzle:"#f6e2bd"}],
+  ["ダックス(ダップル)",{ears:"long",head:"#8a8f97",ear:"#5a5f66",muzzle:"#c98a4a",brows:"#c98a4a",mark:mSpots("#4a4f56"),eyeBg:EYEW}],
+  ["パグ(フォーン)",{ears:"small",head:"#e8cf9f",ear:"#4a3a30",muzzle:"#5a463a",wide:1}],
+  ["パグ(ブラック)",{ears:"small",head:"#3a3a3a",ear:"#2a2a2a",muzzle:"#2a2a2a",wide:1,eyeBg:EYEW}],
+  ["ビーグル",{ears:"flop",head:"#d99a55",ear:"#7a4a22",muzzle:W,mark:mBlaze(W)}],
+  ["ポメ(オレンジ)",{ears:"fluff",fluffy:1,head:"#f0a24a",muzzle:"#f6c07a"}],
+  ["ポメ(クリーム)",{ears:"fluff",fluffy:1,head:"#f6e3c0",muzzle:"#fbf0dc"}],
+  ["ポメ(ホワイト)",{ears:"fluff",fluffy:1,head:W,muzzle:W}],
+  ["ポメ(ブラック)",{ears:"fluff",fluffy:1,head:"#3a3a3a",muzzle:"#4a4a4a",eyeBg:EYEW}],
+  ["マルチーズ",{ears:"long",head:W,ear:"#f7f2ea",muzzle:W,bow:"#ff8fb5"}],
+  ["シーズー",{ears:"long",head:W,ear:"#a8764a",muzzle:W,mark:all(mTop("#a8764a"),mBlaze(W)),bow:"#ff8fb5"}],
+  ["ヨーキー",{ears:"small",head:"#c9934e",muzzle:"#ddb070",mark:mTop("#6f7780"),bow:"#ff6b6b"}],
+  ["ゴールデン",{ears:"gold",head:"#e3a857",ear:"#cf9040",muzzle:"#f0c886"}],
+  ["ラブ(イエロー)",{ears:"flop",head:"#f2d39b",ear:"#e6c283",muzzle:"#f8e3bd"}],
+  ["ラブ(ブラック)",{ears:"flop",head:"#333333",ear:"#2a2a2a",muzzle:"#444444",eyeBg:EYEW}],
+  ["ラブ(チョコ)",{ears:"flop",head:"#6b4027",ear:"#58331f",muzzle:"#7d4f33",eyeBg:EYEW}],
+  ["コーギー",{ears:"big",head:"#e8973f",muzzle:W,wide:1,inner:"#fff3e0",mark:mBlaze(W)}],
+  ["フレブル(フォーン)",{ears:"bat",head:"#d9b27a",ear:"#c9a06a",muzzle:"#4a3a30",wide:1}],
+  ["フレブル(ブリンドル)",{ears:"bat",head:"#4a3d36",muzzle:"#3a302b",wide:1,eyeBg:EYEW}],
+  ["フレブル(パイド)",{ears:"bat",head:W,ear:"#3a3a3a",muzzle:W,wide:1,mark:mPatch("#3a3a3a",[1])}],
+  ["ボーダーコリー",{ears:"fold",head:"#2f2f2f",muzzle:W,wide:1,mark:mWide(W),eyeBg:EYEW}],
+  ["ハスキー",{ears:"point",head:"#7f8790",inner:W,muzzle:W,mark:mMask(W),brows:W,eyeBg:"#8fc8f0"}],
+  ["パピヨン",{ears:"pap",head:W,ear:"#8a5a2e",muzzle:W,mark:all(mPatch("#8a5a2e",[-1,1]),mBlaze(W)),eyeBg:EYEW}],
+  ["シュナウザー",{ears:"fold",head:"#8d939b",muzzle:"#e9ebee",beard:"#e9ebee",brows:"#e9ebee"}],
+  ["ジャックラッセル",{ears:"fold",head:W,ear:"#b5652b",muzzle:W,mark:mPatch("#b5652b",[-1])}],
+  ["狆(ちん)",{ears:"long",head:W,ear:"#2f2f2f",muzzle:W,mark:all(mPatch("#2f2f2f",[-1,1]),mBlaze(W)),eyeBg:EYEW}],
+  ["ボストンテリア",{ears:"bat",head:"#2f2f2f",muzzle:W,wide:1,mark:mBlaze(W),eyeBg:EYEW}],
+  ["キャバリア",{ears:"long",head:W,ear:"#b5652b",muzzle:W,mark:all(mPatch("#b5652b",[-1,1]),mBlaze(W)),eyeBg:EYEW}],
+  ["ペキニーズ",{ears:"long",fluffy:1,head:"#e0b07a",ear:"#c9944f",muzzle:"#4a3a30",wide:1}],
+  ["バーニーズ",{ears:"flop",head:"#2f2f2f",muzzle:W,wide:1,brows:"#c9844a",mark:mBlaze(W),eyeBg:EYEW}],
+];
+const DOG = Object.fromEntries(DOG_LIST.map(([label,o],k)=>["d"+String(k+1).padStart(2,"0"), [label, ()=>dogFace(o)]]));
+
+// ---- 猫(顔だけ・種類と色) ----
+const cTabby = col => stripes(col);
+const cLow = col => c => fillP(c,col,E(0,0.62,0.62,0.45));
+const cHachi = col => c => { fillP(c,col,P(0,-0.6,-0.7,1,0.7,1)); fillP(c,col,E(0,0.55,0.62,0.42)); };
+const cPatches = list => c => list.forEach(([col,x,y,rx,ry])=>fillP(c,col,E(x,y,rx,ry)));
+const cSpots = col => c => { for (const [x,y] of [[-0.55,-0.4],[-0.2,-0.6],[0.25,-0.55],[0.6,-0.35],[-0.75,0.15],[0.75,0.15],[0,-0.35]]) fillP(c,col,E(x,y,0.1,0.08)); };
+const cPoint = col => c => fillP(c,col,E(0,0.38,0.42,0.3));
+const cSwirl = col => c => { stripes(col)(c); withLine(c,col,2.4,()=>{ arcS(c,-0.72,0.25,0.2,-1.2,2.2); arcS(c,0.72,0.25,0.2,0.9,4.3); }); };
+function catFace(o){
+  const head=o.head, ear=o.ear||head, ex=o.expr||"n", s=[];
+  const pair = f => s.push(...both(m=>[ear,f(m)]));
+  switch (o.ears||"n"){
+    case "big": pair(m=>P(-1.0*m,-0.05,-0.98*m,-1.2,-0.18*m,-0.7)); break;
+    case "round": pair(m=>P(-0.98*m,-0.25,-0.85*m,-0.92,-0.4*m,-0.72)); break;
+    case "fold": pair(m=>E(-0.52*m,-0.66,0.32,0.18,-0.45*m)); break;
+    default: pair(m=>P(-0.92*m,-0.22,-0.8*m,-1.08,-0.22*m,-0.76));
+  }
+  if (o.fluffy) for (let k=0;k<12;k++){ const a=k*TAU/12; s.push([head, C(Math.cos(a)*0.9, 0.1+Math.sin(a)*0.76, 0.22)]); }
+  const headP = o.round ? E(0,0.1,1.06,0.86) : E(0,0.08,1.0,0.84);
+  s.push([head, headP]);
+  return {shapes:s, detail:c=>{
+    if (o.ears!=="fold") for (const m of [-1,1]) fillP(c,o.inner||"#f6a9bd",P(-0.8*m,-0.42,-0.75*m,-0.88,-0.42*m,-0.72));
+    if (o.ears==="tuft") withLine(c,INK,1,()=>{ for (const m of [-1,1]) ln(c,-0.8*m,-1.08,-0.84*m,-1.3); });
+    if (o.pattern){ c.save(); c.beginPath(); headP(c); c.clip(); o.pattern(c); c.restore(); }
+    if (o.odd){ fillP(c,o.odd[0],C(-0.38,0,0.16)); fillP(c,o.odd[1],C(0.38,0,0.16)); }
+    eyes(c,0.38,0,0.1,ex,o.eyeBg);
+    fillP(c,"#ff8fa8",P(-0.09,0.2,0.09,0.2,0,0.3));
+    omega(c,0.32,0.1);
+    withLine(c,INK,0.8,()=>{ for (const m of [-1,1]){ ln(c,m*0.35,0.32,m*0.95,0.24); ln(c,m*0.35,0.42,m*0.95,0.5); } });
+  }};
+}
+const BK="#3a3a3a", OR="#f2a65a", ORS="#d9822b", KJ="#9a7650", KJS="#4d3a26", SB="#aab0b8", SBS="#5f656d";
+const GOLD="#f6d743", GREEN="#9ad16a", BLUE="#8fc8f0", COPPER="#e8a04a";
+const mike = cPatches([[BK,-0.62,-0.5,0.45,0.38],[OR,0.66,-0.45,0.42,0.35]]);
+const CAT_LIST = [
+  ["茶トラ",{head:OR,pattern:cTabby(ORS)}],
+  ["茶白",{head:OR,pattern:all(cTabby(ORS),cLow(W))}],
+  ["キジトラ",{head:KJ,pattern:cTabby(KJS),eyeBg:"#c9d65a"}],
+  ["キジ白",{head:KJ,pattern:all(cTabby(KJS),cLow(W)),eyeBg:"#c9d65a"}],
+  ["サバトラ",{head:SB,pattern:cTabby(SBS)}],
+  ["サバ白",{head:SB,pattern:all(cTabby(SBS),cLow(W))}],
+  ["三毛猫",{head:W,pattern:mike}],
+  ["サビ猫",{head:"#3a302b",inner:"#6a5a55",pattern:cPatches([[OR,-0.55,-0.45,0.35,0.3],[OR,0.5,0.2,0.3,0.25],[ORS,0.3,-0.7,0.25,0.2]]),eyeBg:COPPER}],
+  ["黒猫(金の目)",{head:BK,inner:"#6a6a6a",eyeBg:GOLD}],
+  ["黒猫(緑の目)",{head:BK,inner:"#6a6a6a",eyeBg:GREEN}],
+  ["白猫",{head:W}],
+  ["白猫(オッドアイ)",{head:W,odd:[BLUE,GOLD]}],
+  ["白猫(青い目)",{head:W,eyeBg:BLUE}],
+  ["ハチワレ(黒)",{head:BK,inner:"#6a6a6a",eyeBg:W,pattern:cHachi(W)}],
+  ["ハチワレ(グレー)",{head:"#8d939b",eyeBg:W,pattern:cHachi(W)}],
+  ["ハチワレ(茶)",{head:OR,pattern:all(cTabby(ORS),cHachi(W))}],
+  ["白黒ブチ",{head:W,pattern:cPatches([[BK,-0.6,-0.55,0.42,0.35],[BK,0.55,0.35,0.3,0.25]])}],
+  ["ロシアンブルー",{head:"#8f9aa8",inner:"#c9a3ad",eyeBg:GREEN}],
+  ["クリーム",{head:"#f3d9a8"}],
+  ["クリームトラ",{head:"#f3d9a8",pattern:cTabby("#dcb57a")}],
+  ["シャム",{head:"#f3e6cf",ear:"#6b4a3a",inner:"#9a7562",eyeBg:BLUE,pattern:cPoint("#7a5a48")}],
+  ["ラグドール",{fluffy:1,head:"#f4ead9",ear:"#8a7a72",inner:"#b9a39b",eyeBg:BLUE,pattern:cPoint("#8a7a72")}],
+  ["ヒマラヤン",{fluffy:1,round:1,ears:"round",head:"#f3e6cf",ear:"#6b4a3a",inner:"#9a7562",eyeBg:BLUE,pattern:cPoint("#6b4a3a")}],
+  ["ペルシャ(白)",{fluffy:1,round:1,ears:"round",head:W,eyeBg:COPPER}],
+  ["チンチラシルバー",{fluffy:1,head:"#e3e6ea",eyeBg:GREEN}],
+  ["スコティッシュ(グレー)",{ears:"fold",round:1,head:"#9aa3ad",eyeBg:COPPER}],
+  ["スコティッシュ(クリーム)",{ears:"fold",round:1,head:"#f3d9a8"}],
+  ["スコティッシュ(茶トラ)",{ears:"fold",round:1,head:OR,pattern:cTabby(ORS)}],
+  ["スコティッシュ(白)",{ears:"fold",round:1,head:W,eyeBg:COPPER}],
+  ["スコティッシュ(サバ白)",{ears:"fold",round:1,head:SB,pattern:all(cTabby(SBS),cLow(W))}],
+  ["マンチカン",{ears:"round",round:1,head:OR,pattern:cLow(W)}],
+  ["アメショ",{head:"#c9ced4",pattern:cSwirl("#3f444a"),eyeBg:GREEN}],
+  ["ベンガル",{head:"#e0a95a",pattern:cSpots("#6b4a2a"),eyeBg:GREEN}],
+  ["メインクーン",{ears:"tuft",head:KJ,pattern:all(cTabby(KJS),cLow(W)),eyeBg:GOLD}],
+  ["ノルウェージャン",{ears:"tuft",fluffy:1,head:"#c9ced4",pattern:all(cTabby("#6a7079"),cLow(W))}],
+  ["アビシニアン",{ears:"big",head:"#c47a3f",inner:"#f3b3a0",eyeBg:GREEN}],
+  ["ソマリ",{ears:"big",fluffy:1,head:"#c47a3f",inner:"#f3b3a0",eyeBg:COPPER}],
+  ["スフィンクス",{ears:"big",head:"#ecccc4",inner:"#f3a5b0",eyeBg:GREEN,pattern:c=>withLine(c,"#d9aaa0",1.2,()=>{ ln(c,-0.3,-0.55,0.3,-0.55); ln(c,-0.2,-0.42,0.2,-0.42); })}],
+  ["ブリティッシュ",{ears:"round",round:1,head:"#8f9aa8",inner:"#c9a3ad",eyeBg:COPPER}],
+  ["エキゾチック",{ears:"round",round:1,fluffy:1,head:"#f3d9a8",eyeBg:COPPER}],
+  ["ボンベイ",{head:"#2a2a2a",inner:"#5a5a5a",eyeBg:COPPER}],
+  ["ターキッシュアンゴラ",{fluffy:1,head:W,odd:[BLUE,GREEN]}],
+  ["タキシード",{head:BK,inner:"#6a6a6a",eyeBg:GOLD,pattern:cLow(W)}],
+  ["パステル三毛",{head:W,pattern:cPatches([["#9aa3ad",-0.62,-0.5,0.45,0.38],["#f3d9a8",0.66,-0.45,0.42,0.35]])}],
+  ["サビ白",{head:W,pattern:cPatches([["#3a302b",-0.6,-0.5,0.45,0.38],[OR,0.62,-0.48,0.4,0.34],["#3a302b",0.75,-0.2,0.2,0.18]])}],
+  ["子猫(茶トラ)",{head:OR,pattern:cTabby(ORS),expr:"kit"}],
+  ["子猫(キジトラ)",{head:KJ,pattern:cTabby(KJS),expr:"kit",eyeBg:"#c9d65a"}],
+  ["子猫(黒)",{head:BK,inner:"#6a6a6a",expr:"kit",eyeBg:GOLD}],
+  ["子猫(白)",{head:W,expr:"kit"}],
+  ["子猫(三毛)",{head:W,pattern:mike,expr:"kit"}],
+];
+const CAT = Object.fromEntries(CAT_LIST.map(([label,o],k)=>["c"+String(k+1).padStart(2,"0"), [label, ()=>catFace(o)]]));
+
+// ---- 野菜(追加ぶん) ----
+const VEG2 = {
+  v_hakusai:["はくさい", ()=>({shapes:[["#fbf8ee",E(0,0.25,0.52,0.78)],["#8bc34a",E(0,-0.42,0.62,0.52)]], detail:c=>withLine(c,"#ffffff",1.4,()=>{ ln(c,0,-0.7,0,0.9); ln(c,0,-0.3,-0.35,-0.55); ln(c,0,-0.3,0.35,-0.55); })})],
+  v_lettuce:["レタス", ()=>({shapes:[["#b5dd6f",C(0,0.05,0.9)]], detail:c=>withLine(c,"#7cb342",1.2,()=>{ for (let k=0;k<6;k++){ const a=k*TAU/6; arcS(c,Math.cos(a)*0.62,0.05+Math.sin(a)*0.62,0.22,a+1.6,a+4.7); } ln(c,0,0.05,0,0.75); })})],
+  v_spinach:["ほうれんそう", ()=>({shapes:[["#3f8f3a",E(-0.42,-0.3,0.26,0.6,-0.45)],["#3f8f3a",E(0.42,-0.3,0.26,0.6,0.45)],["#3f8f3a",E(0,-0.42,0.26,0.62)],["#ff8fa8",C(0,0.82,0.16)]], detail:c=>withLine(c,"#8bc34a",1.6,()=>{ ln(c,0,0.7,0,-0.2); ln(c,0,0.7,-0.35,-0.05); ln(c,0,0.7,0.35,-0.05); })})],
+  v_celery:["セロリ", ()=>({shapes:[[LEAF,C(-0.4,-0.75,0.22)],[LEAF,C(0,-0.88,0.24)],[LEAF,C(0.4,-0.75,0.22)],["#b5dd8a",K(-0.3,0.95,-0.38,-0.6,0.24)],["#b5dd8a",K(0,0.95,0,-0.7,0.26)],["#b5dd8a",K(0.3,0.95,0.38,-0.6,0.24)]]})],
+  v_gobou:["ごぼう", ()=>({shapes:[["#8b6a45",K(-0.8,0.8,0.8,-0.8,0.22)]], detail:c=>withLine(c,"#5f4630",1,()=>{ ln(c,-0.4,0.35,-0.3,0.45); ln(c,0.1,-0.15,0.2,-0.05); ln(c,0.45,-0.5,0.55,-0.4); })})],
+  v_satoimo:["さといも", ()=>({shapes:[["#8b6a45",E(0,0.1,0.68,0.85)]], detail:c=>withLine(c,"#5f4630",1.2,()=>{ arcS(c,0,-0.95,1.0,1.2,1.95); arcS(c,0,-0.55,1.0,1.2,1.95); arcS(c,0,-0.15,1.0,1.25,1.9); })})],
+  v_nagaimo:["ながいも", ()=>({shapes:[["#d9c7a0",K(-0.7,0.7,0.7,-0.7,0.44)]], detail:c=>{ c.fillStyle="#9a8460"; for (const [x,y] of [[-0.4,0.3],[0,0.05],[0.35,-0.35],[-0.15,0.45],[0.2,-0.05]]) dot(c,x,y,0.04); c.fillStyle=INK; }})],
+  v_ginger:["しょうが", ()=>({shapes:[["#e6c27a",C(-0.45,0.15,0.4)],["#e6c27a",C(0.15,-0.08,0.45)],["#e6c27a",C(0.62,0.3,0.32)],["#ff9ab0",C(-0.6,-0.18,0.12)]], detail:c=>withLine(c,"#c49a50",1.1,()=>{ ln(c,-0.2,0.0,-0.05,0.2); ln(c,0.35,0.1,0.45,0.3); })})],
+  v_zucchini:["ズッキーニ", ()=>({shapes:[["#6b8e23",K(0.72,-0.5,0.95,-0.75,0.14)],["#4f8f3a",E(0,0,1.0,0.3,-0.6)]], detail:c=>withLine(c,"#8bc34a",1.2,()=>ln(c,-0.6,0.45,0.55,-0.35))})],
+  v_goya:["ゴーヤ", ()=>({shapes:[["#5cae4a",E(0,0,0.98,0.38,-0.6)]], detail:c=>{ c.fillStyle="#a6d785"; for (let t=-0.7;t<=0.71;t+=0.2) for (const o of [-0.13,0.13]) dot(c,t*0.82+o*0.53,-t*0.57+o*0.8,0.05); c.fillStyle=INK; }})],
+  v_sorabean:["そらまめ", ()=>({shapes:[["#7cc04a",K(-0.82,0.34,0.82,-0.34,0.62)]], detail:c=>{ for (const t of [-0.5,0.05,0.55]) fillP(c,"#c9e8a0",E(t,-t*0.42,0.22,0.17,-0.4)); }})],
+  v_greenpea:["グリーンピース", ()=>({shapes:[["#6fbf4a",E(0,0,0.98,0.44,-0.4)]], detail:c=>{ for (const t of [-0.55,-0.18,0.18,0.55]) fillP(c,"#b5e07a",C(t*0.92,-t*0.39,0.17)); }})],
+  v_ingen:["いんげん", ()=>({shapes:[["#5cae4a",K(-0.85,0.15,0.85,-0.6,0.2)],["#4f9a40",K(-0.85,0.6,0.85,-0.15,0.2)]]})],
+  v_takenoko:["たけのこ", ()=>({shapes:[["#c9a06a",P(-0.65,0.85,0.65,0.85,0.08,-0.98)],["#f3e2b5",R(-0.66,0.62,1.32,0.33,0.12)]], detail:c=>withLine(c,"#8b6a45",1.2,()=>{ ln(c,-0.45,0.4,0.2,-0.05); ln(c,0.45,0.4,-0.1,-0.4); ln(c,-0.2,0.05,0.12,-0.6); })})],
+  v_enoki:["えのき", ()=>({shapes:[...[-0.4,-0.2,0,0.2,0.4].map((x,k)=>["#f7f1e6",K(x*0.6,0.85,x,-0.55-(k%2)*0.15,0.1)]), ...[-0.4,-0.2,0,0.2,0.4].map((x,k)=>["#f3e2c0",C(x,-0.6-(k%2)*0.15,0.12)]), ["#c9a06a",R(-0.4,0.55,0.8,0.4,0.1)]]})],
+  v_shimeji:["しめじ", ()=>({shapes:[["#f7f1e6",K(-0.45,0.9,-0.45,-0.2,0.2)],["#f7f1e6",K(0.05,0.9,0.05,-0.45,0.2)],["#f7f1e6",K(0.5,0.9,0.5,-0.1,0.2)],["#9a8470",E(-0.45,-0.3,0.32,0.2)],["#9a8470",E(0.05,-0.55,0.34,0.22)],["#9a8470",E(0.5,-0.2,0.3,0.19)]]})],
+  v_eringi:["エリンギ", ()=>({shapes:[["#f7efdf",R(-0.32,-0.35,0.64,1.28,0.3)],["#c9a87a",E(0,-0.48,0.55,0.3)]]})],
+  v_mushroom:["マッシュルーム", ()=>({shapes:[["#f7efdf",R(-0.22,0,0.44,0.8,0.12)],["#efe2cc",c=>{ c.ellipse(0,0.1,0.95,0.78,0,Math.PI,TAU); c.closePath(); }]], detail:c=>withLine(c,"#ffffff",1.6,()=>arcS(c,0,0.1,0.6,-2.6,-2.0))})],
+  v_avocado:["アボカド", ()=>({shapes:[["#5f7f1f",E(0,0.1,0.72,0.95)]], detail:c=>{ fillP(c,"#d8e8a0",E(0,0.16,0.56,0.78)); fillP(c,"#8b5a2b",C(0,0.32,0.3)); }})],
+  v_cauli:["カリフラワー", ()=>({shapes:[["#6fbf4a",E(-0.6,0.45,0.3,0.55,0.8)],["#6fbf4a",E(0.6,0.45,0.3,0.55,-0.8)],["#fbf6e9",C(-0.45,-0.05,0.4)],["#fbf6e9",C(0.45,-0.05,0.4)],["#fbf6e9",C(0,-0.38,0.45)],["#fbf6e9",C(0,0.2,0.4)]]})],
+  v_radish:["ラディッシュ", ()=>({shapes:[[LEAF,E(-0.22,-0.72,0.15,0.35,-0.4)],[LEAF,E(0.22,-0.72,0.15,0.35,0.4)],["#ffffff",K(0,0.6,0,1.02,0.07)],["#e84a6b",C(0,0.2,0.6)]], detail:c=>withLine(c,"#ff9ab0",1.4,()=>arcS(c,0,0.2,0.4,-2.6,-1.9))})],
+  v_brussels:["芽キャベツ", ()=>({shapes:[["#8bc34a",C(-0.38,0.22,0.5)],["#8bc34a",C(0.42,0.0,0.5)]], detail:c=>withLine(c,"#5a8f2a",1.1,()=>{ arcS(c,-0.38,0.22,0.3,-2.6,-0.6); arcS(c,0.42,0,0.3,-2.6,-0.6); })})],
+  v_redpap:["赤パプリカ", ()=>({shapes:[["#3e8e3e",K(0,-0.6,0.15,-0.95,0.14)],["#e8473b",E(-0.3,0.15,0.45,0.75)],["#e8473b",E(0.3,0.15,0.45,0.75)]], detail:c=>withLine(c,"#ff9a8f",1.6,()=>ln(c,-0.45,-0.2,-0.4,0.3))})],
+  v_shishito:["ししとう", ()=>({shapes:[["#3e8e3e",K(-0.7,0.55,-0.9,0.8,0.12)],["#4caf50",K(-0.7,0.5,0.65,-0.45,0.32)]]})],
+  v_beet:["ビーツ", ()=>({shapes:[[LEAF,E(-0.22,-0.75,0.15,0.35,-0.4)],[LEAF,E(0.22,-0.75,0.15,0.35,0.4)],[LEAF,E(0,-0.82,0.15,0.4)],["#8e2c4a",K(0,0.6,0,1.05,0.08)],["#8e2c4a",C(0,0.2,0.66)]], detail:c=>withLine(c,"#c95c7c",1.4,()=>arcS(c,0,0.2,0.45,-2.6,-1.9))})],
+  v_kaiware:["かいわれ", ()=>({shapes:[...[-0.45,-0.15,0.15,0.45].map(x=>["#fbf8ee",K(x*0.6,0.95,x,-0.45,0.08)]), ...[-0.45,-0.15,0.15,0.45].flatMap(x=>[[LEAF,E(x-0.13,-0.55,0.15,0.09,-0.4)],[LEAF,E(x+0.13,-0.55,0.15,0.09,0.4)]])]})],
+};
+
+// ---- 記号 ----
+const heart = col => ()=>({shapes:[[col,HP(0,0.05,0.78)]], detail:c=>withLine(c,"#ffffff",1.6,()=>arcS(c,-0.35,-0.15,0.22,3.4,4.6))});
+const star = col => ()=>({shapes:[[col,ST(0,0.08,0.95,0.42,5)]]});
+const cloudShapes = col => [[col,C(-0.42,0,0.38)],[col,C(0.08,-0.2,0.5)],[col,C(0.55,0.05,0.36)],[col,R(-0.8,-0.05,1.7,0.42,0.2)]];
+const SYM = {
+  s_heart:["ハート(赤)", heart("#ff5a7a")],
+  s_heart_p:["ハート(ピンク)", heart("#ffa3c4")],
+  s_heart_y:["ハート(黄)", heart("#ffd84a")],
+  s_heart_b:["ハート(水色)", heart("#7cc6f2")],
+  s_heart_v:["ハート(むらさき)", heart("#b48ad6")],
+  s_heart_w:["しろハート", heart("#ffffff")],
+  s_heart2:["ふたつハート", ()=>({shapes:[["#ffa3c4",HP(-0.3,0.18,0.55)],["#ff5a7a",HP(0.45,-0.35,0.4)]]})],
+  s_harrow:["ハートの矢", ()=>({shapes:[["#c9a06a",K(-0.95,0.75,0.75,-0.6,0.1)],["#c9a06a",P(0.95,-0.78,0.55,-0.68,0.85,-0.38)],["#ff5a7a",HP(-0.05,0.05,0.55)]]})],
+  s_hbreak:["われたハート", ()=>({shapes:[["#ff5a7a",HP(0,0.05,0.78)]], detail:c=>{ c.save(); c.lineWidth*=2; ln(c,0,-0.3,-0.15,0.0,0.12,0.25,-0.05,0.55,0,0.7); c.restore(); }})],
+  s_hkira:["ハートキラキラ", ()=>({shapes:[["#ff5a7a",HP(-0.12,0.15,0.68)],["#f6d743",ST(0.65,-0.6,0.32,0.09,4)]]})],
+  s_star:["ほし(黄)", star("#f6d743")],
+  s_star_w:["しろほし", star("#ffffff")],
+  s_star_p:["ほし(ピンク)", star("#ffa3c4")],
+  s_shoot:["ながれぼし", ()=>({shapes:[["#ffe58a",K(-0.95,0.8,0.1,-0.05,0.14)],["#ffe58a",K(-0.6,0.95,0.2,0.25,0.1)],["#f6d743",ST(0.4,-0.35,0.55,0.24,5)]]})],
+  s_stars:["ほし3つ", ()=>({shapes:[["#f6d743",ST(-0.42,0.3,0.5,0.22,5)],["#ffa3c4",ST(0.5,0.4,0.38,0.17,5)],["#7cc6f2",ST(0.2,-0.5,0.42,0.19,5)]]})],
+  s_kira:["キラキラ", ()=>({shapes:[["#f6d743",ST(-0.15,0.1,0.85,0.22,4)],["#f6d743",ST(0.62,-0.6,0.36,0.1,4)]]})],
+  s_kira1:["キラッ", ()=>({shapes:[["#ffe58a",ST(0,0,1.0,0.26,4)]]})],
+  s_note:["おんぷ", ()=>({shapes:[["#5bc0eb",K(0.08,0.45,0.08,-0.85,0.14)],["#5bc0eb",K(0.08,-0.85,0.55,-0.45,0.16)],["#5bc0eb",E(-0.22,0.52,0.34,0.25,-0.4)]]})],
+  s_note2:["ふたつおんぷ", ()=>({shapes:[["#ff8fb5",K(-0.35,0.5,-0.35,-0.7,0.13)],["#ff8fb5",K(0.55,0.3,0.55,-0.9,0.13)],["#ff8fb5",K(-0.35,-0.7,0.55,-0.9,0.22)],["#ff8fb5",E(-0.6,0.55,0.3,0.22,-0.4)],["#ff8fb5",E(0.3,0.35,0.3,0.22,-0.4)]]})],
+  s_flower:["はな", ()=>({shapes:[...[0,1,2,3,4].map(k=>{ const a=-Math.PI/2+k*TAU/5; return ["#ff9ec1",C(Math.cos(a)*0.5,Math.sin(a)*0.5,0.4)]; }), ["#f6d743",C(0,0,0.3)]]})],
+  s_sakura:["さくら", ()=>({shapes:[...[0,1,2,3,4].map(k=>{ const a=-Math.PI/2+k*TAU/5; return ["#ffd1e0",E(Math.cos(a)*0.5,Math.sin(a)*0.5,0.3,0.42,a+Math.PI/2)]; })], detail:c=>{ fillP(c,"#ff8fb5",C(0,0,0.18)); }})],
+  s_clover:["よつば", ()=>({shapes:[["#4f9a40",K(0.05,0.2,0.45,1.0,0.1)], ...[0,1,2,3].map(k=>{ const a=k*Math.PI/2+Math.PI/4; return ["#6fbf4a",c=>{ c.save(); c.translate(Math.cos(a)*0.42,Math.sin(a)*0.42); c.rotate(a-Math.PI/2); HP(0,0,0.42)(c); c.restore(); }]; })]})],
+  s_bubble:["ふきだし", ()=>({shapes:[["#ffffff",P(-0.42,0.4,-0.62,0.98,-0.02,0.5)],["#ffffff",E(0,-0.12,0.98,0.68)]], detail:c=>{ dot(c,-0.4,-0.12,0.09); dot(c,0,-0.12,0.09); dot(c,0.4,-0.12,0.09); }})],
+  s_hbubble:["ハートふきだし", ()=>({shapes:[["#ffe3ec",P(-0.42,0.4,-0.62,0.98,-0.02,0.5)],["#ffe3ec",E(0,-0.12,0.98,0.68)]], detail:c=>fillP(c,"#ff5a7a",HP(0,-0.1,0.38))})],
+  s_excl:["びっくり", ()=>({shapes:[["#ff8a3d",K(0,-0.88,0,0.22,0.4)],["#ff8a3d",C(0,0.75,0.21)]]})],
+  s_quest:["はてな", ()=>({shapes:[...TUBE("#8f8cf0",[...arcPts(0,-0.42,0.42,Math.PI*1.05,Math.PI*2.45,8), 0,0.2],0.3),["#8f8cf0",C(0,0.75,0.19)]]})],
+  s_exq:["びっくりはてな", ()=>({shapes:[["#ff8a3d",K(-0.5,-0.85,-0.5,0.2,0.32)],["#ff8a3d",C(-0.5,0.72,0.17)],...TUBE("#8f8cf0",[...arcPts(0.4,-0.45,0.32,Math.PI*1.05,Math.PI*2.45,8), 0.4,0.2],0.24),["#8f8cf0",C(0.4,0.72,0.15)]]})],
+  s_sweat:["あせ", ()=>({shapes:[["#8fd0f5",DROP(0,-0.05,0.95)]], detail:c=>withLine(c,"#e3f5ff",1.6,()=>arcS(c,0,0.28,0.38,2.5,3.3))})],
+  s_tears:["ぽろぽろ", ()=>({shapes:[["#8fd0f5",DROP(-0.45,-0.3,0.45)],["#8fd0f5",DROP(0.4,-0.1,0.5)],["#8fd0f5",DROP(-0.1,0.5,0.35)]]})],
+  s_anger:["ぷんぷん", ()=>({shapes:[[-1,-1],[1,-1],[1,1],[-1,1]].flatMap(([sx,sy])=>TUBE("#ff5a4f",[sx*0.15,sy*0.7, sx*0.22,sy*0.22, sx*0.7,sy*0.15],0.26))})],
+  s_zzz:["Zzz", ()=>({shapes:[["#a9b8f5",P(-0.85,-0.2,-0.05,-0.2,-0.05,0,-0.52,0.55,-0.05,0.55,-0.05,0.78,-0.85,0.78,-0.85,0.58,-0.38,0.02,-0.85,0.02)],["#a9b8f5",P(0.15,-0.8,0.75,-0.8,0.75,-0.63,0.4,-0.25,0.75,-0.25,0.75,-0.08,0.15,-0.08,0.15,-0.25,0.5,-0.63,0.15,-0.63)]]})],
+  s_idea:["ひらめき", ()=>({shapes:[["#b9c3cf",R(-0.28,0.32,0.56,0.42,0.1)],["#f6d743",C(0,-0.25,0.6)]], detail:c=>{ ln(c,-0.28,0.52,0.28,0.52); for (const a of [-2.6,-2.1,-1.57,-1.05,-0.55]) ln(c,Math.cos(a)*0.78,-0.25+Math.sin(a)*0.78,Math.cos(a)*0.98,-0.25+Math.sin(a)*0.98); }})],
+  s_fire:["ほのお", ()=>({shapes:[["#ff6a3d",c=>{ c.moveTo(0,-1.0); c.bezierCurveTo(0.35,-0.55,0.85,-0.2,0.75,0.35); c.bezierCurveTo(0.68,0.8,-0.68,0.8,-0.75,0.35); c.bezierCurveTo(-0.82,-0.05,-0.45,-0.2,-0.4,-0.55); c.bezierCurveTo(-0.15,-0.35,-0.05,-0.6,0,-1.0); c.closePath(); }]], detail:c=>fillP(c,"#ffd24a",c2=>{ c2.moveTo(0,-0.25); c2.bezierCurveTo(0.3,0.05,0.42,0.3,0.35,0.48); c2.bezierCurveTo(0.25,0.72,-0.25,0.72,-0.35,0.48); c2.bezierCurveTo(-0.42,0.25,-0.15,0.1,0,-0.25); c2.closePath(); })})],
+  s_cloud:["くも", ()=>({shapes:cloudShapes("#ffffff")})],
+  s_sun:["たいよう", ()=>({shapes:[...[0,1,2,3,4,5,6,7].map(k=>{ const a=k*TAU/8; return ["#ffb347",K(Math.cos(a)*0.62,Math.sin(a)*0.62,Math.cos(a)*0.9,Math.sin(a)*0.9,0.16)]; }), ["#ffcf4a",C(0,0,0.5)]]})],
+  s_moon:["つき", ()=>({shapes:[["#ffe58a",c=>{ c.arc(0,0,0.85,0.9,TAU-0.9+0.0001,false); c.arc(0.42,-0.2,0.62,TAU-0.75,0.95,true); c.closePath(); }]]})],
+  s_thunder:["かみなり", ()=>({shapes:[["#f6d743",P(0.2,-1.0,-0.55,0.1,-0.05,0.1,-0.25,1.0,0.6,-0.2,0.1,-0.2,0.35,-1.0)]]})],
+  s_rain:["あめ", ()=>({shapes:[...cloudShapes("#b9c3cf").map(([c,p])=>[c,p]), ["#7cc6f2",DROP(-0.4,0.75,0.22)],["#7cc6f2",DROP(0.1,0.85,0.22)],["#7cc6f2",DROP(0.55,0.7,0.22)]]})],
+  s_rainbow:["にじ", ()=>({shapes:[["#ff6b6b",c=>{ c.arc(0,0.55,1.0,Math.PI,TAU); c.arc(0,0.55,0.78,TAU,Math.PI,true); c.closePath(); }],["#ffd84a",c=>{ c.arc(0,0.55,0.78,Math.PI,TAU); c.arc(0,0.55,0.56,TAU,Math.PI,true); c.closePath(); }],["#7cc6f2",c=>{ c.arc(0,0.55,0.56,Math.PI,TAU); c.arc(0,0.55,0.34,TAU,Math.PI,true); c.closePath(); }]]})],
+  s_snow:["ゆき", ()=>({shapes:[0,1,2].map(k=>{ const a=k*Math.PI/3+Math.PI/2, x=Math.cos(a)*0.9, y=Math.sin(a)*0.9; return ["#bfe6ff",K(-x,-y,x,y,0.18)]; }), detail:c=>{ fillP(c,"#ffffff",C(0,0,0.14)); }})],
+  s_crown:["おうかん", ()=>({shapes:[["#f6c744",P(-0.9,0.65,-0.9,-0.45,-0.45,0.0,0,-0.7,0.45,0.0,0.9,-0.45,0.9,0.65)]], detail:c=>{ fillP(c,"#ff5a7a",C(0,0.25,0.13)); fillP(c,"#7cc6f2",C(-0.5,0.3,0.1)); fillP(c,"#7cc6f2",C(0.5,0.3,0.1)); }})],
+  s_ribbon:["リボン", ()=>({shapes:[["#ff8fb5",P(0,0,-0.95,-0.55,-0.95,0.55)],["#ff8fb5",P(0,0,0.95,-0.55,0.95,0.55)],["#ff8fb5",P(-0.15,0.1,-0.45,0.9,-0.1,0.75)],["#ff8fb5",P(0.15,0.1,0.45,0.9,0.1,0.75)],["#ff6b9a",C(0,0,0.22)]]})],
+  s_maru:["まる", ()=>({shapes:[["#ff5a5a",RING(0,0,0.9,0.55)]]})],
+  s_batsu:["ばつ", ()=>({shapes:[["#5b8def",K(-0.7,-0.7,0.7,0.7,0.32)],["#5b8def",K(0.7,-0.7,-0.7,0.7,0.32)]]})],
+  s_check:["チェック", ()=>({shapes:[["#4caf50",K(-0.75,0.0,-0.2,0.6,0.3)],["#4caf50",K(-0.2,0.6,0.8,-0.65,0.3)]]})],
+  s_arrow:["やじるし", ()=>({shapes:[["#ff8a3d",R(-0.95,-0.22,1.1,0.44,0.1)],["#ff8a3d",P(0.1,-0.7,0.98,0,0.1,0.7)]]})],
+  s_arrow_u:["うえやじるし", ()=>({shapes:[["#4caf50",R(-0.22,-0.15,0.44,1.1,0.1)],["#4caf50",P(-0.7,-0.1,0,-0.98,0.7,-0.1)]]})],
+  s_boom:["ばくはつ", ()=>({shapes:[["#ff8a3d",ST(0,0,1.0,0.6,9)]], detail:c=>fillP(c,"#ffd84a",ST(0,0,0.6,0.34,9,0.3))})],
+  s_guru:["ぐるぐる", ()=>({shapes:TUBE("#8f8cf0",(()=>{ const o=[]; for (let k=0;k<=36;k++){ const a=k*0.35, rr=0.06+k*0.024; o.push(Math.cos(a)*rr, Math.sin(a)*rr); } return o; })(),0.16)})],
+  s_steam:["ゆげ", ()=>({shapes:[-0.55,0,0.55].flatMap(x=>TUBE("#e3e6ea",[x,0.8, x+0.12,0.4, x-0.1,0.0, x+0.1,-0.4, x-0.02,-0.8],0.16))})],
+  s_moya:["もやもや", ()=>({shapes:[["#d9dde3",C(-0.45,0.1,0.42)],["#d9dde3",C(0.05,-0.2,0.5)],["#d9dde3",C(0.5,0.12,0.4)],["#d9dde3",C(0,0.35,0.42)]], detail:c=>withLine(c,"#9aa3ad",1.2,()=>arcS(c,0,0.05,0.25,0,4.5))})],
+  s_blush:["てれてれ", ()=>({shapes:[["#ffa3b8",E(-0.5,0,0.4,0.26)],["#ffa3b8",E(0.5,0,0.4,0.26)]], detail:c=>withLine(c,"#ffffff",1.4,()=>{ for (const x of [-0.62,-0.45,0.38,0.55]) ln(c,x,0.12,x+0.12,-0.12); })})],
+  s_dia:["ダイヤ", ()=>({shapes:[["#7cd3f2",P(-0.9,-0.3,-0.5,-0.8,0.5,-0.8,0.9,-0.3,0,0.95)]], detail:c=>withLine(c,"#d6f3ff",1.4,()=>{ ln(c,-0.9,-0.3,0.9,-0.3); ln(c,-0.3,-0.3,0,0.95,0.3,-0.3); ln(c,-0.5,-0.8,-0.3,-0.3); ln(c,0.5,-0.8,0.3,-0.3); })})],
+};
+
+const MOTIFS = {};
+const GENRES = {};
+for (const [g, lib] of [["犬",DOG],["猫",CAT],["野菜",{...VEG,...VEG2}],["記号",SYM]]){
+  GENRES[g] = Object.keys(lib);
+  for (const [id,[label,make]] of Object.entries(lib)) MOTIFS[id] = {label, make, genre:g};
+}
+GENRES["ミックス"] = Object.keys(MOTIFS);
+
+function renderMotif(c, id, d, lw){
+  const m = MOTIFS[id]; if (!m) return;
+  const spec = m.spec || (m.spec = m.make());
+  const r = d*0.36, L = lw/r;
+  INK = S.lc1;
+  c.save(); c.scale(r,r); c.lineJoin="round"; c.lineCap="round";
+  c.strokeStyle = INK; c.lineWidth = L*2;
+  for (const [,p] of spec.shapes){ c.beginPath(); p(c); c.stroke(); }
+  for (const [col,p] of spec.shapes){ c.beginPath(); p(c); c.fillStyle=col; c.fill(); }
+  if (spec.detail){ c.fillStyle=INK; c.strokeStyle=INK; c.lineWidth=L*0.8; spec.detail(c); }
+  c.restore();
+}
+function decoPlace(idx, box, W, H){
+  if (S.decoOn!=="on" || !S.decoMap) return null;
+  const e = S.decoMap[idx]; if (!e || !MOTIFS[e.m]) return null;
+  const corner = S.decoPos==="rand" ? e.c : S.decoPos;
+  const d = Math.min(W,H) * S.decoSize/100, lw = d*0.075, half = d/2+lw;
+  let cx = corner[1]==="l" ? box.l + d*0.12 : box.r - d*0.12;
+  let cy = corner[0]==="t" ? box.t + d*0.12 : box.b - d*0.12;
+  cx = Math.min(W-half, Math.max(half, cx)); cy = Math.min(H-half, Math.max(half, cy));
+  return {cx, cy, d, lw, m:e.m};
+}
+const CORNERS = ["tr","tl","br","bl"];
+const cornerPool = () => { const p = (S.decoCorners||[]).filter(c=>CORNERS.includes(c)); return p.length ? p : CORNERS; };
+function shuffleDeco(){
+  const pool = S.decoPool.filter(id=>MOTIFS[id]);
+  const use = pool.length ? pool : GENRES["犬"];
+  S.decoMap = KANA.map((_,i)=> Math.random()*100 < S.decoRate ? {m: pick(use), c: pick(cornerPool())} : null);
+}
+
+// ---- 一覧 ----
+const grid = $("grid"), cells = [], motionTags = [];
+KANA.forEach((ch,i)=>{
+  const b = document.createElement("button");
+  b.className = "cell"; b.type = "button"; b.setAttribute("aria-label", `${num(i)} ${ch}`);
+  const cv = document.createElement("canvas"); cv.width = 180; cv.height = 180;
+  const sp = document.createElement("span"); sp.textContent = num(i);
+  const mb = document.createElement("b");
+  b.append(cv, sp, mb); grid.append(b); motionTags.push(mb);
+  b.addEventListener("click", ()=>{ S.sel=i; save(); drawSel(); markSel(); });
+  cells.push(cv);
+});
+function markSel(){ grid.querySelectorAll(".cell").forEach((c,i)=>c.setAttribute("aria-current", i===S.sel)); }
+function applyGridBg(){ cells.forEach(cv=>{ cv.className = S.gridBg; }); }
+
+function drawSel(){
+  const ch = KANA[S.sel];
+  $("selLabel").textContent = `${num(S.sel)}.png ／ ${ch}`;
+  $("selMotion").value = S.motions[S.sel];
+  $("selDeco").value = (S.decoMap[S.sel] && S.decoMap[S.sel].m) || "";
+  $("selDecoMotion").value = S.decoMotions[S.sel];
+  for (const id of ["bigA","bigB","bigC"]){
+    const ctx = $(id).getContext("2d");
+    if (S.mode==="anim"){ ctx.clearRect(0,0,180,180); ctx.drawImage(cells[S.sel],0,0); }
+    else drawChar(ctx, ch, 180, 180, S.sel);
+  }
+}
+
+let bubbleCvs = [];
+function buildBubble(){
+  const chars = Array.from($("sample").value);
+  const bub = $("bubble"); bub.textContent = ""; bubbleCvs = [];
+  const allDeco = chars.length>0 && chars.every(c=>KANA.includes(c));
+  bub.classList.toggle("solo", allDeco && chars.length===1);
+  for (const c of chars){
+    const i = KANA.indexOf(c);
+    if (i < 0){ bub.append(document.createTextNode(c)); continue; }
+    const cv = document.createElement("canvas"); cv.width=180; cv.height=180; cv.setAttribute("aria-label", c);
+    bub.append(cv); bubbleCvs.push([cv,i]);
+  }
+  paintBubble();
+}
+function paintBubble(){
+  for (const [cv,i] of bubbleCvs){ const x=cv.getContext("2d"); x.clearRect(0,0,180,180); x.drawImage(cells[i],0,0); }
+}
+const drawBubble = buildBubble;
+
+// ---- アニメ:止まった形(2倍サイズ)から各コマを作る ----
+const rests = [], boxes = [];
+let fitS = 1;
+const places = [];
+function buildRests(){
+  for (let i=0;i<KANA.length;i++){
+    if (!rests[i]){ rests[i]=document.createElement("canvas"); rests[i].width=360; rests[i].height=360; }
+    const ctx = rests[i].getContext("2d", {willReadFrequently:true});
+    const res = drawChar(ctx, KANA[i], 360, 360, i, true);     // 文字だけ(絵は別に動かす)
+    const pl = res && res.place;
+    places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m} : null;
+    const d = ctx.getImageData(0,0,360,360).data;
+    let x0=360,y0=360,x1=-1,y1=-1;
+    for (let y=0;y<360;y++) for (let x=0;x<360;x++) if (d[(y*360+x)*4+3]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    boxes[i] = x1<0 ? {x0:80,y0:80,x1:100,y1:100} : {x0:x0/2, y0:y0/2, x1:(x1+1)/2, y1:(y1+1)/2};
+  }
+}
+function motionMatrix(moId, bx, p, s, A = S.amp/100){
+  const mo = MID[moId] || MOTIONS[0];
+  const o = mo.f(p, A);
+  const px = (bx.x0+bx.x1)/2, py = mo.pivot==="b" ? bx.y1 : (bx.y0+bx.y1)/2;
+  const sc = o.s || 1;
+  return new DOMMatrix().translate(90,90).scale(s).translate(-90,-90)
+    .translate(px+(o.dx||0), py+(o.dy||0)).rotate(o.rot||0)
+    .multiply(new DOMMatrix([1,0,o.k||0,1,0,0]))
+    .scale((o.sx??1)*sc, (o.sy??1)*sc).translate(-px,-py);
+}
+const frameMatrix = (i, p, s) => motionMatrix(S.motions[i], boxes[i], p, s);
+const decoHalf = pl => pl.d*0.44 + pl.lw;
+function decoMatrix(i, p, s){
+  const pl = places[i], dm = S.decoMotions[i];
+  if (dm==="follow") return frameMatrix(i, p, s).translate(pl.cx, pl.cy);
+  if (dm==="still") return new DOMMatrix().translate(90,90).scale(s).translate(-90,-90).translate(pl.cx, pl.cy);
+  const h = decoHalf(pl), A = (S.amp/100) * (S.decoAmp/100);
+  const base = new DOMMatrix().translate(90,90).scale(s).translate(-90,-90);
+  const bm = DMID[dm];
+  if (bm && bm.big){
+    const q = bm.pos(p, A, pl, h);
+    return base.translate(q.x, q.y).rotate(q.rot||0).scale(q.sc||1);
+  }
+  return motionMatrix(dm, {x0:pl.cx-h, y0:pl.cy-h, x1:pl.cx+h, y1:pl.cy+h}, p, s, A).translate(pl.cx, pl.cy);
+}
+function computeFit(){
+  const n = S.frames;
+  const inside = (m, pts) => pts.every(([x,y])=>{ const q = m.transformPoint({x,y}); return q.x>=1 && q.y>=1 && q.x<=179 && q.y<=179; });
+  const fits = s => {
+    for (let i=0;i<KANA.length;i++){
+      const b = boxes[i], pts = [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];
+      const pl = places[i], h = pl ? decoHalf(pl) : 0, dpts = [[-h,-h],[h,-h],[-h,h],[h,h]];
+      for (let f=0; f<n; f++){
+        if (!inside(frameMatrix(i, f/n, s), pts)) return false;
+        if (pl && !(DMID[S.decoMotions[i]]||{}).big && !inside(decoMatrix(i, f/n, s), dpts)) return false;
+      }
+    }
+    return true;
+  };
+  let s = 1; while (s>0.3 && !fits(s)) s -= 0.02;
+  fitS = s;
+}
+function drawFrame(ctx, i, f){
+  const p = f/S.frames;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,180,180);
+  ctx.setTransform(frameMatrix(i, p, fitS).multiply(new DOMMatrix().scale(0.5)));
+  ctx.imageSmoothingQuality = "high";
+  ctx.drawImage(rests[i], 0, 0);
+  const pl = places[i];
+  if (pl){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); }
+  ctx.setTransform(1,0,0,1,0,0);
+}
+
+let tick = 0, timer = 0;
+function startAnim(){
+  clearInterval(timer);
+  if (S.mode!=="anim") return;
+  const n = S.frames, per = (+S.sec*1000)/n;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const step = ()=>{
+    const f = reduce ? 0 : tick % n;
+    for (let i=0;i<KANA.length;i++) drawFrame(cells[i].getContext("2d"), i, f);
+    drawSel(); paintBubble(); tick++;
+  };
+  step(); if (!reduce) timer = setInterval(step, Math.max(per, 50));
+}
+function labelMotions(){ motionTags.forEach((t,i)=>{ t.textContent = MID[S.motions[i]].label; }); }
+
+function drawTab(){
+  const ch = (S.tab || "あ");
+  const i = Math.max(0, KANA.indexOf(ch));
+  drawChar($("tabCv").getContext("2d"), ch, 96, 74, i);
+}
+
+let raf = 0;
+function redraw(){
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(()=>{
+    document.body.classList.toggle("anim", S.mode==="anim");
+    document.body.classList.toggle("deco", S.decoOn==="on");
+    $("exportBtn").textContent = S.mode==="anim" ? "動く161個 + tab をZIPで保存" : "161個 + tab をZIPで保存";
+    labelMotions();
+    if (S.mode==="anim"){ buildRests(); computeFit(); drawTab(); buildBubble(); startAnim(); }
+    else {
+      clearInterval(timer);
+      KANA.forEach((ch,i)=>drawChar(cells[i].getContext("2d"), ch, 180, 180, i));
+      drawSel(); drawTab(); buildBubble();
+    }
+  });
+}
+// 動きの設定だけ変えたとき(文字の描き直し不要)
+function reanim(){ if (S.mode!=="anim") return; labelMotions(); computeFit(); startAnim(); }
+
+// ---- UI ----
+function fillFontSelect(){
+  const sel = $("font"); sel.textContent = "";
+  fontList.forEach((f,i)=>{ const o=document.createElement("option"); o.value=i; o.textContent=f.label; sel.append(o); });
+  if (S.font >= fontList.length) S.font = 0;
+  sel.value = S.font;
+}
+function bindSeg(id, key, after){
+  const box = $(id);
+  const sync = ()=> box.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===S[key]));
+  box.addEventListener("click", e=>{ const b=e.target.closest("button"); if(!b) return; S[key]=b.dataset.v; sync(); save(); after(); });
+  sync(); return sync;
+}
+function bindRange(id, after, unit="px"){
+  const el=$(id), v=$(id+"V");
+  const show=()=>{ v.textContent = S[id]+unit; };
+  el.value = S[id]; show();
+  el.addEventListener("input", ()=>{ S[id]=+el.value; show(); save(); after(); });
+  return ()=>{ el.value=S[id]; show(); };
+}
+function bindColor(id){
+  const el=$(id); el.value=S[id];
+  el.addEventListener("input", ()=>{ S[id]=el.value; save(); redraw(); });
+  return ()=>{ el.value=S[id]; };
+}
+function fillNote(){
+  const t = {solid:"色1だけ使います", grad:"上が色1、下が色2", cycle:"ピンク・水色・紫…の6色を順番に"}[S.fill];
+  $("fillNote").textContent = t;
+  $("c2").hidden = S.fill!=="grad";
+  $("c1").hidden = S.fill==="cycle";
+}
+
+const syncers = [];
+syncers.push(bindSeg("fillMode","fill",()=>{fillNote();redraw();}));
+syncers.push(bindSeg("fitMode","fit",redraw));
+syncers.push(bindSeg("gridBg","gridBg",applyGridBg));
+for (const id of ["line1","line2","bold","margin"]) syncers.push(bindRange(id, redraw));
+for (const id of ["c1","c2","lc1","lc2"]) syncers.push(bindColor(id));
+
+// ---- アニメのUI ----
+function fixLoops(){
+  const maxL = Math.floor(4 / +S.sec);
+  if (+S.loops > maxL) S.loops = String(maxL);
+  $("loops").querySelectorAll("button").forEach(b=>{ b.disabled = +b.dataset.v > maxL; b.setAttribute("aria-pressed", b.dataset.v===S.loops); });
+}
+syncers.push(bindSeg("mode","mode",redraw));
+syncers.push(bindSeg("sec","sec",()=>{ fixLoops(); save(); reanim(); }));
+syncers.push(bindSeg("loops","loops",()=>{ fixLoops(); save(); }));
+syncers.push(bindRange("amp", reanim, "%"));
+syncers.push(bindRange("frames", reanim, "コマ"));
+fixLoops();
+
+const motionOpts = sel => LETTER_MOTIONS.forEach(m=>{ const o=document.createElement("option"); o.value=m.id; o.textContent=m.label; sel.append(o); });
+motionOpts($("allMotion")); motionOpts($("selMotion"));
+const poolBox = $("pool");
+MOTIONS.forEach(m=>{
+  const b=document.createElement("button"); b.type="button"; b.textContent=m.label; b.dataset.v=m.id;
+  b.setAttribute("aria-pressed", S.pool.includes(m.id));
+  b.addEventListener("click", ()=>{
+    const on = S.pool.includes(m.id);
+    if (on && S.pool.length===1) return;           // 1つは残す
+    S.pool = on ? S.pool.filter(x=>x!==m.id) : S.pool.concat(m.id);
+    b.setAttribute("aria-pressed", !on); save();
+  });
+  poolBox.append(b);
+});
+// ---- 飾りの絵のUI ----
+if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
+S.decoPool = S.decoPool.filter(id=>MOTIFS[id]);
+if (!GENRES[S.decoView]) S.decoView = "犬";
+if (!Array.isArray(S.decoMap) || S.decoMap.length!==161 || S.decoMap.some(e=>e && !MOTIFS[e.m])) shuffleDeco();
+syncers.push(bindSeg("decoOn","decoOn",redraw));
+syncers.push(bindSeg("decoPos","decoPos",()=>{ syncCorners(); redraw(); }));
+function syncCorners(){
+  $("cornerBox").hidden = S.decoPos!=="rand";
+  $("decoCorners").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", cornerPool().includes(b.dataset.v)));
+}
+$("decoCorners").addEventListener("click", e=>{
+  const b = e.target.closest("button"); if (!b) return;
+  const v = b.dataset.v, cur = cornerPool();
+  if (cur.includes(v) && cur.length===1) return;              // 1か所は残す
+  S.decoCorners = cur.includes(v) ? cur.filter(x=>x!==v) : cur.concat(v);
+  const pool = cornerPool();
+  S.decoMap.forEach(e2=>{ if (e2 && !pool.includes(e2.c)) e2.c = pick(pool); });   // 外した位置の絵だけ置き直す
+  syncCorners(); save(); redraw();
+});
+syncCorners();
+syncers.push(bindRange("decoSize", redraw, "%"));
+syncers.push(bindRange("decoRate", ()=>{ shuffleDeco(); save(); redraw(); }, "%"));
+const decoPoolBox = $("decoPool");
+function iconCanvas(id, px=52){
+  const cv = document.createElement("canvas"); cv.width=px; cv.height=px;
+  const x = cv.getContext("2d"); x.translate(px/2,px/2); renderMotif(x, id, px*1.05, px*0.05); return cv;
+}
+function buildPoolChips(){
+  decoPoolBox.textContent = "";
+  for (const id of GENRES[S.decoView]){
+    const b=document.createElement("button"); b.type="button"; b.className="mchip"; b.dataset.v=id;
+    b.append(iconCanvas(id), document.createTextNode(MOTIFS[id].label));
+    b.addEventListener("click", ()=>{
+      const on = S.decoPool.includes(id);
+      if (on && S.decoPool.length===1) return;
+      S.decoPool = on ? S.decoPool.filter(x=>x!==id) : S.decoPool.concat(id);
+      syncDecoPool(); shuffleDeco(); save(); redraw();
+    });
+    decoPoolBox.append(b);
+  }
+  syncDecoPool();
+}
+function syncDecoPool(){
+  decoPoolBox.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", S.decoPool.includes(b.dataset.v)));
+  $("genre").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===S.decoView));
+  $("poolCount").textContent = ` ／ 使う絵 ${S.decoPool.length}種類`;
+}
+Object.entries(GENRES).forEach(([name,list])=>{
+  const b=document.createElement("button"); b.type="button"; b.dataset.v=name; b.textContent=`${name}(${list.length})`;
+  b.addEventListener("click", ()=>{ S.decoView=name; S.decoPool = list.slice(); buildPoolChips(); shuffleDeco(); save(); redraw(); });
+  $("genre").append(b);
+});
+$("poolAllBtn").addEventListener("click", ()=>{ S.decoPool = [...new Set(S.decoPool.concat(GENRES[S.decoView]))]; syncDecoPool(); shuffleDeco(); save(); redraw(); });
+$("poolNoneBtn").addEventListener("click", ()=>{ const keep = S.decoPool.filter(id=>!GENRES[S.decoView].includes(id)); S.decoPool = keep.length ? keep : [GENRES[S.decoView][0]]; syncDecoPool(); shuffleDeco(); save(); redraw(); });
+buildPoolChips();
+$("decoShuffleBtn").addEventListener("click", ()=>{ shuffleDeco(); save(); redraw(); });
+
+// この字の絵
+const selDeco = $("selDeco");
+{ const o=document.createElement("option"); o.value=""; o.textContent="なし"; selDeco.append(o); }
+for (const [g,list] of Object.entries(GENRES)){ if (g==="ミックス") continue;
+  const og=document.createElement("optgroup"); og.label=g;
+  for (const id of list){ const o=document.createElement("option"); o.value=id; o.textContent=MOTIFS[id].label; og.append(o); }
+  selDeco.append(og);
+}
+selDeco.addEventListener("change", e=>{
+  const v = e.target.value, cur = S.decoMap[S.sel];
+  S.decoMap[S.sel] = v ? {m:v, c: cur ? cur.c : pick(cornerPool())} : null; save(); redraw();
+});
+// 絵の動き
+const dmp = $("decoMpool"), dmpBig = $("decoMpoolBig");
+DECO_MOTIONS.forEach(m=>{
+  const b=document.createElement("button"); b.type="button"; b.textContent=m.label; b.dataset.v=m.id;
+  b.setAttribute("aria-pressed", S.decoMpool.includes(m.id));
+  b.addEventListener("click", ()=>{
+    const on = S.decoMpool.includes(m.id);
+    if (on && S.decoMpool.length===1) return;
+    S.decoMpool = on ? S.decoMpool.filter(x=>x!==m.id) : S.decoMpool.concat(m.id);
+    b.setAttribute("aria-pressed", !on); save();
+  });
+  (m.big ? dmpBig : dmp).append(b);
+});
+DECO_MOTIONS.forEach(m=>{ const o=document.createElement("option"); o.value=m.id; o.textContent=m.label; $("selDecoMotion").append(o); });
+$("selDecoMotion").addEventListener("change", e=>{ S.decoMotions[S.sel]=e.target.value; save(); reanim(); });
+syncers.push(bindRange("decoAmp", reanim, "%"));
+$("stopAllBtn").addEventListener("click", ()=>{ S.motions = S.motions.map(()=>"none"); S.decoMotions = S.decoMotions.map(()=>"still"); save(); reanim(); drawSel(); });
+$("selStopBtn").addEventListener("click", ()=>{ S.motions[S.sel]="none"; S.decoMotions[S.sel]="still"; save(); reanim(); drawSel(); });
+$("shuffleTextBtn").addEventListener("click", ()=>{ shuffleAll(); save(); reanim(); drawSel(); });
+$("shuffleDecoMBtn").addEventListener("click", ()=>{ shuffleDecoMotions(); save(); reanim(); drawSel(); });
+
+$("shuffleBtn").addEventListener("click", ()=>{ shuffleAll(); shuffleDecoMotions(); save(); reanim(); drawSel(); });
+$("allSameBtn").addEventListener("click", ()=>{ S.motions = S.motions.map(()=>$("allMotion").value); save(); reanim(); drawSel(); });
+$("selMotion").addEventListener("change", e=>{ S.motions[S.sel]=e.target.value; save(); reanim(); });
+$("selRandBtn").addEventListener("click", ()=>{ S.motions[S.sel]=pick(S.pool, S.motions[S.sel]); save(); reanim(); });
+
+const pre = $("presets");
+Object.keys(PRESETS).forEach(name=>{
+  const b=document.createElement("button"); b.type="button"; b.textContent=name;
+  b.addEventListener("click", ()=>{ Object.assign(S, PRESETS[name]); save(); syncers.forEach(s=>s()); fillNote(); redraw(); });
+  pre.append(b);
+});
+
+$("font").addEventListener("change", async e=>{ S.font=+e.target.value; save(); await computeMetrics(); redraw(); });
+$("fontUpBtn").addEventListener("click", ()=>$("fontFile").click());
+$("fontFile").addEventListener("change", async e=>{
+  const file = e.target.files[0]; if(!file) return;
+  const name = "UserFont" + fontList.length;
+  try{
+    const face = new FontFace(name, await file.arrayBuffer());
+    await face.load(); document.fonts.add(face);
+    fontList.push({label: file.name.replace(/\.[^.]+$/,""), fam:`"${name}"`, w:"normal"});
+    S.font = fontList.length-1; fillFontSelect(); await computeMetrics(); redraw();
+  }catch(err){ $("report").innerHTML = `<span class="ng">フォントを読み込めませんでした。.ttf / .otf / .woff のファイルか確認してください。</span>`; }
+  e.target.value = "";
+});
+$("tabChar").value = S.tab;
+$("tabChar").addEventListener("input", e=>{ S.tab = Array.from(e.target.value)[0] || "あ"; save(); drawTab(); });
+$("sample").addEventListener("input", drawBubble);
+
+// ---- ZIP(無圧縮・外部ライブラリなし) ----
+const CRC = (()=>{ const t=new Uint32Array(256); for(let n=0;n<256;n++){ let c=n; for(let k=0;k<8;k++) c = c&1 ? 0xEDB88320^(c>>>1) : c>>>1; t[n]=c>>>0; } return t; })();
+function crc32(b){ let c=0xFFFFFFFF; for(let i=0;i<b.length;i++) c = CRC[(c^b[i])&255]^(c>>>8); return (c^0xFFFFFFFF)>>>0; }
+function makeZip(files){
+  const enc=new TextEncoder(), parts=[], central=[]; let off=0;
+  const d=new Date();
+  const time=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1);
+  const date=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for (const f of files){
+    const nm=enc.encode(f.name), crc=crc32(f.data), sz=f.data.length;
+    const h=new DataView(new ArrayBuffer(30));
+    h.setUint32(0,0x04034b50,true); h.setUint16(4,20,true); h.setUint16(10,time,true); h.setUint16(12,date,true);
+    h.setUint32(14,crc,true); h.setUint32(18,sz,true); h.setUint32(22,sz,true); h.setUint16(26,nm.length,true);
+    parts.push(new Uint8Array(h.buffer), nm, f.data);
+    const c=new DataView(new ArrayBuffer(46));
+    c.setUint32(0,0x02014b50,true); c.setUint16(4,20,true); c.setUint16(6,20,true); c.setUint16(12,time,true); c.setUint16(14,date,true);
+    c.setUint32(16,crc,true); c.setUint32(20,sz,true); c.setUint32(24,sz,true); c.setUint16(28,nm.length,true); c.setUint32(42,off,true);
+    central.push(new Uint8Array(c.buffer), nm);
+    off += 30+nm.length+sz;
+  }
+  let cs=0; central.forEach(p=>cs+=p.length);
+  const e=new DataView(new ArrayBuffer(22));
+  e.setUint32(0,0x06054b50,true); e.setUint16(8,files.length,true); e.setUint16(10,files.length,true); e.setUint32(12,cs,true); e.setUint32(16,off,true);
+  return new Blob([...parts, ...central, new Uint8Array(e.buffer)], {type:"application/zip"});
+}
+const toBytes = cv => new Promise(res=>cv.toBlob(async b=>res(new Uint8Array(await b.arrayBuffer())),"image/png"));
+
+// ---- APNG(パレット256色に減色して軽くする・外部ライブラリなし) ----
+const deflate = async bytes => new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream("deflate"))).arrayBuffer());
+function chunk(type, data){
+  const t = new TextEncoder().encode(type), out = new Uint8Array(12+data.length), dv = new DataView(out.buffer);
+  dv.setUint32(0, data.length); out.set(t,4); out.set(data,8);
+  const c = new Uint8Array(4+data.length); c.set(t,0); c.set(data,4);
+  dv.setUint32(8+data.length, crc32(c)); return out;
+}
+function quantize(frames){
+  const acc = new Map();
+  const keyOf = (d,j) => ((d[j]>>3)<<15)|((d[j+1]>>3)<<10)|((d[j+2]>>3)<<5)|(d[j+3]>>3);
+  for (const d of frames) for (let j=0;j<d.length;j+=4){
+    if (d[j+3] < 8) continue;
+    const k = keyOf(d,j); let a = acc.get(k);
+    if (!a){ a=[0,0,0,0,0]; acc.set(k,a); }
+    a[0]++; a[1]+=d[j]; a[2]+=d[j+1]; a[3]+=d[j+2]; a[4]+=d[j+3];
+  }
+  const avg = a => [a[1]/a[0], a[2]/a[0], a[3]/a[0], a[4]/a[0]];
+  const ents = [...acc.entries()].sort((x,y)=>y[1][0]-x[1][0]);
+  const pal = [[0,0,0,0]], map = new Map();
+  ents.slice(0,255).forEach(([k,a])=>{ map.set(k, pal.length); pal.push(avg(a).map(Math.round)); });
+  for (const [k,a] of ents.slice(255)){
+    const c = avg(a); let best=1, bd=Infinity;
+    for (let p=1;p<pal.length;p++){ const q=pal[p]; const dd=(q[0]-c[0])**2+(q[1]-c[1])**2+(q[2]-c[2])**2+2*(q[3]-c[3])**2; if(dd<bd){bd=dd;best=p;} }
+    map.set(k,best);
+  }
+  const idx = frames.map(d=>{ const o=new Uint8Array(d.length/4); for(let j=0,p=0;j<d.length;j+=4,p++) o[p] = d[j+3]<8 ? 0 : map.get(keyOf(d,j)); return o; });
+  return {pal, idx};
+}
+async function encodeAPNG(frames, w, h, totalMs, plays){
+  const {pal, idx} = quantize(frames);
+  const n = frames.length, parts = [new Uint8Array([137,80,78,71,13,10,26,10])];
+  const ihdr = new Uint8Array(13), hv = new DataView(ihdr.buffer);
+  hv.setUint32(0,w); hv.setUint32(4,h); ihdr[8]=8; ihdr[9]=3;
+  parts.push(chunk("IHDR", ihdr));
+  parts.push(chunk("PLTE", new Uint8Array(pal.flatMap(c=>[c[0],c[1],c[2]]))));
+  parts.push(chunk("tRNS", new Uint8Array(pal.map(c=>c[3]))));
+  const ac = new Uint8Array(8), av = new DataView(ac.buffer); av.setUint32(0,n); av.setUint32(4,plays);
+  parts.push(chunk("acTL", ac));
+  let seq = 0, same = 0;
+  for (let f=0; f<n; f++){
+    if (f>0 && idx[f].every((v,k)=>v===idx[f-1][k])) same++;
+    const delay = Math.round((f+1)*totalMs/n) - Math.round(f*totalMs/n);
+    const fc = new Uint8Array(26), fv = new DataView(fc.buffer);
+    fv.setUint32(0,seq++); fv.setUint32(4,w); fv.setUint32(8,h); fv.setUint16(20,delay); fv.setUint16(22,1000); fc[24]=0; fc[25]=0;
+    parts.push(chunk("fcTL", fc));
+    const raw = new Uint8Array(h*(w+1));
+    for (let y=0;y<h;y++) raw.set(idx[f].subarray(y*w,(y+1)*w), y*(w+1)+1);
+    const z = await deflate(raw);
+    if (f===0) parts.push(chunk("IDAT", z));
+    else { const fd = new Uint8Array(4+z.length); new DataView(fd.buffer).setUint32(0,seq++); fd.set(z,4); parts.push(chunk("fdAT", fd)); }
+  }
+  parts.push(chunk("IEND", new Uint8Array(0)));
+  const len = parts.reduce((s,p)=>s+p.length,0), out = new Uint8Array(len); let o=0;
+  for (const p of parts){ out.set(p,o); o+=p.length; }
+  return {data: out, same};
+}
+
+$("exportBtn").addEventListener("click", async ()=>{
+  const btn=$("exportBtn"), rep=$("report");
+  btn.disabled = true; rep.textContent = "書き出し中…";
+  const anim = S.mode==="anim";
+  try{
+    const files=[]; let maxKB=0, maxName="", sameList=[];
+    const cv=document.createElement("canvas"); cv.width=180; cv.height=180; const ctx=cv.getContext("2d",{willReadFrequently:true});
+    if (anim){ buildRests(); computeFit(); }
+    for (let i=0;i<KANA.length;i++){
+      let data;
+      if (anim){
+        const fr = [];
+        for (let f=0; f<S.frames; f++){ drawFrame(ctx, i, f); fr.push(ctx.getImageData(0,0,180,180).data); }
+        const r = await encodeAPNG(fr, 180, 180, +S.sec*1000, +S.loops);
+        data = r.data; if (r.same) sameList.push(num(i));
+        if (i%10===0) rep.textContent = `書き出し中… ${i+1}/161`;
+      } else {
+        drawChar(ctx, KANA[i], 180, 180, i);
+        data = await toBytes(cv);
+      }
+      const kb = data.length/1024; if (kb>maxKB){ maxKB=kb; maxName=num(i)+".png"; }
+      files.push({name:num(i)+".png", data});
+    }
+    drawTab();
+    files.push({name:"tab.png", data: await toBytes($("tabCv"))});
+    const zip = makeZip(files);
+    const mb = zip.size/1024/1024;
+    const okCount = files.length===162, okKB = maxKB<=1024, okMB = mb<=20;
+    rep.innerHTML =
+      `<span class="${okCount?"ok":"ng"}">${okCount?"✓":"✕"} 001〜161.png と tab.png(計${files.length}ファイル)</span>`+
+      `<span class="${okKB?"ok":"ng"}">${okKB?"✓":"✕"} いちばん重い画像 ${maxName}:${maxKB.toFixed(1)}KB(上限1MB)</span>`+
+      `<span class="${okMB?"ok":"ng"}">${okMB?"✓":"✕"} ZIP ${mb.toFixed(2)}MB(上限20MB)</span>`+
+      (anim ? `<span class="ok">✓ ${S.frames}コマ・${S.sec}秒×${S.loops}回(合計${+S.sec*+S.loops}秒)・縮小${Math.round(fitS*100)}%</span>`+
+        (sameList.length ? `<span class="ng">✕ 前と同じコマがある字:${sameList.join(", ")}(動きを強くするか変えてください)</span>` : `<span class="ok">✓ どの字も全コマ動いています</span>`) : "");
+    const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = anim ? "decomoji_kana161_anim.zip" : "decomoji_kana161.zip";
+    document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
+  }catch(err){ rep.innerHTML = `<span class="ng">保存できませんでした:${err.message}</span>`; }
+  btn.disabled = false;
+});
+
+// ---- 途中の作業を保存・読み込み ----
+function downloadBlob(blob, name){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
+  document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
+}
+$("projSaveBtn").addEventListener("click", ()=>{
+  const f = fontList[S.font] || fontList[0];
+  const data = {app:"Mon Chein デコ文字工房", version:1, savedAt:new Date().toISOString(), fontLabel:f.label, userFont: S.font >= FONTS.length, state:S};
+  const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
+  downloadBlob(new Blob([JSON.stringify(data)], {type:"application/json"}), `decomoji_work_${stamp}.json`);
+  $("report").innerHTML = `<span class="ok">✓ 作業を保存しました(decomoji_work_${stamp}.json)</span>` +
+    (data.userFont ? `<span class="note">手持ちのフォント「${f.label}」はファイルに入らないので、読み込んだあとにもう一度フォントを読み込んでください。</span>` : "");
+});
+$("projLoadBtn").addEventListener("click", ()=>$("projFile").click());
+$("projFile").addEventListener("change", async e=>{
+  const file = e.target.files[0]; e.target.value = ""; if (!file) return;
+  try{
+    const data = JSON.parse(await file.text());
+    if (!data || !data.state || data.app!=="Mon Chein デコ文字工房") throw new Error("デコ文字工房の作業ファイルではありません");
+    const st = Object.assign({}, DEF, data.state);
+    if (data.userFont){ st.font = 0; }
+    S = st;
+    if (!Array.isArray(S.motions) || S.motions.length!==161 || S.motions.some(m=>!MID[m])) shuffleAll();
+    if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==161 || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
+    if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
+    if (!Array.isArray(S.decoMap) || S.decoMap.length!==161) shuffleDeco();
+    if (!GENRES[S.decoView]) S.decoView = "犬";
+    save();
+    fillFontSelect(); syncers.forEach(fn=>fn()); fillNote(); fixLoops(); applyGridBg(); markSel();
+    $("tabChar").value = S.tab; buildPoolChips(); syncCorners();
+    $("pool").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", S.pool.includes(b.dataset.v)));
+    $("decoMpool").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", S.decoMpool.includes(b.dataset.v)));
+    $("decoMpoolBig").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", S.decoMpool.includes(b.dataset.v)));
+    await computeMetrics(); redraw();
+    $("report").innerHTML = `<span class="ok">✓ 作業を読み込みました(${new Date(data.savedAt).toLocaleString("ja-JP")} に保存したもの)</span>` +
+      (data.userFont ? `<span class="note">保存したときは手持ちのフォント「${data.fontLabel}」を使っていました。もう一度読み込んでください。</span>` : "");
+  }catch(err){ $("report").innerHTML = `<span class="ng">読み込めませんでした:${err.message}</span>`; }
+});
+
+// ---- 起動 ----
+(async ()=>{
+  fillFontSelect(); fillNote(); applyGridBg(); markSel();
+  await computeMetrics(); redraw();
+  document.fonts.ready.then(async()=>{ await computeMetrics(); redraw(); });
+})();
+</script>
