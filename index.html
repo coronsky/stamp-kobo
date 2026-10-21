@@ -664,6 +664,14 @@ select, input[type=number] { border-color: var(--line-strong); }
         <button type="button" class="btn primary" id="exportStillBtn">通常スタンプ(静止画PNG・370×320)を1個だけ保存</button>
         <button type="button" class="btn primary" id="exportStillEmojiBtn">通常絵文字(静止画PNG・180×180)を1個だけ保存</button>
         <p class="fine">ZIPではなく、いま選んでいるスタンプの動く画像(.png)を1つだけ保存します。スタンプ用は「キャンバスサイズ」の大きさ、絵文字用は180×180で、再生時間・コマ数・ループは今の設定のままです。</p>
+        <p class="sub">メイン画像・タブ画像だけを、1枚ずつ保存</p>
+        <div class="stage-bar">
+          <button type="button" class="btn primary" id="saveMainBtn">メイン画像(240×240)を保存</button>
+          <button type="button" class="btn primary" id="saveTabBtn">タブ画像(96×74)を保存</button>
+        </div>
+        <p class="fine">動かない画像(PNG)で、LINEのスタンプ申請にそのまま使えます。「メイン画像・タブ画像」で決めたスタンプを使います(決めていないときは、いま選んでいるスタンプです)。文字・エフェクトも重ねます。</p>
+        <p id="mtMsg" role="status" aria-live="polite"></p>
+        <a class="btn" id="mtLink" href="#" download="main.png" hidden>保存ファイルをダウンロード</a>
         <p class="sub">作業の保存(あとで続きから作れます)</p>
         <div class="stage-bar">
           <button type="button" class="btn primary" id="projSave">作業を保存する</button>
@@ -3387,6 +3395,41 @@ function findTextCells(bg, W, H, opt) {
   ['oneEmojiBtn', 'exportEmojiBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('emoji')));
   ['oneStillStickerBtn', 'exportStillBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('stillSticker')));
   ['oneStillEmojiBtn', 'exportStillEmojiBtn'].forEach((id) => $(id).addEventListener('click', () => saveOne('stillEmoji')));
+
+  // メイン画像(240×240)・タブ画像(96×74)を、1枚ずつ保存する
+  async function saveMainTab(which) {
+    const say = (t) => { $('mtMsg').textContent = t; };
+    const main = which === 'main';
+    const id = main ? state.mainId : state.tabId;
+    let it = state.items.find((x) => x.id === id), fromSel = false;
+    if (!it) { it = cur(); fromSel = true; }
+    if (!it) { say('スタンプがありません。画像を追加してから押してください。'); return; }
+    const W = main ? 240 : 96, H = main ? 240 : 74, fname = main ? 'main.png' : 'tab.png', label = main ? 'メイン画像' : 'タブ画像';
+    ['saveMainBtn', 'saveTabBtn'].forEach((b) => { $(b).disabled = true; });
+    $('mtLink').hidden = true;
+    try {
+      const bytes = await stillPng(it, W, H);
+      const blob = new Blob([bytes], { type: 'image/png' });
+      const no = state.items.indexOf(it) + 1;
+      const note = '(' + (fromSel ? '決めていないため、選んでいる' : '決めてある') + 'スタンプ' + no + '番、' + W + '×' + H + '、' + Math.round(blob.size / 1024) + ' KB)';
+      if (downloads) {
+        try { await downloads.save({ filename: fname, data: blob }); say(label + 'を保存しました' + note + '。'); }
+        catch (e) { say((e && e.code === 'declined') ? '保存をキャンセルしました。もう一度押すと保存できます。' : 'この画面からは保存できませんでした。'); }
+      } else {
+        const link = $('mtLink');
+        if (link.dataset.url) URL.revokeObjectURL(link.dataset.url);
+        link.dataset.url = URL.createObjectURL(blob);
+        link.href = link.dataset.url; link.download = fname; link.hidden = false;
+        say(label + 'ができました' + note + '。下のボタンから保存してください。');
+      }
+    } catch (e) {
+      say('書き出しに失敗しました。もう一度お試しください。');
+    } finally {
+      ['saveMainBtn', 'saveTabBtn'].forEach((b) => { $(b).disabled = false; });
+    }
+  }
+  $('saveMainBtn').addEventListener('click', () => saveMainTab('main'));
+  $('saveTabBtn').addEventListener('click', () => saveMainTab('tab'));
 
   // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
   const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
