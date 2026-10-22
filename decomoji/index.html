@@ -84,6 +84,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .mchip canvas{width:26px;height:26px}
 body:not(.anim) .animbox{display:none}
 body:not(.deco) .decobox{display:none}
+body:not(.clip) .clipbox{display:none}
 .pastebox{border:2px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);font-size:.85rem;min-height:44px;outline:none;overflow:hidden;max-height:60px}
 .pastebox:focus{border-color:var(--accent)}
 body:not(.emo) .emobox{display:none}
@@ -99,7 +100,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-7(画像を読み込む欄をいつも表示)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-8(切り抜き文字・探偵のメッセージ風)</span></p>
 </header>
 
 <div class="wrap">
@@ -135,11 +136,22 @@ body:not(.anim) .cell b{display:none}
       <label for="font">フォント</label>
       <select id="font"></select>
       <span class="note" id="fontWarn"></span>
+
       <div class="row">
         <button class="btn2" id="fontUpBtn" type="button">手持ちのフォントを読み込む</button>
         <input type="file" id="fontFile" class="hidden-file" accept=".ttf,.otf,.woff,.woff2">
       </div>
       <span class="note">一覧のフォント(36種類)はすべてGoogle Fontsのオープンフォントライセンスで、LINEスタンプなどの販売にも使えます。手持ちのフォントは販売利用OKか確認してから使ってください。</span>
+    </div>
+    <div class="field">
+      <span class="lbl">文字のスタイル</span>
+      <div class="seg" id="textStyle"><button type="button" data-v="normal">ふつう</button><button type="button" data-v="clip">✂ 切り抜き(探偵のメッセージ風)</button></div>
+      <div class="field clipbox" style="gap:8px">
+        <span class="lbl">紙の種類</span>
+        <div class="seg" id="clipPaper"><button type="button" data-v="news">新聞</button><button type="button" data-v="mag">雑誌(カラー)</button><button type="button" data-v="mix">ミックス</button></div>
+        <button class="btn2" id="clipShuffleBtn" type="button" style="font-weight:900">🎲 切り抜きを作り直す(紙・フォント・角度)</button>
+        <span class="note">1文字ずつ、紙の色・フォント・かたむきがランダムになります。フォント・塗り方の設定は使わず、ふち(内側)の色と太さは紙のふちに少しだけ使います。</span>
+      </div>
     </div>
 
     <div class="field">
@@ -487,7 +499,7 @@ const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", li
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
-  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true};
+  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix"};
 
 let S = Object.assign({}, DEF);
 try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
@@ -537,7 +549,63 @@ async function computeMetrics(){
   checkGlyphs();
 }
 
+// ---- 切り抜き文字(探偵のメッセージ風) ----
+function rng(seed){ let a = seed>>>0; return ()=>{ a = (a + 0x6D2B79F5)>>>0; let t = a; t = Math.imul(t ^ t>>>15, t|1); t ^= t + Math.imul(t ^ t>>>7, t|61); return ((t ^ t>>>14)>>>0)/4294967296; }; }
+const CLIP_FONTS = [
+  {fam:'"Zen Kaku Gothic New"', w:"900"}, {fam:'"Shippori Mincho B1"', w:"800"}, {fam:'"Kaisei Tokumin"', w:"800"},
+  {fam:'"Dela Gothic One"', w:"400"}, {fam:'"Reggae One"', w:"400"}, {fam:'"DotGothic16"', w:"400"},
+  {fam:'"Yuji Syuku"', w:"400"}, {fam:'"M PLUS 1"', w:"900"}, {fam:'"RocknRoll One"', w:"400"},
+  {fam:'"Train One"', w:"400"}, {fam:'"Potta One"', w:"400"}, {fam:'"Zen Antique"', w:"400"},
+  {fam:'"Murecho"', w:"900"}, {fam:'"Kosugi Maru"', w:"400"}, {fam:'"Mochiy Pop One"', w:"400"}, {fam:'"Stick"', w:"400"},
+];
+// 紙: [紙の色, 文字の色, 新聞の線を入れるか]
+const PAPERS_NEWS = [["#f4f1e8","#1d1d1d",1],["#ece6d6","#1d1d1d",1],["#e9e9e4","#1d1d1d",1],["#f7f4ec","#b3261e",1],["#2a2a2a","#f7f4ec",0],["#e3dccb","#1d1d1d",1]];
+const PAPERS_MAG = [["#ffd84a","#1d1d1d",0],["#ff6b8a","#ffffff",0],["#7cc6f2","#1d1d1d",0],["#ffffff","#e8473b",0],["#1d1d1d","#ffd84a",0],["#9ccf7a","#1d1d1d",0],["#ff9f2e","#ffffff",0],["#d8c8f0","#3a2a5e",0]];
+let clipFontsLoaded = false;
+async function loadClipFonts(){
+  if (clipFontsLoaded) return; clipFontsLoaded = true;
+  try { await Promise.all(CLIP_FONTS.map(f=>document.fonts.load(`${f.w} 100px ${f.fam}`, ALL.slice(0,EMO_BASE).join("")))); } catch(e){}
+  redraw();
+}
+function drawClipChar(ctx, ch, W, H, idx, noDeco){
+  ctx.clearRect(0,0,W,H);
+  const r = rng((S.clipSeed||1)*7919 + idx*104729);
+  const f = Math.min(W,H)/180, pad = Math.max(S.margin, 4)*f;
+  const papers = S.clipPaper==="news" ? PAPERS_NEWS : S.clipPaper==="mag" ? PAPERS_MAG : PAPERS_NEWS.concat(PAPERS_MAG);
+  const [paper, ink, lines] = papers[Math.floor(r()*papers.length)];
+  const font = CLIP_FONTS[Math.floor(r()*CLIP_FONTS.length)];
+  // 紙のかたち:少しゆがんだ四角を少し回す
+  const rot = (r()-0.5) * 0.28, sw = (0.72 + r()*0.2)*W - 2*pad, sh = (0.78 + r()*0.18)*H - 2*pad;
+  const j = () => (r()-0.5) * Math.min(W,H)*0.07;
+  const pts = [[-sw/2+j(),-sh/2+j()],[sw/2+j(),-sh/2+j()],[sw/2+j(),sh/2+j()],[-sw/2+j(),sh/2+j()]];
+  ctx.save(); ctx.translate(W/2, H/2); ctx.rotate(rot);
+  const path = () => { ctx.beginPath(); pts.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); };
+  ctx.save(); ctx.translate(2.5*f, 3*f); path(); ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.fill(); ctx.restore();   // かげ
+  path(); ctx.fillStyle = paper; ctx.fill();
+  if (S.line1 > 0){ ctx.lineWidth = Math.max(1, S.line1*0.25)*f; ctx.strokeStyle = S.lc1; ctx.stroke(); }
+  if (lines){   // 新聞の細かい文字の線
+    ctx.save(); path(); ctx.clip(); ctx.fillStyle = "rgba(0,0,0,0.13)";
+    for (let y=-sh/2+4*f; y<sh/2; y+=7*f) for (let x=-sw/2+3*f; x<sw/2; x+= (6+r()*16)*f){ const len=(4+r()*12)*f; ctx.fillRect(x, y, len, 2.2*f); x+=len; }
+    ctx.restore();
+  }
+  // 文字:紙の中にできるだけ大きく
+  mctx.font = `${font.w} 100px ${font.fam}, "Hiragino Sans", sans-serif`;
+  const m = mctx.measureText(ch), gl=m.actualBoundingBoxLeft, gr=m.actualBoundingBoxRight, ga=m.actualBoundingBoxAscent, gd=m.actualBoundingBoxDescent;
+  const inner = 0.78, k = Math.min(sw*inner/Math.max(gl+gr,1), sh*inner/Math.max(ga+gd,1));
+  ctx.rotate((r()-0.5)*0.2);
+  ctx.font = `${font.w} ${100*k}px ${font.fam}, "Hiragino Sans", sans-serif`;
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.fillStyle = ink;
+  ctx.fillText(ch, -(gr-gl)/2*k, (ga-gd)/2*k);
+  ctx.restore();
+  // 飾りの絵は紙のかどに
+  const bb = {l:W/2-sw/2, r:W/2+sw/2, t:H/2-sh/2, b:H/2+sh/2};
+  const place = decoPlace(idx, bb, W, H);
+  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  return {place};
+}
+
 function drawChar(ctx, ch, W, H, idx, noDeco=false){
+  if (S.textStyle==="clip") return drawClipChar(ctx, ch, W, H, idx, noDeco);
   if (!metrics) return null;
   ctx.clearRect(0,0,W,H);
   const f = Math.min(W,H)/180;                       // タブ画像用に線と余白を縮める
@@ -1297,6 +1365,7 @@ function checkGlyphs(){
   const shot = (ch, fam) => { x.clearRect(0,0,64,64); x.font = `${f.w} 48px ${fam}`; x.textBaseline="middle"; x.fillText(ch, 8, 32); return x.getImageData(0,0,64,64).data; };
   const same = (a,b) => { for (let k=3;k<a.length;k+=16) if (a[k]!==b[k]) return false; return true; };
   missing = new Set();
+  if (S.textStyle==="clip"){ cellBtns.forEach(b=>b.classList.remove("nofont")); $("fontWarn").innerHTML = ""; return; }
   for (const g of LIST()){
     if (isEmo(g)) continue;
     const ch = ALL[g];
@@ -1440,6 +1509,8 @@ function redraw(){
   raf = requestAnimationFrame(()=>{
     document.body.classList.toggle("anim", S.mode==="anim");
     document.body.classList.toggle("deco", S.decoOn==="on");
+    document.body.classList.toggle("clip", S.textStyle==="clip");
+    if (S.textStyle==="clip") loadClipFonts();
     refreshPackage();
     const n = LIST().length;
     $("exportBtn").textContent = S.mode==="anim" ? `動く${n}個 + tab をZIPで保存` : `${n}個 + tab をZIPで保存`;
@@ -1495,6 +1566,9 @@ function fillNote(){
 const syncers = [];
 syncers.push(bindSeg("fillMode","fill",()=>{fillNote();redraw();}));
 syncers.push(bindSeg("fitMode","fit",redraw));
+syncers.push(bindSeg("textStyle","textStyle",()=>{ checkGlyphs(); redraw(); }));
+syncers.push(bindSeg("clipPaper","clipPaper",redraw));
+$("clipShuffleBtn").addEventListener("click", ()=>{ S.clipSeed = Math.floor(Math.random()*1e9)+1; save(); redraw(); });
 syncers.push(bindSeg("gridBg","gridBg",applyGridBg));
 for (const id of ["line1","line2","bold","margin"]) syncers.push(bindRange(id, redraw));
 for (const id of ["c1","c2","lc1","lc2"]) syncers.push(bindColor(id));
