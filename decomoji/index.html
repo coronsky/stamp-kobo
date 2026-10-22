@@ -84,6 +84,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .mchip canvas{width:26px;height:26px}
 body:not(.anim) .animbox{display:none}
 body:not(.deco) .decobox{display:none}
+body:not(.deco):not(.emo) .custbox{display:none}
+.pastebox{border:2px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);font-size:.85rem;min-height:44px;outline:none;overflow:hidden;max-height:60px}
+.pastebox:focus{border-color:var(--accent)}
 body:not(.emo) .emobox{display:none}
 body:not(.selemo) .selemobox{display:none}
 body.selemo .notemo{display:none}
@@ -97,7 +100,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-4(おすわり犬・食べ物・季節・いきもの・小物を追加)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-5(自分の絵の読み込み・貼り付け)</span></p>
 </header>
 
 <div class="wrap">
@@ -217,6 +220,17 @@ body:not(.anim) .cell b{display:none}
         <div class="row"><input type="range" id="decoRate" min="10" max="100" step="10"><span class="val" id="decoRateV"></span></div>
       </div>
       <button class="btn2" id="decoShuffleBtn" type="button" style="font-weight:900">🎲 絵を振り分け直す</button>
+    </div>
+    <div class="field custbox" style="gap:10px">
+      <span class="lbl">自分の絵を足す(「自分の絵」ジャンルに入り、飾りにも絵文字にも使えます)</span>
+      <div class="row">
+        <button class="btn2" id="custAddBtn" type="button">🖼 画像を読み込む</button>
+        <button class="btn2" id="custPasteBtn" type="button">📋 貼り付け</button>
+        <input type="file" id="custFile" class="hidden-file" accept="image/*" multiple>
+      </div>
+      <div id="pasteBox" class="pastebox" contenteditable="true" aria-label="画像の貼り付け場所">iPhone・iPadは、ここを長押しして「ペースト」</div>
+      <div class="row"><button class="btn2" id="custDelBtn" type="button">自分の絵をぜんぶ消す</button><span class="note" id="custCount"></span></div>
+      <span class="note">透過PNGがおすすめです。まわりの透明な余白は自動で切り取ります。パソコンでは、画面のどこでも Ctrl+V(Macは ⌘+V)で貼り付けられます。</span>
       <span class="note">ガイドラインでは、絵文字は小さく表示されるので飾りはシンプルに、とされています。文字が読めるよう、大きくしすぎないのがおすすめです。</span>
     </div>
 
@@ -470,7 +484,7 @@ const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", li
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
-  decoMotions:null, decoMpool:null};
+  decoMotions:null, decoMpool:null, customs:[]};
 
 let S = Object.assign({}, DEF);
 try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
@@ -490,7 +504,10 @@ function shuffleDecoMotions(){
 }
 if (Array.isArray(S.decoMotions) && S.decoMotions.length<ALL.length && S.decoMotions.every(m=>DMID[m])) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
 if (!Array.isArray(S.decoMotions) || S.decoMotions.length!==ALL.length || S.decoMotions.some(m=>!DMID[m])) shuffleDecoMotions();
-const save = () => { try { localStorage.setItem("decomoji-v1", JSON.stringify(S)); } catch(e){} };
+const save = () => { try { localStorage.setItem("decomoji-v1", JSON.stringify(S)); } catch(e){
+  const r = document.getElementById("report");
+  if (r) r.innerHTML = `<span class="ng">ブラウザに覚えきれませんでした。自分の絵が多すぎるかもしれません。「💾 作業を保存」でファイルに保存しておいてください。</span>`;
+} };
 
 const $ = id => document.getElementById(id);
 const fontList = FONTS.slice();
@@ -518,6 +535,7 @@ async function computeMetrics(){
 }
 
 function drawChar(ctx, ch, W, H, idx, noDeco=false){
+  if (!metrics) return null;
   ctx.clearRect(0,0,W,H);
   const f = Math.min(W,H)/180;                       // タブ画像用に線と余白を縮める
   const bold=S.bold*f, l1=S.line1*f, l2=S.line2*f, pad=S.margin*f;
@@ -1182,10 +1200,35 @@ for (const [g, lib] of [["犬",DOG],["おすわり犬",SITDOG],["猫",CAT],["い
   GENRES[g] = Object.keys(lib);
   for (const [id,[label,make]] of Object.entries(lib)) MOTIFS[id] = {label, make, genre:g};
 }
+GENRES["自分の絵"] = [];
 GENRES["ミックス"] = Object.keys(MOTIFS);
+
+// ---- 自分の絵(読み込んだ・貼り付けた画像) ----
+const customImgs = {};
+function registerCustoms(){
+  for (const id of GENRES["自分の絵"]) delete MOTIFS[id];
+  const list = (Array.isArray(S.customs) ? S.customs : []).filter(u=>u && u.id && u.img);
+  S.customs = list;
+  GENRES["自分の絵"] = list.map(u=>u.id);
+  for (const u of list){
+    MOTIFS[u.id] = {label: u.name || "自分の絵", custom:true, genre:"自分の絵"};
+    if (!customImgs[u.id] || customImgs[u.id].src !== u.img){
+      const im = new Image(); im.onload = ()=>{ redraw(); refreshCustomUI(); }; im.src = u.img; customImgs[u.id] = im;
+    }
+  }
+}
+registerCustoms();
 
 function renderMotif(c, id, d, lw){
   const m = MOTIFS[id]; if (!m) return;
+  if (m.custom){
+    const im = customImgs[id];
+    if (im && im.complete && im.naturalWidth){
+      const box = d*0.9, sc = Math.min(box/im.naturalWidth, box/im.naturalHeight), w = im.naturalWidth*sc, h = im.naturalHeight*sc;
+      c.save(); c.imageSmoothingQuality = "high"; c.drawImage(im, -w/2, -h/2, w, h); c.restore();
+    }
+    return;
+  }
   const spec = m.spec || (m.spec = m.make());
   const r = d*0.36, L = lw/r;
   INK = S.lc1;
@@ -1532,9 +1575,12 @@ function syncDecoPool(){
   $("genre").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===S.decoView));
   $("poolCount").textContent = ` ／ 使う絵 ${S.decoPool.length}種類`;
 }
-Object.entries(GENRES).forEach(([name,list])=>{
-  const b=document.createElement("button"); b.type="button"; b.dataset.v=name; b.textContent=`${name}(${list.length})`;
-  b.addEventListener("click", ()=>{ S.decoView=name; S.decoPool = list.slice(); buildPoolChips(); shuffleDeco(); save(); redraw(); });
+Object.keys(GENRES).forEach(name=>{
+  const b=document.createElement("button"); b.type="button"; b.dataset.v=name; b.textContent=`${name}(${GENRES[name].length})`;
+  b.addEventListener("click", ()=>{
+    if (!GENRES[name].length){ $("report").innerHTML = `<span class="note">「自分の絵」はまだありません。下の「🖼 画像を読み込む」か「📋 貼り付け」で足してください。</span>`; return; }
+    S.decoView=name; S.decoPool = GENRES[name].slice(); buildPoolChips(); shuffleDeco(); save(); redraw();
+  });
   $("genre").append(b);
 });
 $("poolAllBtn").addEventListener("click", ()=>{ S.decoPool = [...new Set(S.decoPool.concat(GENRES[S.decoView]))]; syncDecoPool(); shuffleDeco(); save(); redraw(); });
@@ -1542,14 +1588,20 @@ $("poolNoneBtn").addEventListener("click", ()=>{ const keep = S.decoPool.filter(
 buildPoolChips();
 $("decoShuffleBtn").addEventListener("click", ()=>{ shuffleDeco(); save(); redraw(); });
 
+// 絵の一覧のプルダウン(自分の絵が増えたら作り直す)
+function fillMotifSelect(sel, firstLabel){
+  const keep = sel.value; sel.textContent = "";
+  const o=document.createElement("option"); o.value=""; o.textContent=firstLabel; sel.append(o);
+  for (const [g,list] of Object.entries(GENRES)){ if (g==="ミックス" || !list.length) continue;
+    const og=document.createElement("optgroup"); og.label=g;
+    for (const id of list){ const op=document.createElement("option"); op.value=id; op.textContent=MOTIFS[id].label; og.append(op); }
+    sel.append(og);
+  }
+  sel.value = keep;
+}
 // この字の絵
 const selDeco = $("selDeco");
-{ const o=document.createElement("option"); o.value=""; o.textContent="なし"; selDeco.append(o); }
-for (const [g,list] of Object.entries(GENRES)){ if (g==="ミックス") continue;
-  const og=document.createElement("optgroup"); og.label=g;
-  for (const id of list){ const o=document.createElement("option"); o.value=id; o.textContent=MOTIFS[id].label; og.append(o); }
-  selDeco.append(og);
-}
+fillMotifSelect(selDeco, "なし");
 selDeco.addEventListener("change", e=>{
   const v = e.target.value, cur = S.decoMap[S.sel];
   S.decoMap[S.sel] = v ? {m:v, c: cur ? cur.c : pick(cornerPool())} : null; save(); redraw();
@@ -1755,6 +1807,78 @@ function shuffleEmojis(fillOnlyBroken=false){
 fixEmojis(); loadEmojiImgs();
 const emoGenreBox = $("emoGenre");
 Object.keys(GENRES).forEach(g=>{ const b=document.createElement("button"); b.type="button"; b.dataset.v=g; b.textContent=g; emoGenreBox.append(b); });
+// ---- 自分の絵の読み込み・貼り付け ----
+function refreshCustomUI(){
+  $("genre").querySelectorAll("button").forEach(b=>{ b.textContent = `${b.dataset.v}(${(GENRES[b.dataset.v]||[]).length})`; });
+  if (S.decoView==="自分の絵") buildPoolChips();
+  fillMotifSelect($("selDeco"), "なし"); fillMotifSelect($("selEmoji"), "(読み込んだ画像)");
+  $("custCount").textContent = S.customs.length ? `自分の絵 ${S.customs.length}枚` : "";
+  if (typeof drawSel==="function" && cells.length) drawSel();
+}
+async function addCustomFromBlob(blob, name){
+  const url = URL.createObjectURL(blob), im = new Image();
+  await new Promise((ok,ng)=>{ im.onload=ok; im.onerror=()=>ng(new Error("画像を開けませんでした")); im.src=url; });
+  // 大きすぎる写真はまず縮める
+  const pre = Math.min(1, 1200/Math.max(im.naturalWidth, im.naturalHeight));
+  const w = Math.max(1,Math.round(im.naturalWidth*pre)), h = Math.max(1,Math.round(im.naturalHeight*pre));
+  const c = document.createElement("canvas"); c.width=w; c.height=h;
+  const x = c.getContext("2d", {willReadFrequently:true}); x.drawImage(im,0,0,w,h); URL.revokeObjectURL(url);
+  // まわりの透明な余白を切り取る
+  const d = x.getImageData(0,0,w,h).data; let x0=w,y0=h,x1=-1,y1=-1;
+  for (let yy=0;yy<h;yy++) for (let xx=0;xx<w;xx++) if (d[(yy*w+xx)*4+3]>8){ if(xx<x0)x0=xx; if(xx>x1)x1=xx; if(yy<y0)y0=yy; if(yy>y1)y1=yy; }
+  if (x1<0){ x0=0; y0=0; x1=w-1; y1=h-1; }
+  const cw=x1-x0+1, ch=y1-y0+1, sc=Math.min(1, 400/Math.max(cw,ch));
+  const o = document.createElement("canvas"); o.width=Math.max(1,Math.round(cw*sc)); o.height=Math.max(1,Math.round(ch*sc));
+  o.getContext("2d").drawImage(c, x0,y0,cw,ch, 0,0,o.width,o.height);
+  const id = "u" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+  S.customs.push({id, name: name || `自分の絵${S.customs.length+1}`, img: o.toDataURL("image/png")});
+  return id;
+}
+async function addCustoms(blobs){
+  const ids = [], errsC = [];
+  for (const b of blobs){ try{ ids.push(await addCustomFromBlob(b, (b.name||"").replace(/\.[^.]+$/,"").slice(0,12) || "")); }catch(err){ errsC.push(err.message); } }
+  if (!ids.length){ $("report").innerHTML = `<span class="ng">画像を足せませんでした${errsC.length?":"+errsC[0]:""}</span>`; return; }
+  registerCustoms();
+  S.decoView = "自分の絵"; S.decoPool = GENRES["自分の絵"].slice();
+  if (S.decoOn==="on") shuffleDeco();
+  save(); refreshCustomUI(); syncDecoPool(); redraw();
+  $("report").innerHTML = `<span class="ok">✓ 自分の絵を${ids.length}枚足しました(全部で${S.customs.length}枚)。飾りの絵は「自分の絵」ジャンルになっています。</span>`;
+}
+$("custAddBtn").addEventListener("click", ()=>$("custFile").click());
+$("custFile").addEventListener("change", e=>{ const fs=[...e.target.files]; e.target.value=""; if (fs.length) addCustoms(fs); });
+$("custPasteBtn").addEventListener("click", async ()=>{
+  try{
+    if (!navigator.clipboard || !navigator.clipboard.read) throw new Error("no");
+    const items = await navigator.clipboard.read(), blobs = [];
+    for (const it of items){ const t = it.types.find(t=>t.startsWith("image/")); if (t) blobs.push(await it.getType(t)); }
+    if (!blobs.length){ $("report").innerHTML = `<span class="ng">コピーされている画像が見つかりませんでした。画像をコピーしてからもう一度押してください。</span>`; return; }
+    addCustoms(blobs);
+  }catch(err){
+    $("report").innerHTML = `<span class="note">このブラウザではボタンから貼り付けできませんでした。点線の枠を長押し(パソコンはクリックして Ctrl+V / ⌘+V)して貼り付けてください。</span>`;
+    $("pasteBox").focus();
+  }
+});
+document.addEventListener("paste", e=>{
+  const files = [...(e.clipboardData ? e.clipboardData.files : [])].filter(f=>f.type.startsWith("image/"));
+  if (!files.length) return;
+  e.preventDefault(); $("pasteBox").blur(); addCustoms(files);
+});
+$("pasteBox").addEventListener("input", ()=>{ const box=$("pasteBox"); const img = box.querySelector("img");
+  if (img && img.src){ fetch(img.src).then(r=>r.blob()).then(b=>addCustoms([b])).catch(()=>{}); }
+  box.textContent = "iPhone・iPadは、ここを長押しして「ペースト」"; });
+let delArm = 0;
+$("custDelBtn").addEventListener("click", ()=>{
+  if (!S.customs.length) return;
+  if (Date.now() - delArm > 3000){ delArm = Date.now(); $("custDelBtn").textContent = "もう一度押すと消えます"; setTimeout(()=>{ $("custDelBtn").textContent = "自分の絵をぜんぶ消す"; }, 3000); return; }
+  const gone = new Set(S.customs.map(u=>u.id)); S.customs = []; registerCustoms();
+  if (S.decoView==="自分の絵"){ S.decoView = "犬"; S.decoPool = GENRES["犬"].slice(); }
+  S.decoPool = S.decoPool.filter(id=>!gone.has(id)); if (!S.decoPool.length) S.decoPool = GENRES["犬"].slice();
+  S.decoMap = S.decoMap.map(e=> e && gone.has(e.m) ? {m: pick(S.decoPool), c: e.c} : e);
+  S.emojis = S.emojis.map(e=> e && gone.has(e.m) ? {m: pick(GENRES[S.emojiGenre]&&GENRES[S.emojiGenre].length?GENRES[S.emojiGenre]:GENRES["犬"])} : e);
+  delArm = 0; $("custDelBtn").textContent = "自分の絵をぜんぶ消す";
+  save(); buildPoolChips(); refreshCustomUI(); redraw();
+});
+refreshCustomUI();
 function syncEmoUI(){
   emoGenreBox.querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", b.dataset.v===S.emojiGenre));
   $("emojiCount").value = emoCount(); $("emojiCountV").textContent = emoCount()+"個";
@@ -1764,11 +1888,7 @@ $("emojiCount").addEventListener("input", e=>{ S.emojiCount = +e.target.value; s
 $("emoShuffleBtn").addEventListener("click", ()=>{ shuffleEmojis(); save(); redraw(); });
 syncEmoUI();
 { const sel = $("selEmoji");
-  const o=document.createElement("option"); o.value=""; o.textContent="(読み込んだ画像)"; sel.append(o);
-  for (const [g,list] of Object.entries(GENRES)){ if (g==="ミックス") continue;
-    const og=document.createElement("optgroup"); og.label=g;
-    for (const id of list){ const op=document.createElement("option"); op.value=id; op.textContent=MOTIFS[id].label; og.append(op); }
-    sel.append(og); }
+  fillMotifSelect(sel, "(読み込んだ画像)");
   sel.addEventListener("change", e=>{ if (!isEmo(S.sel) || !e.target.value) return; S.emojis[S.sel-EMO_BASE] = {m:e.target.value}; loadEmojiImgs(); save(); redraw(); });
 }
 $("emoImgBtn").addEventListener("click", ()=>$("emoImgFile").click());
@@ -1809,6 +1929,7 @@ $("projFile").addEventListener("change", async e=>{
     const st = Object.assign({}, DEF, data.state);
     if (data.userFont){ st.font = 0; }
     S = st;
+    registerCustoms();
     if (Array.isArray(S.motions) && S.motions.length<ALL.length) S.motions = extendTo(S.motions, (i,prev)=>pick(S.pool.length?S.pool:MOTIONS.map(m=>m.id), prev));
     if (Array.isArray(S.decoMotions) && S.decoMotions.length<ALL.length) S.decoMotions = extendTo(S.decoMotions, (i,prev)=>pick(S.decoMpool, prev));
     if (Array.isArray(S.decoMap) && S.decoMap.length<ALL.length) S.decoMap = extendTo(S.decoMap, ()=>null);
@@ -1818,7 +1939,7 @@ $("projFile").addEventListener("change", async e=>{
     if (!Array.isArray(S.decoPool) || !S.decoPool.some(id=>MOTIFS[id])) S.decoPool = GENRES["犬"].slice();
     if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length) shuffleDeco();
     $("pkg").value = S.pkg;
-    fixEmojis(); loadEmojiImgs(); syncEmoUI();
+    fixEmojis(); loadEmojiImgs(); syncEmoUI(); refreshCustomUI();
     if (!GENRES[S.decoView]) S.decoView = "犬";
     save();
     fillFontSelect(); syncers.forEach(fn=>fn()); fillNote(); fixLoops(); applyGridBg(); markSel();
