@@ -97,7 +97,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-3(＋絵文字・絵文字だけのタイプに対応)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-4(おすわり犬・食べ物・季節・いきもの・小物を追加)</span></p>
 </header>
 
 <div class="wrap">
@@ -696,8 +696,14 @@ function dogFace(o){
     fillP(c,mz,mzP);
     if (o.brows) for (const m of [-1,1]) fillP(c,o.brows,E(m*0.3,-0.34,0.08,0.06));
     if (o.bow){ outlined(c,o.bow,P(0.55,-0.75,0.28,-0.95,0.28,-0.55)); outlined(c,o.bow,P(0.55,-0.75,0.82,-0.95,0.82,-0.55)); outlined(c,o.bow,C(0.55,-0.75,0.08)); }
-    eyes(c,0.36,-0.06,0.1,o.expr||"n",o.eyeBg);
-    omega(c,0.36,0.12); dot(c,0,0.24,0.13);
+    eyes(c,0.36,-0.06,0.1,o.expr==="laugh"?"smile":(o.expr||"n"),o.eyeBg);
+    if (o.expr==="laugh"){
+      fillP(c,"#5a2a2a",c2=>{ c2.moveTo(-0.2,0.34); c2.quadraticCurveTo(0,0.36,0.2,0.34); c2.quadraticCurveTo(0.18,0.62,0,0.62); c2.quadraticCurveTo(-0.18,0.62,-0.2,0.34); c2.closePath(); });
+      fillP(c,"#ff7f9a",E(0,0.54,0.11,0.08));
+      withLine(c,INK,1,()=>{ c.beginPath(); c.moveTo(-0.2,0.34); c.quadraticCurveTo(0,0.36,0.2,0.34); c.quadraticCurveTo(0.18,0.62,0,0.62); c.quadraticCurveTo(-0.18,0.62,-0.2,0.34); c.stroke(); });
+      blush(c,0.58,0.3);
+    } else omega(c,0.36,0.12);
+    dot(c,0,0.24,0.13);
   }};
 }
 const W="#ffffff", EYEW="#ffffff";
@@ -933,9 +939,246 @@ const SYM = {
   s_dia:["ダイヤ", ()=>({shapes:[["#7cd3f2",P(-0.9,-0.3,-0.5,-0.8,0.5,-0.8,0.9,-0.3,0,0.95)]], detail:c=>withLine(c,"#d6f3ff",1.4,()=>{ ln(c,-0.9,-0.3,0.9,-0.3); ln(c,-0.3,-0.3,0,0.95,0.3,-0.3); ln(c,-0.5,-0.8,-0.3,-0.3); ln(c,0.5,-0.8,0.3,-0.3); })})],
 };
 
+// ===== 追加ジャンル(おすわり犬・食べ物・季節・いきもの・小物) =====
+// 形をまるごと移動・拡大するための包み
+const TR = (p, tx, ty, sc=1, rot=0) => c => { c.save(); c.translate(tx,ty); c.rotate(rot); c.scale(sc,sc); p(c); c.restore(); };
+const trDetail = (fn, tx, ty, sc) => c => { c.save(); c.translate(tx,ty); c.scale(sc,sc); c.lineWidth/=sc; fn(c); c.restore(); };
+const darker = (hex, k=0.75) => { const n=parseInt(hex.slice(1),16); const f=v=>Math.round(v*k).toString(16).padStart(2,"0"); return "#"+f(n>>16&255)+f(n>>8&255)+f(n&255); };
+
+// ---- おすわり犬(全身・笑顔) ----
+function sitDog(o){
+  const head = o.head, body = o.body || head, leg = o.leg || body, chest = o.chest || o.muzzle || body;
+  const hs = 0.6, hx = 0, hy = -0.44;
+  const face = dogFace({...o, expr:"laugh"});
+  const long = o.build==="long", fluffy = o.build==="fluffy", big = o.build==="big";
+  const s = [];
+  // しっぽ(いちばん後ろ)
+  const tcol = o.tailCol || body;
+  if (o.tail==="curl") s.push([tcol, RING(0.5,0.3,0.24,0.08)]);
+  else if (o.tail==="long") s.push([tcol, K(0.38,0.8,0.86,0.3,0.15)]);
+  else if (o.tail==="fluffy") s.push([tcol, E(0.56,0.4,0.24,0.42,0.5)]);
+  else if (o.tail==="thin") s.push([tcol, K(0.4,0.85,0.82,0.5,0.08)]);
+  else if (o.tail==="up") s.push([tcol, K(0.42,0.55,0.62,0.05,0.13)]);
+  // うしろ足(おしり)
+  const hw = long ? 0.36 : 0.3;
+  s.push([body, E(-(long?0.5:0.42),0.7,hw,0.28)], [body, E((long?0.5:0.42),0.7,hw,0.28)]);
+  s.push([leg, E(-0.52,0.98,0.2,0.1)], [leg, E(0.52,0.98,0.2,0.1)]);
+  // からだ
+  if (fluffy) for (let k=0;k<10;k++){ const a=k*TAU/10; s.push([body, C(Math.cos(a)*0.4, 0.45+Math.sin(a)*0.42, 0.2)]); }
+  s.push([body, long ? E(0,0.5,0.58,0.44) : E(0,0.42,big?0.52:0.46,0.52)]);
+  // 前足
+  const ly = long ? 0.55 : 0.35;
+  s.push([leg, K(-0.17,ly,-0.19,0.94,0.19)], [leg, K(0.17,ly,0.19,0.94,0.19)]);
+  s.push([leg, E(-0.2,1.0,0.15,0.09)], [leg, E(0.2,1.0,0.15,0.09)]);
+  // 顔(少し小さくして上に)
+  for (const [col,p] of face.shapes) s.push([col, TR(p, hx, hy, hs)]);
+  const bodyP = long ? E(0,0.5,0.58,0.44) : E(0,0.42,big?0.52:0.46,0.52);
+  return {shapes:s, detail:c=>{
+    // むね
+    c.save(); c.beginPath(); bodyP(c); c.clip(); fillP(c, chest, E(0,0.22,0.24,0.34)); c.restore();
+    // 前足の白(くつした)
+    if (o.socks) for (const m of [-1,1]) fillP(c, o.socks, E(m*0.2,0.98,0.15,0.1));
+    withLine(c,INK,0.9,()=>{ ln(c,0,Math.max(ly+0.05,0.66),0,0.98); for (const m of [-1,1]){ ln(c,m*0.15,0.98,m*0.15,1.06); ln(c,m*0.25,0.98,m*0.25,1.06); } });
+    trDetail(face.detail, hx, hy, hs)(c);
+  }};
+}
+const findDog = label => (DOG_LIST.find(([l])=>l===label) || DOG_LIST[0])[1];
+const SIT_LIST = [
+  ["柴犬(赤)", {tail:"curl", chest:"#fff3e0", socks:"#fff3e0"}],
+  ["黒柴", {tail:"curl", chest:"#f3e2cf", socks:"#f3e2cf"}],
+  ["白柴", {tail:"curl"}],
+  ["秋田犬", {tail:"curl", chest:"#ffffff", socks:"#ffffff", build:"big"}],
+  ["トイプー(アプリコット)", {tail:"up", build:"fluffy"}],
+  ["トイプー(ブラウン)", {tail:"up", build:"fluffy"}],
+  ["トイプー(ホワイト)", {tail:"up", build:"fluffy"}],
+  ["トイプー(ブラック)", {tail:"up", build:"fluffy"}],
+  ["チワワ(クリーム)", {tail:"thin"}],
+  ["チワワ(ブラックタン)", {tail:"thin", chest:"#d9a066", leg:"#d9a066"}],
+  ["ダックス(レッド)", {tail:"long", build:"long"}],
+  ["ダックス(ブラックタン)", {tail:"long", build:"long", chest:"#c98a4a", leg:"#c98a4a"}],
+  ["ポメ(オレンジ)", {tail:"fluffy", build:"fluffy", chest:"#f6c07a"}],
+  ["ポメ(ホワイト)", {tail:"fluffy", build:"fluffy"}],
+  ["パグ(フォーン)", {tail:"curl", body:"#e8cf9f"}],
+  ["フレブル(フォーン)", {tail:"none", body:"#d9b27a"}],
+  ["コーギー", {tail:"none", build:"long", chest:"#ffffff", socks:"#ffffff"}],
+  ["ゴールデン", {tail:"fluffy", build:"big"}],
+  ["ラブ(イエロー)", {tail:"long", build:"big"}],
+  ["ラブ(ブラック)", {tail:"long", build:"big", body:"#333333"}],
+  ["ビーグル", {tail:"up", tailCol:"#ffffff", chest:"#ffffff", socks:"#ffffff", body:"#d99a55"}],
+  ["マルチーズ", {tail:"fluffy", build:"fluffy"}],
+  ["シーズー", {tail:"fluffy", build:"fluffy", body:"#ffffff", tailCol:"#a8764a"}],
+  ["ヨーキー", {tail:"up", body:"#6f7780", chest:"#c9934e", leg:"#c9934e"}],
+  ["ハスキー", {tail:"fluffy", build:"big", chest:"#ffffff", socks:"#ffffff"}],
+  ["ボーダーコリー", {tail:"fluffy", chest:"#ffffff", socks:"#ffffff", body:"#2f2f2f"}],
+  ["パピヨン", {tail:"fluffy", body:"#ffffff", tailCol:"#8a5a2e"}],
+  ["シュナウザー", {tail:"up", chest:"#e9ebee", leg:"#e9ebee"}],
+  ["ジャックラッセル", {tail:"up", body:"#ffffff"}],
+  ["ボストンテリア", {tail:"none", body:"#2f2f2f", chest:"#ffffff", socks:"#ffffff"}],
+  ["キャバリア", {tail:"fluffy", body:"#ffffff", tailCol:"#b5652b"}],
+  ["バーニーズ", {tail:"fluffy", build:"big", body:"#2f2f2f", chest:"#ffffff", socks:"#c9844a"}],
+];
+const SITDOG = Object.fromEntries(SIT_LIST.map(([label,o],k)=>["sd"+String(k+1).padStart(2,"0"), [label+"(おすわり)", ()=>sitDog({...findDog(label), ...o})]]));
+
+// ---- 食べ物・スイーツ ----
+const CREAM="#fff6e8", STRAW="#f0485a", CHOCO="#7a4a2a", BREAD="#e9b46a";
+const FOOD = {
+  f_cake:["ショートケーキ", ()=>({shapes:[[CREAM,P(-0.9,0.75,0.9,0.75,0.9,-0.05,-0.9,0.25)],[STRAW,C(0.35,-0.42,0.3)],[CREAM,E(-0.15,0.0,0.35,0.15,-0.15)]], detail:c=>{ withLine(c,"#ff9aa8",3,()=>ln(c,-0.9,0.5,0.9,0.4)); fillP(c,"#4caf50",E(0.4,-0.72,0.12,0.06,0.3)); }})],
+  f_straw:["いちご", ()=>({shapes:[[STRAW,c=>{ c.moveTo(0,0.95); c.bezierCurveTo(-0.9,0.3,-0.8,-0.6,0,-0.55); c.bezierCurveTo(0.8,-0.6,0.9,0.3,0,0.95); c.closePath(); }],["#4caf50",ST(0,-0.62,0.42,0.16,5)]], detail:c=>{ c.fillStyle="#ffe08a"; for (const [x,y] of [[-0.3,-0.1],[0.25,-0.15],[0,0.2],[-0.35,0.3],[0.35,0.3],[0,0.55]]) dot(c,x,y,0.05); c.fillStyle=INK; }})],
+  f_donut:["ドーナツ", ()=>({shapes:[[BREAD,RING(0,0,0.9,0.3)],["#ff9ec1",c=>{ c.ellipse(0,-0.05,0.78,0.72,0,0,TAU); c.moveTo(0.36,-0.05); c.arc(0,-0.05,0.36,0,TAU,true); }]], detail:c=>{ for (const [x,y,col] of [[-0.5,-0.3,"#7cc6f2"],[0.45,-0.4,"#ffe08a"],[0.55,0.3,"#ffffff"],[-0.45,0.35,"#7cc6f2"],[0,-0.6,"#ffffff"]]) fillP(c,col,E(x,y,0.09,0.04,0.6)); }})],
+  f_macaron:["マカロン", ()=>({shapes:[["#ffb3cf",E(0,-0.35,0.85,0.4)],["#fff6e8",R(-0.75,-0.12,1.5,0.24,0.1)],["#ffb3cf",E(0,0.35,0.85,0.4)]]})],
+  f_cupcake:["カップケーキ", ()=>({shapes:[["#ffb3cf",C(-0.35,-0.15,0.4)],["#ffb3cf",C(0.35,-0.15,0.4)],["#ffb3cf",C(0,-0.45,0.42)],["#7cc6f2",P(-0.75,0.1,0.75,0.1,0.55,0.95,-0.55,0.95)],[STRAW,C(0,-0.85,0.16)]], detail:c=>withLine(c,"#bfe6ff",1.6,()=>{ ln(c,-0.3,0.2,-0.22,0.9); ln(c,0,0.2,0,0.9); ln(c,0.3,0.2,0.22,0.9); })})],
+  f_pudding:["プリン", ()=>({shapes:[["#ffe08a",P(-0.45,-0.6,0.45,-0.6,0.85,0.75,-0.85,0.75)],["#8b4a1e",E(0,-0.62,0.45,0.15)],["#ffffff",E(0,0.85,0.98,0.16)]], detail:c=>fillP(c,"#8b4a1e",c2=>{ c2.moveTo(-0.45,-0.6); c2.lineTo(0.45,-0.6); c2.lineTo(0.52,-0.35); c2.quadraticCurveTo(0.3,-0.2,0.2,-0.38); c2.quadraticCurveTo(0,-0.15,-0.2,-0.35); c2.quadraticCurveTo(-0.35,-0.2,-0.52,-0.35); c2.closePath(); })})],
+  f_icecream:["アイス", ()=>({shapes:[["#e9b46a",P(-0.5,0.05,0.5,0.05,0,1.05)],["#ffb3cf",C(0,-0.25,0.52)],["#fff6e8",C(-0.05,-0.72,0.36)]], detail:c=>withLine(c,"#c48a3a",1.2,()=>{ ln(c,-0.3,0.25,0.15,0.75); ln(c,0.3,0.25,-0.15,0.75); })})],
+  f_soft:["ソフトクリーム", ()=>({shapes:[["#e9b46a",P(-0.42,0.15,0.42,0.15,0,1.05)],["#fffaf0",E(0,0.05,0.55,0.2)],["#fffaf0",E(0,-0.25,0.45,0.18)],["#fffaf0",E(0,-0.52,0.33,0.15)],["#fffaf0",P(-0.18,-0.62,0.18,-0.62,0.02,-0.98)]]})],
+  f_cookie:["クッキー", ()=>({shapes:[[BREAD,C(0,0,0.88)]], detail:c=>{ c.fillStyle=CHOCO; for (const [x,y] of [[-0.4,-0.3],[0.3,-0.45],[0.45,0.2],[-0.2,0.4],[0.05,0]]) dot(c,x,y,0.11); c.fillStyle=INK; }})],
+  f_pancake:["ホットケーキ", ()=>({shapes:[["#ffffff",E(0,0.75,0.98,0.2)],[BREAD,E(0,0.45,0.85,0.25)],[BREAD,E(0,0.15,0.85,0.25)],[BREAD,E(0,-0.15,0.85,0.25)],["#ffe08a",R(-0.22,-0.38,0.44,0.22,0.05)]], detail:c=>withLine(c,"#fff3d6",1.6,()=>{ ln(c,-0.75,0.0,0.75,0.0); ln(c,-0.75,0.3,0.75,0.3); })})],
+  f_onigiri:["おにぎり", ()=>({shapes:[["#ffffff",c=>{ c.moveTo(0,-0.9); c.quadraticCurveTo(0.25,-0.85,0.9,0.45); c.quadraticCurveTo(0.95,0.8,0.6,0.8); c.lineTo(-0.6,0.8); c.quadraticCurveTo(-0.95,0.8,-0.9,0.45); c.quadraticCurveTo(-0.25,-0.85,0,-0.9); c.closePath(); }],["#2f3b2f",R(-0.35,0.2,0.7,0.62,0.05)]]})],
+  f_sushi:["おすし", ()=>({shapes:[["#ffffff",E(0,0.3,0.8,0.32)],["#ff8a5c",c=>{ c.moveTo(-0.95,-0.05); c.quadraticCurveTo(0,-0.6,0.95,-0.05); c.quadraticCurveTo(0,0.15,-0.95,-0.05); c.closePath(); }]], detail:c=>withLine(c,"#ffd3c2",1.6,()=>{ ln(c,-0.4,-0.2,-0.2,0.0); ln(c,0.05,-0.3,0.25,-0.05); ln(c,0.5,-0.2,0.65,-0.03); })})],
+  f_ramen:["ラーメン", ()=>({shapes:[["#e8473b",c=>{ c.moveTo(-0.95,-0.05); c.lineTo(0.95,-0.05); c.quadraticCurveTo(0.9,0.9,0,0.9); c.quadraticCurveTo(-0.9,0.9,-0.95,-0.05); c.closePath(); }],["#ffe08a",E(0,-0.05,0.95,0.2)],["#f2c84b",K(0.5,-0.25,0.85,-0.95,0.08)],["#f2c84b",K(0.65,-0.2,1.0,-0.85,0.08)]], detail:c=>{ fillP(c,"#ffffff",C(-0.4,-0.08,0.15)); fillP(c,"#ffd24a",C(-0.4,-0.08,0.07)); fillP(c,"#4caf50",E(0.1,-0.08,0.15,0.06)); withLine(c,"#ffffff",1.4,()=>ln(c,-0.6,0.4,0.6,0.4)); }})],
+  f_burger:["ハンバーガー", ()=>({shapes:[[BREAD,c=>{ c.ellipse(0,-0.15,0.9,0.7,0,Math.PI,TAU); c.closePath(); }],["#7cc04a",R(-0.95,-0.12,1.9,0.2,0.1)],["#6b3a1f",R(-0.9,0.06,1.8,0.28,0.12)],[BREAD,R(-0.88,0.32,1.76,0.4,0.18)]], detail:c=>{ c.fillStyle="#fff6e8"; for (const [x,y] of [[-0.4,-0.5],[0,-0.62],[0.4,-0.5],[-0.15,-0.35],[0.25,-0.33]]) dot(c,x,y,0.04); c.fillStyle=INK; }})],
+  f_pizza:["ピザ", ()=>({shapes:[["#f6d06b",P(-0.8,-0.7,0.8,-0.7,0,1.0)],[BREAD,R(-0.9,-0.95,1.8,0.32,0.14)]], detail:c=>{ fillP(c,"#e8473b",C(-0.3,-0.35,0.13)); fillP(c,"#e8473b",C(0.25,-0.25,0.13)); fillP(c,"#e8473b",C(0,0.25,0.12)); fillP(c,"#4caf50",E(0.25,0.15,0.08,0.05)); }})],
+  f_bread:["しょくぱん", ()=>({shapes:[[BREAD,c=>{ c.moveTo(-0.75,0.9); c.lineTo(-0.75,-0.3); c.arc(-0.42,-0.4,0.42,Math.PI*0.8,Math.PI*1.9); c.arc(0.42,-0.4,0.42,Math.PI*1.1,Math.PI*0.2); c.lineTo(0.75,0.9); c.closePath(); }]], detail:c=>fillP(c,"#fff3d6",c2=>{ c2.moveTo(-0.6,0.78); c2.lineTo(-0.6,-0.28); c2.arc(-0.38,-0.38,0.3,Math.PI*0.85,Math.PI*1.9); c2.arc(0.38,-0.38,0.3,Math.PI*1.1,Math.PI*0.15); c2.lineTo(0.6,0.78); c2.closePath(); })})],
+  f_croissant:["クロワッサン", ()=>({shapes:[[BREAD,E(-0.62,0.25,0.3,0.22,0.6)],[BREAD,E(0.62,0.25,0.3,0.22,-0.6)],[BREAD,E(-0.32,0,0.32,0.36,0.3)],[BREAD,E(0.32,0,0.32,0.36,-0.3)],["#d9963a",E(0,-0.1,0.3,0.42)]]})],
+  f_egg:["めだまやき", ()=>({shapes:[["#ffffff",c=>{ c.moveTo(-0.9,0); c.bezierCurveTo(-0.9,-0.8,0.1,-0.9,0.5,-0.6); c.bezierCurveTo(1.0,-0.3,0.95,0.6,0.3,0.75); c.bezierCurveTo(-0.3,0.95,-0.9,0.6,-0.9,0); c.closePath(); }],["#ffc93c",C(0,0,0.38)]], detail:c=>fillP(c,"#fff3c4",C(-0.12,-0.12,0.1))})],
+  f_ebi:["えびフライ", ()=>({shapes:[["#ff6b4a",P(0.6,-0.6,1.0,-0.95,0.95,-0.5)],["#e9a94a",E(-0.1,0.15,0.35,0.95,-0.75)]], detail:c=>withLine(c,"#c4802a",1.2,()=>{ for (const t of [-0.5,-0.15,0.2]) ln(c,t-0.15,t*0.7+0.2,t+0.15,t*0.7+0.35); })})],
+  f_coffee:["コーヒー", ()=>({shapes:[["#ffffff",RING(0.75,0.15,0.3,0.14)],["#ffffff",R(-0.75,-0.35,1.4,1.1,0.25)],["#ffffff",E(-0.05,0.85,0.95,0.15)]], detail:c=>{ fillP(c,"#7a4a2a",E(-0.05,-0.32,0.62,0.12)); withLine(c,"#c9b9a0",1.2,()=>{ arcS(c,-0.25,-0.75,0.15,1.2,4.5); arcS(c,0.15,-0.8,0.15,1.2,4.5); }); fillP(c,"#ff9aa8",HP(-0.05,0.25,0.22)); }})],
+  f_juice:["ジュース", ()=>({shapes:[["#ff6b8a",K(0.1,-0.4,0.45,-1.0,0.1)],["#ffb347",P(-0.55,-0.45,0.55,-0.45,0.42,0.95,-0.42,0.95)]], detail:c=>{ fillP(c,"#fff3c4",C(-0.2,0.1,0.12)); fillP(c,"#fff3c4",C(0.15,0.45,0.1)); withLine(c,"#ffd9a6",1.6,()=>ln(c,-0.5,-0.25,0.5,-0.25)); }})],
+  f_tapioca:["タピオカ", ()=>({shapes:[["#ff8fb5",K(0.15,-0.5,0.3,-1.0,0.16)],["#e8cfb0",P(-0.55,-0.5,0.55,-0.5,0.42,0.95,-0.42,0.95)],["#ffffff",E(0,-0.5,0.62,0.14)]], detail:c=>{ c.fillStyle="#3a2a20"; for (const [x,y] of [[-0.25,0.75],[0,0.8],[0.25,0.75],[-0.12,0.6],[0.12,0.6]]) dot(c,x,y,0.09); c.fillStyle=INK; }})],
+  f_tea:["おちゃ", ()=>({shapes:[["#9ccf7a",R(-0.6,-0.45,1.2,1.25,0.2)]], detail:c=>{ fillP(c,"#5aa84a",E(0,-0.4,0.5,0.1)); withLine(c,"#c9b9a0",1.2,()=>{ arcS(c,-0.2,-0.8,0.15,1.2,4.5); arcS(c,0.2,-0.85,0.15,1.2,4.5); }); withLine(c,"#ffffff",1.6,()=>ln(c,-0.45,0.4,0.45,0.4)); }})],
+  f_apple:["りんご", ()=>({shapes:[["#6b4a2a",K(0,-0.55,0.1,-0.95,0.1)],["#4caf50",E(0.32,-0.75,0.25,0.12,-0.4)],["#e8473b",c=>{ c.moveTo(0,-0.5); c.bezierCurveTo(0.6,-0.95,1.15,-0.2,0.75,0.5); c.bezierCurveTo(0.5,0.95,0.15,0.85,0,0.75); c.bezierCurveTo(-0.15,0.85,-0.5,0.95,-0.75,0.5); c.bezierCurveTo(-1.15,-0.2,-0.6,-0.95,0,-0.5); c.closePath(); }]], detail:c=>withLine(c,"#ff9a8f",1.6,()=>arcS(c,-0.15,0.0,0.45,2.6,3.5))})],
+  f_banana:["バナナ", ()=>({shapes:[["#6b8e23",K(0.6,-0.75,0.75,-0.95,0.1)],["#ffd84a",c=>{ c.moveTo(0.65,-0.75); c.quadraticCurveTo(0.6,0.75,-0.9,0.55); c.quadraticCurveTo(-0.95,0.4,-0.8,0.35); c.quadraticCurveTo(0.3,0.3,0.45,-0.75); c.closePath(); }]], detail:c=>withLine(c,"#e8b93a",1.2,()=>{ c.beginPath(); c.moveTo(0.55,-0.6); c.quadraticCurveTo(0.45,0.5,-0.7,0.45); c.stroke(); })})],
+  f_grape:["ぶどう", ()=>({shapes:[["#6b4a2a",K(0,-0.7,0.1,-1.0,0.1)],["#4caf50",E(0.35,-0.8,0.25,0.12,-0.3)], ...[[-0.45,-0.45],[0,-0.45],[0.45,-0.45],[-0.22,-0.05],[0.22,-0.05],[-0.45,0.3],[0.45,0.3],[0,0.35],[-0.2,0.7],[0.2,0.7]].map(([x,y])=>["#8a5cc2",C(x,y,0.24)])], detail:c=>{ c.fillStyle="#c9a8ef"; for (const [x,y] of [[-0.5,-0.52],[-0.05,-0.52],[0.4,-0.52],[-0.27,-0.12],[0.17,-0.12]]) dot(c,x,y,0.05); c.fillStyle=INK; }})],
+  f_cherry:["さくらんぼ", ()=>({shapes:[["#5aa84a",K(-0.4,0.2,0.2,-0.9,0.07)],["#5aa84a",K(0.4,0.3,0.2,-0.9,0.07)],["#5aa84a",E(0.45,-0.85,0.25,0.12,-0.3)],["#e8304a",C(-0.42,0.45,0.38)],["#e8304a",C(0.42,0.55,0.38)]], detail:c=>{ fillP(c,"#ff9aa8",C(-0.55,0.32,0.08)); fillP(c,"#ff9aa8",C(0.29,0.42,0.08)); }})],
+  f_peach:["もも", ()=>({shapes:[["#5aa84a",E(-0.3,-0.8,0.28,0.13,0.4)],["#ffb3a7",c=>{ c.moveTo(0,-0.65); c.bezierCurveTo(0.9,-0.85,1.05,0.35,0.35,0.8); c.quadraticCurveTo(0,0.98,-0.35,0.8); c.bezierCurveTo(-1.05,0.35,-0.9,-0.85,0,-0.65); c.closePath(); }]], detail:c=>withLine(c,"#ff8a7a",1.2,()=>{ c.beginPath(); c.moveTo(0,-0.6); c.quadraticCurveTo(-0.25,0.1,0,0.85); c.stroke(); })})],
+  f_watermelon:["スイカ", ()=>({shapes:[["#4caf50",c=>{ c.moveTo(-0.98,-0.3); c.arc(0,-0.3,0.98,Math.PI,0,true); c.closePath(); }],["#ff5a6a",c=>{ c.moveTo(-0.82,-0.3); c.arc(0,-0.3,0.82,Math.PI,0,true); c.closePath(); }]], detail:c=>{ c.fillStyle=INK; for (const [x,y] of [[-0.4,-0.05],[0,0.05],[0.4,-0.05],[-0.2,0.25],[0.2,0.25]]) { c.beginPath(); c.ellipse(x,y,0.05,0.08,0,0,TAU); c.fill(); } }})],
+  f_orange:["みかん", ()=>({shapes:[["#ff9f2e",E(0,0.1,0.9,0.78)],["#4caf50",E(0.25,-0.7,0.25,0.12,-0.3)]], detail:c=>{ c.fillStyle="#d97a14"; for (const [x,y] of [[-0.4,0],[0.3,0.3],[0,-0.35],[0.5,-0.2],[-0.2,0.45]]) dot(c,x,y,0.04); c.fillStyle=INK; dot(c,0,-0.62,0.06); }})],
+  f_choco:["チョコ", ()=>({shapes:[[CHOCO,R(-0.6,-0.9,1.2,1.8,0.1)],["#ff6b8a",P(-0.65,0.25,0.65,0.25,0.65,0.95,-0.65,0.95)]], detail:c=>withLine(c,"#5a3420",1.4,()=>{ ln(c,0,-0.85,0,0.2); ln(c,-0.55,-0.35,0.55,-0.35); })})],
+  f_candy:["キャンディ", ()=>({shapes:[["#ffb3cf",P(-0.45,0,-0.98,-0.38,-0.98,0.38)],["#ffb3cf",P(0.45,0,0.98,-0.38,0.98,0.38)],["#ff6b8a",E(0,0,0.5,0.4)]], detail:c=>withLine(c,"#ffffff",1.6,()=>{ arcS(c,0,0,0.25,-2.5,-0.6); })})],
+  f_lolli:["ぺろぺろキャンディ", ()=>({shapes:[["#ffffff",K(0,0.3,0,1.0,0.12)],["#ffd84a",C(0,-0.25,0.68)]], detail:c=>withLine(c,"#ff6b8a",2.4,()=>{ c.beginPath(); for (let k=0;k<=40;k++){ const a=k*0.4, rr=0.03+k*0.014; const x=Math.cos(a)*rr, y=-0.25+Math.sin(a)*rr; k?c.lineTo(x,y):c.moveTo(x,y); } c.stroke(); })})],
+  f_dango:["おだんご", ()=>({shapes:[["#c9a06a",K(0,-1.0,0,1.0,0.08)],["#ff9ec1",C(0,-0.55,0.3)],["#fffaf0",C(0,0,0.3)],["#9ccf7a",C(0,0.55,0.3)]]})],
+};
+
+// ---- 季節・行事 ----
+const SEASON = {
+  e_kagami:["かがみもち", ()=>({shapes:[["#e8473b",R(-0.85,0.55,1.7,0.42,0.06)],["#ffffff",E(0,0.38,0.8,0.32)],["#ffffff",E(0,-0.05,0.6,0.26)],["#ff9f2e",C(0,-0.42,0.24)],["#4caf50",E(0.2,-0.62,0.15,0.07,-0.4)]]})],
+  e_sunrise:["はつひので", ()=>({shapes:[["#ff6b4a",c=>{ c.arc(0,0.3,0.7,Math.PI,0); c.closePath(); }],["#7cc6f2",R(-0.98,0.3,1.96,0.25,0.08)],["#5b8def",R(-0.98,0.55,1.96,0.25,0.08)]], detail:c=>withLine(c,"#ffb347",1.6,()=>{ for (const a of [-2.6,-2.1,-1.57,-1.05,-0.55]) ln(c,Math.cos(a)*0.85,0.3+Math.sin(a)*0.85,Math.cos(a)*1.0,0.3+Math.sin(a)*1.0); })})],
+  e_daruma:["だるま", ()=>({shapes:[["#e8473b",E(0,0.08,0.82,0.92)]], detail:c=>{ fillP(c,"#fff3e0",E(0,-0.12,0.5,0.42)); dot(c,-0.2,-0.18,0.09); dot(c,0.2,-0.18,0.09); withLine(c,INK,1.4,()=>{ ln(c,-0.35,-0.4,-0.08,-0.33); ln(c,0.35,-0.4,0.08,-0.33); arcS(c,0,0.0,0.15,0.4,2.7); }); withLine(c,"#f6d743",1.6,()=>arcS(c,0,0.25,0.62,0.6,2.5)); }})],
+  e_kite:["たこあげ", ()=>({shapes:[["#ff6b4a",P(0,-0.98,0.62,-0.15,0,0.62,-0.62,-0.15)]], detail:c=>{ withLine(c,"#ffffff",1.6,()=>{ ln(c,0,-0.98,0,0.62); ln(c,-0.62,-0.15,0.62,-0.15); }); withLine(c,INK,0.9,()=>{ c.beginPath(); c.moveTo(0,0.62); c.quadraticCurveTo(0.3,0.8,0.1,1.0); c.stroke(); }); }})],
+  e_ume:["うめ", ()=>({shapes:[...[0,1,2,3,4].map(k=>{ const a=-Math.PI/2+k*TAU/5; return ["#ff6b8a",C(Math.cos(a)*0.48,Math.sin(a)*0.48,0.38)]; })], detail:c=>{ fillP(c,"#ffd24a",C(0,0,0.18)); }})],
+  e_oni:["おに", ()=>({shapes:[["#f6d743",P(-0.55,-0.5,-0.42,-1.0,-0.25,-0.62)],["#f6d743",P(0.55,-0.5,0.42,-1.0,0.25,-0.62)],["#e8473b",E(0,0.1,0.82,0.8)],["#3a3a3a",c=>{ c.ellipse(0,-0.25,0.85,0.55,0,Math.PI,TAU); c.closePath(); }]], detail:c=>{ dot(c,-0.3,0.05,0.09); dot(c,0.3,0.05,0.09); withLine(c,INK,1.4,()=>{ ln(c,-0.48,-0.12,-0.15,-0.03); ln(c,0.48,-0.12,0.15,-0.03); }); fillP(c,"#ffffff",P(-0.25,0.45,-0.15,0.62,-0.05,0.45)); fillP(c,"#ffffff",P(0.25,0.45,0.15,0.62,0.05,0.45)); }})],
+  e_valentine:["バレンタイン", ()=>({shapes:[["#ff6b8a",HP(0,0.15,0.82)]], detail:c=>{ withLine(c,"#ffd24a",2.4,()=>{ ln(c,-0.75,0.0,0.75,0.0); ln(c,0,-0.45,0,0.75); }); fillP(c,"#ffd24a",P(0,0,-0.35,-0.25,-0.35,0.25)); fillP(c,"#ffd24a",P(0,0,0.35,-0.25,0.35,0.25)); }})],
+  e_hina:["ひなにんぎょう", ()=>({shapes:[["#e8473b",P(-0.95,0.95,-0.05,0.95,-0.3,-0.1,-0.7,-0.1)],["#ffb3cf",P(0.95,0.95,0.05,0.95,0.3,-0.1,0.7,-0.1)],["#fff3e0",C(-0.5,-0.4,0.3)],["#fff3e0",C(0.5,-0.4,0.3)],["#2a2a2a",c=>{ c.arc(-0.5,-0.45,0.31,Math.PI,0); c.closePath(); }],["#2a2a2a",c=>{ c.arc(0.5,-0.45,0.31,Math.PI,0); c.closePath(); }]], detail:c=>{ for (const x of [-0.5,0.5]){ arcS(c,x-0.1,-0.35,0.05,0.3,2.8); arcS(c,x+0.1,-0.35,0.05,0.3,2.8); } fillP(c,"#f6d743",P(0.45,-0.95,0.55,-0.95,0.62,-0.75,0.38,-0.75)); }})],
+  e_koi:["こいのぼり", ()=>({shapes:[["#5b8def",c=>{ c.moveTo(-0.95,-0.35); c.lineTo(0.55,-0.35); c.lineTo(0.98,-0.6); c.lineTo(0.8,0); c.lineTo(0.98,0.6); c.lineTo(0.55,0.35); c.lineTo(-0.95,0.35); c.closePath(); }]], detail:c=>{ fillP(c,"#ffffff",C(-0.62,-0.05,0.17)); dot(c,-0.62,-0.05,0.08); withLine(c,"#bfe6ff",1.4,()=>{ for (const x of [-0.2,0.1,0.4]) arcS(c,x,0,0.18,-1.2,1.2); }); }})],
+  e_kabuto:["かぶと", ()=>({shapes:[["#f6c744",P(-0.55,-0.2,-0.85,-1.0,-0.25,-0.35)],["#f6c744",P(0.55,-0.2,0.85,-1.0,0.25,-0.35)],["#5b6b8a",c=>{ c.arc(0,0.15,0.7,Math.PI,0); c.lineTo(0.98,0.55); c.lineTo(-0.98,0.55); c.closePath(); }]], detail:c=>{ fillP(c,"#f6c744",C(0,-0.15,0.13)); withLine(c,"#8a9ab8",1.4,()=>ln(c,-0.85,0.35,0.85,0.35)); }})],
+  e_teru:["てるてるぼうず", ()=>({shapes:[["#ffffff",P(-0.3,0.0,0.3,0.0,0.6,0.95,-0.6,0.95)],["#ffffff",C(0,-0.35,0.5)]], detail:c=>{ dot(c,-0.18,-0.38,0.06); dot(c,0.18,-0.38,0.06); arcS(c,0,-0.28,0.12,0.4,2.7); withLine(c,"#ff6b8a",2,()=>ln(c,-0.3,0.05,0.3,0.05)); withLine(c,INK,0.8,()=>ln(c,0,-0.85,0,-1.0)); }})],
+  e_ajisai:["あじさい", ()=>({shapes:[...[[-0.45,-0.25],[0,-0.45],[0.45,-0.25],[-0.3,0.2],[0.3,0.2],[0,0.0]].map(([x,y])=>["#a9b8f5",C(x,y,0.36)]), ["#5aa84a",E(0,0.75,0.45,0.2)]], detail:c=>{ c.fillStyle="#ffffff"; for (const [x,y] of [[-0.45,-0.25],[0,-0.45],[0.45,-0.25],[-0.3,0.2],[0.3,0.2],[0,0]]) dot(c,x,y,0.06); c.fillStyle=INK; }})],
+  e_snail:["かたつむり", ()=>({shapes:[["#c9e8a0",c=>{ c.moveTo(-0.95,0.7); c.quadraticCurveTo(-0.95,0.4,-0.6,0.4); c.lineTo(0.85,0.4); c.quadraticCurveTo(0.98,0.7,0.85,0.75); c.lineTo(-0.85,0.75); c.closePath(); }],["#c9e8a0",C(-0.72,0.15,0.25)],["#e8a94a",C(0.15,-0.05,0.6)]], detail:c=>{ withLine(c,"#b37a35",1.4,()=>{ c.beginPath(); for (let k=0;k<=30;k++){ const a=k*0.42, rr=0.04+k*0.016; const x=0.15+Math.cos(a)*rr, y=-0.05+Math.sin(a)*rr; k?c.lineTo(x,y):c.moveTo(x,y); } c.stroke(); }); dot(c,-0.78,0.1,0.05); withLine(c,INK,0.8,()=>{ ln(c,-0.75,-0.08,-0.85,-0.4); ln(c,-0.62,-0.06,-0.55,-0.4); }); }})],
+  e_tanabata:["たなばた", ()=>({shapes:[["#5aa84a",K(0.5,1.0,-0.2,-0.98,0.08)],["#7cc04a",E(-0.1,-0.6,0.3,0.1,-0.5)],["#7cc04a",E(0.25,-0.1,0.3,0.1,0.5)],["#ff9ec1",R(-0.55,-0.3,0.25,0.55,0.03)],["#7cc6f2",R(0.35,0.3,0.25,0.55,0.03)],["#ffd84a",R(-0.3,0.45,0.25,0.5,0.03)]]})],
+  e_furin:["ふうりん", ()=>({shapes:[["#ffffff",K(0,0.2,0,0.5,0.04)],["#ffffff",R(-0.2,0.5,0.4,0.48,0.03)],["#bfe6ff",c=>{ c.arc(0,0.2,0.55,Math.PI,0); c.closePath(); }]], detail:c=>{ fillP(c,"#ff6b8a",C(-0.2,-0.05,0.08)); fillP(c,"#ff6b8a",C(0.2,-0.05,0.08)); withLine(c,INK,0.8,()=>ln(c,0,-0.35,0,-0.6)); }})],
+  e_hanabi:["はなび", ()=>({shapes:[...range(0,12).map(k=>{ const a=k*TAU/12, col=["#ff6b8a","#ffd84a","#7cc6f2"][k%3]; return [col, K(Math.cos(a)*0.3,Math.sin(a)*0.3,Math.cos(a)*0.85,Math.sin(a)*0.85,0.12)]; })], detail:c=>{ fillP(c,"#ffffff",C(0,0,0.15)); }})],
+  e_kakigori:["かきごおり", ()=>({shapes:[["#ffffff",c=>{ c.moveTo(-0.7,0.05); c.quadraticCurveTo(0,-1.2,0.7,0.05); c.closePath(); }],["#7cc6f2",P(-0.8,0.05,0.8,0.05,0.45,0.6,-0.45,0.6)],["#7cc6f2",R(-0.3,0.6,0.6,0.32,0.06)]], detail:c=>fillP(c,"#ff6b8a",c2=>{ c2.moveTo(-0.55,-0.1); c2.quadraticCurveTo(0,-0.95,0.55,-0.1); c2.quadraticCurveTo(0.3,-0.3,0.15,-0.05); c2.quadraticCurveTo(0,-0.3,-0.2,-0.05); c2.quadraticCurveTo(-0.35,-0.25,-0.55,-0.1); c2.closePath(); })})],
+  e_himawari:["ひまわり", ()=>({shapes:[...range(0,12).map(k=>{ const a=k*TAU/12; return ["#ffd84a",E(Math.cos(a)*0.58,Math.sin(a)*0.58,0.32,0.15,a)]; }), ["#8b5a2b",C(0,0,0.42)]], detail:c=>{ c.fillStyle="#5f3c1c"; for (const [x,y] of [[-0.15,-0.15],[0.15,-0.15],[0,0.12],[-0.2,0.15],[0.2,0.15],[0,-0.25]]) dot(c,x,y,0.05); c.fillStyle=INK; }})],
+  e_uchiwa:["うちわ", ()=>({shapes:[["#e9b46a",K(0,0.35,0,1.0,0.14)],["#7cc6f2",C(0,-0.2,0.7)]], detail:c=>{ fillP(c,"#ff6b4a",C(0.15,-0.1,0.25)); withLine(c,"#bfe6ff",1.2,()=>{ arcS(c,-0.25,-0.45,0.15,0,3.2); }); }})],
+  e_tsukimi:["おつきみ", ()=>({shapes:[["#c9a06a",P(-0.85,0.65,0.85,0.65,0.6,0.95,-0.6,0.95)],["#fffaf0",C(-0.4,0.35,0.28)],["#fffaf0",C(0.4,0.35,0.28)],["#fffaf0",C(0,0.35,0.28)],["#fffaf0",C(-0.2,-0.05,0.28)],["#fffaf0",C(0.2,-0.05,0.28)],["#fffaf0",C(0,-0.42,0.28)]]})],
+  e_momiji:["もみじ", ()=>({shapes:[["#c94a2a",K(0,0.3,0.05,1.0,0.08)],["#ff5a3a",ST(0,-0.05,0.95,0.38,5)]], detail:c=>withLine(c,"#ffb08a",1.2,()=>{ for (let k=0;k<5;k++){ const a=-Math.PI/2+k*TAU/5; ln(c,0,-0.05,Math.cos(a)*0.65,-0.05+Math.sin(a)*0.65); } })})],
+  e_icho:["いちょう", ()=>({shapes:[["#c9a06a",K(0,0.25,0.05,1.0,0.08)],["#ffd84a",c=>{ c.moveTo(0,0.3); c.lineTo(-0.9,-0.4); c.quadraticCurveTo(-0.5,-1.0,0,-0.75); c.quadraticCurveTo(0.5,-1.0,0.9,-0.4); c.closePath(); }]], detail:c=>withLine(c,"#e8b93a",1.2,()=>{ for (const x of [-0.5,-0.2,0.2,0.5]) ln(c,0,0.25,x,-0.6); })})],
+  e_donguri:["どんぐり", ()=>({shapes:[["#c9853a",E(0,0.25,0.5,0.68)],["#8b5a2b",c=>{ c.ellipse(0,-0.2,0.6,0.42,0,Math.PI,TAU); c.closePath(); }],["#8b5a2b",K(0,-0.6,0.05,-0.85,0.1)]], detail:c=>withLine(c,"#e9a94a",1.6,()=>arcS(c,-0.15,0.3,0.25,2.4,3.4))})],
+  e_kinoko:["きのこ", ()=>({shapes:[["#fff6e8",R(-0.25,0,0.5,0.9,0.15)],["#e8473b",c=>{ c.ellipse(0,0.1,0.95,0.85,0,Math.PI,TAU); c.closePath(); }]], detail:c=>{ c.fillStyle="#ffffff"; for (const [x,y,rr] of [[-0.45,-0.25,0.14],[0.2,-0.5,0.16],[0.55,-0.1,0.1],[-0.1,-0.15,0.08]]) dot(c,x,y,rr); c.fillStyle=INK; }})],
+  e_jack:["ハロウィン", ()=>({shapes:[["#5aa84a",K(0,-0.6,0.1,-0.95,0.16)],["#ff8a2e",E(-0.45,0.12,0.5,0.72)],["#ff8a2e",E(0.45,0.12,0.5,0.72)],["#ff8a2e",E(0,0.12,0.5,0.76)]], detail:c=>{ fillP(c,"#5a3420",P(-0.5,-0.15,-0.2,-0.15,-0.35,-0.4)); fillP(c,"#5a3420",P(0.5,-0.15,0.2,-0.15,0.35,-0.4)); fillP(c,"#5a3420",c2=>{ c2.moveTo(-0.55,0.25); c2.lineTo(0.55,0.25); c2.lineTo(0.3,0.55); c2.lineTo(0.15,0.4); c2.lineTo(0,0.6); c2.lineTo(-0.15,0.4); c2.lineTo(-0.3,0.55); c2.closePath(); }); }})],
+  e_ghost:["おばけ", ()=>({shapes:[["#ffffff",c=>{ c.moveTo(-0.7,0.9); c.lineTo(-0.7,-0.2); c.arc(0,-0.2,0.7,Math.PI,0); c.lineTo(0.7,0.9); c.lineTo(0.45,0.7); c.lineTo(0.2,0.9); c.lineTo(-0.05,0.7); c.lineTo(-0.3,0.9); c.lineTo(-0.5,0.7); c.closePath(); }]], detail:c=>{ dot(c,-0.25,-0.2,0.09); dot(c,0.25,-0.2,0.09); fillP(c,"#ff7f9a",E(0,0.15,0.13,0.15)); blush(c,0.45,0.0); }})],
+  e_tree:["クリスマスツリー", ()=>({shapes:[["#8b5a2b",R(-0.15,0.7,0.3,0.3,0.04)],["#3e9a4a",P(-0.85,0.75,0.85,0.75,0,-0.05)],["#3e9a4a",P(-0.68,0.25,0.68,0.25,0,-0.55)],["#3e9a4a",P(-0.5,-0.25,0.5,-0.25,0,-0.85)],["#ffd84a",ST(0,-0.85,0.25,0.11,5)]], detail:c=>{ for (const [x,y,col] of [[-0.3,0.45,"#ff5a6a"],[0.35,0.55,"#7cc6f2"],[0.15,0.05,"#ffd84a"],[-0.2,-0.2,"#ff5a6a"],[0.4,0.2,"#ffffff"]]) fillP(c,col,C(x,y,0.08)); }})],
+  e_santa:["サンタぼうし", ()=>({shapes:[["#ffffff",C(0.85,-0.55,0.17)],["#e8473b",c=>{ c.moveTo(-0.8,0.45); c.quadraticCurveTo(-0.6,-0.9,0.85,-0.55); c.quadraticCurveTo(0.4,-0.2,0.8,0.45); c.closePath(); }],["#ffffff",R(-0.95,0.35,1.9,0.42,0.2)]]})],
+  e_present:["プレゼント", ()=>({shapes:[["#ff6b8a",P(0,-0.55,-0.6,-0.95,-0.6,-0.55)],["#ff6b8a",P(0,-0.55,0.6,-0.95,0.6,-0.55)],["#7cc6f2",R(-0.8,-0.15,1.6,1.05,0.06)],["#7cc6f2",R(-0.9,-0.55,1.8,0.42,0.06)]], detail:c=>{ fillP(c,"#ff6b8a",R(-0.14,-0.55,0.28,1.45,0)); }})],
+  e_snowman:["ゆきだるま", ()=>({shapes:[["#ffffff",C(0,0.42,0.55)],["#ffffff",C(0,-0.4,0.42)],["#e8473b",R(-0.38,-0.12,0.76,0.18,0.08)]], detail:c=>{ dot(c,-0.14,-0.45,0.06); dot(c,0.14,-0.45,0.06); fillP(c,"#ff8a2e",P(0,-0.35,0.25,-0.3,0,-0.25)); dot(c,0,0.3,0.06); dot(c,0,0.55,0.06); }})],
+  e_bell:["ベル", ()=>({shapes:[["#4caf50",E(-0.35,-0.85,0.25,0.12,-0.4)],["#4caf50",E(0.35,-0.85,0.25,0.12,0.4)],["#ffd84a",c=>{ c.moveTo(-0.75,0.6); c.quadraticCurveTo(-0.55,0.45,-0.55,0.0); c.quadraticCurveTo(-0.5,-0.7,0,-0.7); c.quadraticCurveTo(0.5,-0.7,0.55,0.0); c.quadraticCurveTo(0.55,0.45,0.75,0.6); c.closePath(); }],["#ffd84a",C(0,0.75,0.16)]], detail:c=>fillP(c,"#e8473b",C(0,-0.8,0.1))})],
+};
+
+// ---- いきもの(犬猫以外) ----
+function aniFace(o){
+  const s = [...(o.back||[]), [o.head, o.headP || E(0,0.08,0.88,0.8)], ...(o.front||[])];
+  return {shapes:s, detail:c=>{
+    if (o.mark) o.mark(c);
+    eyes(c, o.ex||0.34, o.ey||-0.02, 0.1, o.expr||"n", o.eyeBg);
+    if (o.nose!==false) fillP(c, o.noseCol||INK, E(0, o.ny||0.25, 0.1, 0.07));
+    if (o.mouth!==false) omega(c, (o.ny||0.25)+0.1, 0.09);
+    if (o.blush!==false) blush(c, 0.55, 0.28);
+    if (o.extra) o.extra(c);
+  }};
+}
+const ears2 = (col, f) => both(m=>[col, f(m)]);
+const ANIMAL = {
+  a_usagi:["うさぎ", ()=>aniFace({head:"#ffffff", back:ears2("#ffffff",m=>E(-0.32*m,-0.85,0.17,0.48,-0.15*m)), mark:c=>{ for (const m of [-1,1]) fillP(c,"#ffb3c1",E(-0.32*m,-0.88,0.08,0.32,-0.15*m)); }})],
+  a_kuma:["くま", ()=>aniFace({head:"#a8723e", back:ears2("#a8723e",m=>C(-0.62*m,-0.62,0.26)), front:[["#e8c79a",E(0,0.32,0.36,0.26)]], mark:c=>{ for (const m of [-1,1]) fillP(c,"#7a4f28",C(-0.62*m,-0.62,0.12)); }})],
+  a_shirokuma:["しろくま", ()=>aniFace({head:"#ffffff", back:ears2("#ffffff",m=>C(-0.62*m,-0.6,0.22)), front:[["#f3efe8",E(0,0.32,0.34,0.24)]]})],
+  a_panda:["パンダ", ()=>aniFace({head:"#ffffff", back:ears2("#2f2f2f",m=>C(-0.62*m,-0.62,0.26)), eyeBg:"#2f2f2f", mark:c=>{ for (const m of [-1,1]) fillP(c,"#2f2f2f",E(-0.34*m,-0.02,0.2,0.24,0.4*m)); }, extra:c=>{ for (const m of [-1,1]) fillP(c,"#ffffff",C(-0.34*m+0.03,-0.05,0.05)); }})],
+  a_hiyoko:["ひよこ", ()=>aniFace({head:"#ffe066", back:[["#ffe066",E(0,-0.85,0.1,0.18,0.3)]], nose:false, mouth:false, extra:c=>fillP(c,"#ff9f2e",P(-0.14,0.22,0.14,0.22,0,0.4))})],
+  a_buta:["ぶた", ()=>aniFace({head:"#ffc2cf", back:ears2("#ffc2cf",m=>P(-0.75*m,-0.35,-0.7*m,-0.95,-0.3*m,-0.7)), front:[["#ff9fb3",E(0,0.3,0.3,0.2)]], nose:false, mouth:false, extra:c=>{ dot(c,-0.1,0.3,0.05); dot(c,0.1,0.3,0.05); }})],
+  a_ushi:["うし", ()=>aniFace({head:"#ffffff", back:[...ears2("#ffffff",m=>E(-0.92*m,-0.25,0.28,0.14,0.3*m)), ...ears2("#f6d06b",m=>K(-0.45*m,-0.65,-0.62*m,-0.98,0.13))], front:[["#ffc2cf",E(0,0.4,0.48,0.28)]], nose:false, mouth:false, mark:c=>fillP(c,"#3a3a3a",E(0.45,-0.45,0.3,0.25)), extra:c=>{ dot(c,-0.15,0.4,0.05); dot(c,0.15,0.4,0.05); }})],
+  a_hitsuji:["ひつじ", ()=>aniFace({head:"#f3e2c8", headP:E(0,0.18,0.62,0.66), back:[...range(0,9).map(k=>{ const a=-Math.PI+k*Math.PI/8; return ["#ffffff",C(Math.cos(a)*0.72,-0.05+Math.sin(a)*0.62,0.3)]; }), ...ears2("#f3e2c8",m=>E(-0.75*m,0.15,0.25,0.12,0.4*m))]})],
+  a_penguin:["ペンギン", ()=>aniFace({head:"#3a4a5e", headP:E(0,0.1,0.9,0.85), eyeBg:"#ffffff", nose:false, mouth:false, mark:c=>{ fillP(c,"#ffffff",E(-0.25,0.15,0.35,0.5)); fillP(c,"#ffffff",E(0.25,0.15,0.35,0.5)); }, extra:c=>fillP(c,"#ff9f2e",P(-0.12,0.25,0.12,0.25,0,0.42))})],
+  a_hamster:["ハムスター", ()=>aniFace({head:"#f2b56a", back:ears2("#f2b56a",m=>C(-0.55*m,-0.68,0.2)), mark:c=>{ fillP(c,"#ffffff",E(0,0.45,0.6,0.4)); for (const m of [-1,1]) fillP(c,"#ffb3c1",C(-0.55*m,-0.68,0.1)); }, blush:true})],
+  a_risu:["りす", ()=>aniFace({head:"#c9853a", back:[["#a8652a",E(0.75,-0.1,0.35,0.75,0.4)], ...ears2("#c9853a",m=>P(-0.62*m,-0.45,-0.55*m,-1.0,-0.25*m,-0.65))], mark:c=>fillP(c,"#fff3e0",E(0,0.42,0.42,0.3))})],
+  a_kitsune:["きつね", ()=>aniFace({head:"#f29b38", headP:c=>{ c.moveTo(-0.9,-0.3); c.quadraticCurveTo(0,-0.75,0.9,-0.3); c.quadraticCurveTo(0.6,0.5,0,0.8); c.quadraticCurveTo(-0.6,0.5,-0.9,-0.3); c.closePath(); }, back:ears2("#f29b38",m=>P(-0.85*m,-0.3,-0.7*m,-1.05,-0.25*m,-0.55)), ny:0.45, mark:c=>{ fillP(c,"#ffffff",c2=>{ c2.moveTo(-0.85,0.0); c2.quadraticCurveTo(-0.3,0.15,0,0.78); c2.quadraticCurveTo(0.3,0.15,0.85,0.0); c2.quadraticCurveTo(0.5,0.5,0,0.8); c2.quadraticCurveTo(-0.5,0.5,-0.85,0); c2.closePath(); }); }})],
+  a_tanuki:["たぬき", ()=>aniFace({head:"#a8845e", back:ears2("#6b5a4a",m=>C(-0.6*m,-0.6,0.22)), eyeBg:"#4a3a30", mark:c=>{ for (const m of [-1,1]) fillP(c,"#4a3a30",E(-0.34*m,0.02,0.24,0.2,0.3*m)); fillP(c,"#f3e2c8",E(0,0.38,0.34,0.24)); }})],
+  a_koala:["コアラ", ()=>aniFace({head:"#a9adb3", back:ears2("#a9adb3",m=>C(-0.8*m,-0.35,0.36)), mark:c=>{ for (const m of [-1,1]) fillP(c,"#f3efe8",C(-0.8*m,-0.35,0.2)); }, nose:false, extra:c=>fillP(c,"#3a3a3a",E(0,0.2,0.16,0.22))})],
+  a_lion:["ライオン", ()=>aniFace({head:"#f6c96b", back:[...range(0,14).map(k=>{ const a=k*TAU/14; return ["#c9742a",C(Math.cos(a)*0.85,0.08+Math.sin(a)*0.8,0.26)]; }), ...ears2("#f6c96b",m=>C(-0.55*m,-0.55,0.18))], headP:E(0,0.1,0.7,0.65)})],
+  a_tora:["とら", ()=>aniFace({head:"#f29b38", back:ears2("#f29b38",m=>C(-0.62*m,-0.6,0.24)), mark:c=>{ withLine(c,"#3a2a20",2.4,()=>{ ln(c,0,-0.7,0,-0.45); ln(c,-0.2,-0.68,-0.15,-0.48); ln(c,0.2,-0.68,0.15,-0.48); ln(c,-0.88,0.0,-0.62,0.05); ln(c,0.88,0,0.62,0.05); }); fillP(c,"#ffffff",E(0,0.38,0.38,0.26)); }})],
+  a_saru:["さる", ()=>aniFace({head:"#a8723e", back:ears2("#f3c9a0",m=>C(-0.85*m,0.05,0.24)), mark:c=>{ fillP(c,"#f3c9a0",c2=>{ c2.moveTo(0,-0.15); c2.bezierCurveTo(-0.3,-0.55,-0.75,-0.3,-0.55,0.1); c2.bezierCurveTo(-0.7,0.6,0.7,0.6,0.55,0.1); c2.bezierCurveTo(0.75,-0.3,0.3,-0.55,0,-0.15); c2.closePath(); }); }})],
+  a_kaeru:["かえる", ()=>aniFace({head:"#7cc04a", headP:E(0,0.2,0.92,0.68), back:ears2("#7cc04a",m=>C(-0.45*m,-0.4,0.3)), ex:0.45, ey:-0.42, eyeBg:"#ffffff", nose:false, mouth:false, extra:c=>arcS(c,0,0.15,0.4,0.3,2.84)})],
+  a_fukurou:["ふくろう", ()=>aniFace({head:"#a8845e", back:ears2("#a8845e",m=>P(-0.85*m,-0.4,-0.75*m,-0.95,-0.35*m,-0.65)), ex:0.38, eyeBg:"#ffd84a", nose:false, mouth:false, mark:c=>{ for (const m of [-1,1]) fillP(c,"#ffffff",C(-0.38*m,-0.02,0.3)); fillP(c,"#f3e2c8",E(0,0.55,0.4,0.3)); }, extra:c=>fillP(c,"#ff9f2e",P(-0.08,0.15,0.08,0.15,0,0.35))})],
+  a_inko:["インコ", ()=>aniFace({head:"#8fd06b", back:[["#8fd06b",E(0,-0.85,0.12,0.2)]], nose:false, mouth:false, mark:c=>{ fillP(c,"#ffe066",E(0,-0.45,0.6,0.4)); fillP(c,"#7cc6f2",C(-0.55,0.25,0.12)); fillP(c,"#7cc6f2",C(0.55,0.25,0.12)); }, extra:c=>fillP(c,"#ff9f2e",c2=>{ c2.moveTo(-0.12,0.18); c2.quadraticCurveTo(0,0.1,0.12,0.18); c2.quadraticCurveTo(0.05,0.45,0,0.45); c2.closePath(); })})],
+  a_nezumi:["ねずみ", ()=>aniFace({head:"#b9c0c8", back:ears2("#b9c0c8",m=>C(-0.68*m,-0.55,0.38)), mark:c=>{ for (const m of [-1,1]) fillP(c,"#ffb3c1",C(-0.68*m,-0.55,0.22)); }, noseCol:"#ff8fa8", extra:c=>withLine(c,INK,0.8,()=>{ for (const m of [-1,1]){ ln(c,m*0.3,0.3,m*0.85,0.22); ln(c,m*0.3,0.38,m*0.85,0.46); } })})],
+  a_azarashi:["あざらし", ()=>aniFace({head:"#e3e6ea", headP:E(0,0.1,0.92,0.8), front:[["#f3f5f7",E(-0.15,0.35,0.18,0.14)],["#f3f5f7",E(0.15,0.35,0.18,0.14)]], ny:0.22, mouth:false, extra:c=>withLine(c,"#9aa3ad",0.8,()=>{ dot(c,-0.2,0.38,0.025); dot(c,0.2,0.38,0.025); })})],
+  a_kawauso:["カワウソ", ()=>aniFace({head:"#9a7650", back:ears2("#9a7650",m=>C(-0.75*m,-0.35,0.15)), mark:c=>fillP(c,"#f3e2c8",E(0,0.38,0.5,0.32))})],
+  a_alpaca:["アルパカ", ()=>aniFace({head:"#fff6e8", headP:E(0,0.2,0.6,0.72), back:[...range(0,7).map(k=>["#fff6e8",C(-0.45+k*0.15,-0.62,0.22)]), ...ears2("#fff6e8",m=>E(-0.5*m,-0.85,0.12,0.25,-0.3*m))], ny:0.4, ey:0.05, ex:0.25})],
+  a_lesser:["レッサーパンダ", ()=>aniFace({head:"#c9622a", back:ears2("#c9622a",m=>P(-0.85*m,-0.3,-0.7*m,-0.9,-0.3*m,-0.65)), mark:c=>{ fillP(c,"#ffffff",E(0,0.35,0.42,0.3)); for (const m of [-1,1]) fillP(c,"#ffffff",E(-0.35*m,-0.32,0.13,0.08)); for (const m of [-1,1]) fillP(c,"#ffffff",P(-0.8*m,-0.35,-0.7*m,-0.75,-0.4*m,-0.65)); }})],
+  a_gorilla:["ゴリラ", ()=>aniFace({head:"#4a4a4a", back:ears2("#4a4a4a",m=>C(-0.85*m,0.0,0.18)), eyeBg:"#ffffff", noseCol:"#2a2a2a", mark:c=>fillP(c,"#9a8a7a",c2=>{ c2.moveTo(0,-0.2); c2.bezierCurveTo(-0.3,-0.45,-0.7,-0.25,-0.55,0.15); c2.bezierCurveTo(-0.7,0.65,0.7,0.65,0.55,0.15); c2.bezierCurveTo(0.7,-0.25,0.3,-0.45,0,-0.2); c2.closePath(); })})],
+  a_kujira:["くじら", ()=>({shapes:[["#5b8def",P(0.65,-0.05,1.05,-0.55,1.0,0.1)],["#5b8def",c=>{ c.moveTo(-0.95,0.1); c.bezierCurveTo(-0.95,-0.7,0.6,-0.6,0.75,0.05); c.bezierCurveTo(0.7,0.65,-0.95,0.75,-0.95,0.1); c.closePath(); }]], detail:c=>{ fillP(c,"#bfe6ff",c2=>{ c2.moveTo(-0.9,0.25); c2.quadraticCurveTo(-0.1,0.65,0.65,0.25); c2.quadraticCurveTo(-0.1,0.45,-0.9,0.25); c2.closePath(); }); dot(c,-0.5,-0.05,0.07); withLine(c,"#7cc6f2",1.6,()=>{ ln(c,-0.4,-0.6,-0.4,-0.95); ln(c,-0.4,-0.75,-0.6,-0.95); ln(c,-0.4,-0.75,-0.2,-0.95); }); }})],
+  a_kame:["かめ", ()=>({shapes:[["#9ccf7a",C(0.75,0.2,0.22)],["#9ccf7a",E(-0.5,0.55,0.15,0.12)],["#9ccf7a",E(0.4,0.55,0.15,0.12)],["#5aa84a",c=>{ c.ellipse(-0.05,0.35,0.7,0.65,0,Math.PI,TAU); c.closePath(); }]], detail:c=>{ withLine(c,"#9ccf7a",1.4,()=>{ ln(c,-0.4,0.35,-0.25,-0.1); ln(c,0.3,0.35,0.15,-0.1); ln(c,-0.25,-0.1,0.15,-0.1); }); dot(c,0.82,0.15,0.05); }})],
+  a_tako:["たこ", ()=>({shapes:[...range(0,5).map(k=>["#ff6b6b",K(-0.6+k*0.3,0.3,-0.75+k*0.38,0.92,0.18)]), ["#ff6b6b",E(0,-0.15,0.7,0.65)]], detail:c=>{ dot(c,-0.25,0.0,0.07); dot(c,0.25,0.0,0.07); fillP(c,"#ff9a9a",E(0,0.25,0.12,0.09)); blush(c,0.45,0.15); }})],
+  a_kani:["かに", ()=>({shapes:[["#ff5a4a",K(-0.6,0.0,-0.85,-0.65,0.16)],["#ff5a4a",K(0.6,0.0,0.85,-0.65,0.16)],["#ff5a4a",P(-1.0,-0.6,-0.8,-0.98,-0.6,-0.6)],["#ff5a4a",P(1.0,-0.6,0.8,-0.98,0.6,-0.6)],...[-1,1].flatMap(m=>[0.2,0.45].map(y=>["#ff5a4a",K(m*0.5,y,m*0.95,y+0.3,0.1)])),["#ff5a4a",E(0,0.2,0.7,0.48)]], detail:c=>{ dot(c,-0.22,0.05,0.07); dot(c,0.22,0.05,0.07); arcS(c,0,0.25,0.12,0.4,2.7); }})],
+};
+
+// ---- 犬猫の小物・おしゃれ ----
+const pawShapes2 = col => [[col,E(0,0.3,0.5,0.4)],[col,C(-0.6,-0.2,0.2)],[col,C(-0.22,-0.58,0.2)],[col,C(0.22,-0.58,0.2)],[col,C(0.6,-0.2,0.2)]];
+const pawDetail = (c, col, tx, ty, sc) => { c.save(); c.translate(tx,ty); c.scale(sc,sc); for (const [,p] of pawShapes2(col)) fillP(c,col,p); c.restore(); };
+const GOODS = {
+  g_pad:["肉球", ()=>({shapes:[["#ffffff",C(0,0,0.95)]], detail:c=>pawDetail(c,"#f6a9bd",0,0,0.72)})],
+  g_paw:["足あと", ()=>({shapes:pawShapes2("#8a5a2e")})],
+  g_pawpink:["ピンクの足あと", ()=>({shapes:pawShapes2("#ff9ec1")})],
+  g_bone:["ほね", ()=>({shapes:[...[[-0.75,-0.22],[-0.75,0.22],[0.75,-0.22],[0.75,0.22]].map(([x,y])=>["#fff7e6",C(x,y,0.26)]), ["#fff7e6",R(-0.75,-0.2,1.5,0.4,0.05)]]})],
+  g_ball:["ボール", ()=>({shapes:[["#c8e04a",C(0,0,0.85)]], detail:c=>withLine(c,"#ffffff",1.6,()=>{ arcS(c,-1.25,0,0.8,-0.62,0.62); arcS(c,1.25,0,0.8,Math.PI-0.62,Math.PI+0.62); })})],
+  g_bowl:["ごはん皿", ()=>({shapes:[["#b07a45",C(-0.4,-0.05,0.22)],["#b07a45",C(0,-0.18,0.24)],["#b07a45",C(0.4,-0.05,0.22)],["#e8473b",P(-0.98,0.05,0.98,0.05,0.72,0.72,-0.72,0.72)]], detail:c=>withLine(c,"#ffffff",1.4,()=>ln(c,-0.75,0.3,0.75,0.3))})],
+  g_collar:["首輪", ()=>({shapes:[["#e8473b",c=>{c.ellipse(0,-0.2,0.92,0.5,0,0,TAU); c.moveTo(0.7,-0.2); c.ellipse(0,-0.2,0.7,0.3,0,0,TAU,true);}],["#f2c84b",C(0,0.55,0.3)]], detail:c=>fillP(c,"#ffffff",C(-0.08,0.48,0.07))})],
+  g_tag:["迷子札", ()=>({shapes:[["#d9dde3",RING(0,-0.72,0.22,0.1)],["#d9dde3",C(0,0.18,0.72)]], detail:c=>{ fillP(c,"#ff7f9a",HP(0,0.18,0.32)); withLine(c,"#ffffff",1.4,()=>arcS(c,0,0.18,0.55,-2.4,-1.6)); }})],
+  g_tagbone:["ほね型の迷子札", ()=>({shapes:[["#f2c84b",RING(-0.75,-0.55,0.17,0.07)],...[[-0.7,-0.2],[-0.7,0.2],[0.7,-0.2],[0.7,0.2]].map(([x,y])=>["#f2c84b",C(x,y,0.25)]),["#f2c84b",R(-0.7,-0.22,1.4,0.44,0.05)]], detail:c=>pawDetail(c,"#c9962a",0,0.02,0.22)})],
+  g_house:["いぬごや", ()=>({shapes:[["#e0b07a",R(-0.75,-0.25,1.5,1.2,0.05)],["#e8473b",P(-0.98,-0.12,0,-1.0,0.98,-0.12)]], detail:c=>fillP(c,"#5a3a20",c2=>{ c2.moveTo(-0.32,0.95); c2.lineTo(-0.32,0.3); c2.arc(0,0.3,0.32,Math.PI,0); c2.lineTo(0.32,0.95); c2.closePath(); })})],
+  g_jerky:["ジャーキー", ()=>({shapes:[["#a0522d",K(-0.75,0.5,0.75,-0.5,0.42)]], detail:c=>withLine(c,"#c97a4a",1.4,()=>{ ln(c,-0.35,0.12,-0.1,0.3); ln(c,0.1,-0.3,0.35,-0.12); })})],
+  g_disc:["フリスビー", ()=>({shapes:[["#5bc0eb",E(0,0,0.98,0.52)]], detail:c=>withLine(c,"#a9e2f7",1.6,()=>{ c.beginPath(); c.ellipse(0,-0.04,0.6,0.28,0,0,TAU); c.stroke(); })})],
+  g_food:["フード袋", ()=>({shapes:[["#f6d06b",R(-0.65,-0.85,1.3,1.75,0.15)]], detail:c=>{ ln(c,-0.65,-0.55,0.65,-0.55); pawDetail(c,"#8a5a2e",0,0.25,0.4); }})],
+  g_fish:["おさかな", ()=>({shapes:[["#7fb8e6",P(0.45,0,1.05,-0.5,1.05,0.5)],["#7fb8e6",E(-0.15,0,0.75,0.45)]], detail:c=>dot(c,-0.5,-0.06,0.09)})],
+  g_fishbone:["魚の骨", ()=>({shapes:[["#ffffff",K(-0.35,0,0.7,0,0.09)], ...[-0.1,0.18,0.45].map(x=>["#ffffff",K(x,-0.38,x,0.38,0.08)]), ["#ffffff",P(0.65,0,1.02,-0.38,1.02,0.38)], ["#ffffff",E(-0.62,0,0.36,0.3)]], detail:c=>dot(c,-0.7,-0.05,0.07)})],
+  g_yarn:["毛糸玉", ()=>({shapes:[["#f28fb0",C(0,0,0.8)]], detail:c=>withLine(c,"#ffc3d6",1.4,()=>{ arcS(c,-0.9,-0.3,0.9,-0.5,0.7); arcS(c,0.3,0.9,0.95,-2.4,-1.2); arcS(c,0.6,-0.7,0.7,1.6,2.9); ln(c,0.55,0.55,0.95,0.85,0.75,1.0); })})],
+  g_toy:["ねこじゃらし", ()=>({shapes:[["#6fbf4a",K(0.55,0.95,-0.1,-0.15,0.09)],["#e8d38a",E(-0.35,-0.5,0.3,0.55,-0.55)]]})],
+  g_bell:["鈴", ()=>({shapes:[["#f2c84b",RING(0,-0.72,0.2,0.09)],["#f2c84b",C(0,0.1,0.75)]], detail:c=>{ ln(c,-0.6,0.1,0.6,0.1); dot(c,0,0.42,0.1); ln(c,0,0.42,0,0.75); }})],
+  g_can:["ねこ缶", ()=>({shapes:[["#9fc5e8",R(-0.85,-0.35,1.7,0.95,0.12)],["#d9dde3",E(0,-0.35,0.85,0.22)]], detail:c=>{ c.save(); c.translate(0,0.18); c.scale(0.45,0.45); fillP(c,"#ffffff",E(-0.15,0,0.75,0.45)); fillP(c,"#ffffff",P(0.45,0,1.05,-0.5,1.05,0.5)); c.restore(); }})],
+  g_box:["ダンボール猫", ()=>({shapes:[...both(m=>["#f2a65a",P(-0.6*m,-0.25,-0.5*m,-0.85,-0.12*m,-0.4)]), ["#f2a65a",E(0,-0.15,0.62,0.4)], ["#d2a066",R(-0.95,-0.05,1.9,1.0,0.05)]], detail:c=>{ dot(c,-0.22,-0.2,0.08); dot(c,0.22,-0.2,0.08); ln(c,-0.95,0.25,0.95,0.25); }})],
+  g_milk:["ミルク", ()=>({shapes:[["#5bc0eb",R(-0.35,-0.98,0.7,0.32,0.08)],["#ffffff",R(-0.45,-0.72,0.9,1.65,0.15)]], detail:c=>withLine(c,"#5bc0eb",2,()=>ln(c,-0.3,0.15,0.3,0.15))})],
+  g_beckon:["おいでの手", ()=>({shapes:[["#ffffff",K(0,0.95,0,-0.25,0.56)],["#ffffff",C(0,-0.48,0.44)]], detail:c=>pawDetail(c,"#f6a9bd",0,-0.45,0.32)})],
+  g_ribbon:["リボン", ()=>({shapes:[["#ff8fb5",P(0,0,-0.95,-0.55,-0.95,0.55)],["#ff8fb5",P(0,0,0.95,-0.55,0.95,0.55)],["#ff6b9a",C(0,0,0.22)]], detail:c=>{ c.fillStyle="#ffffff"; for (const [x,y] of [[-0.6,-0.15],[-0.5,0.25],[0.6,-0.15],[0.5,0.25]]) dot(c,x,y,0.06); c.fillStyle=INK; }})],
+  g_crown:["おうかん", ()=>({shapes:[["#f6c744",P(-0.9,0.55,-0.9,-0.45,-0.45,0.0,0,-0.7,0.45,0.0,0.9,-0.45,0.9,0.55)]], detail:c=>{ fillP(c,"#ff5a7a",C(0,0.2,0.13)); fillP(c,"#7cc6f2",C(-0.5,0.25,0.1)); fillP(c,"#7cc6f2",C(0.5,0.25,0.1)); }})],
+  g_bandana:["バンダナ", ()=>({shapes:[["#e8473b",P(-0.98,-0.45,0.98,-0.45,0,0.85)]], detail:c=>{ c.fillStyle="#ffffff"; for (const [x,y] of [[-0.5,-0.25],[0,-0.25],[0.5,-0.25],[-0.25,0.1],[0.25,0.1],[0,0.45]]) dot(c,x,y,0.07); c.fillStyle=INK; }})],
+  g_sweater:["わんこの服", ()=>({shapes:[["#7cc6f2",c=>{ c.moveTo(-0.4,-0.85); c.quadraticCurveTo(0,-0.65,0.4,-0.85); c.lineTo(0.95,-0.35); c.lineTo(0.7,-0.05); c.lineTo(0.55,-0.2); c.lineTo(0.6,0.9); c.lineTo(-0.6,0.9); c.lineTo(-0.55,-0.2); c.lineTo(-0.7,-0.05); c.lineTo(-0.95,-0.35); c.closePath(); }]], detail:c=>{ withLine(c,"#ffffff",1.6,()=>{ ln(c,-0.6,0.2,0.6,0.2); ln(c,-0.6,0.5,0.6,0.5); }); pawDetail(c,"#ffffff",0,-0.25,0.2); }})],
+  g_leash:["リード", ()=>({shapes:[["#ff8a3d",RING(-0.45,-0.45,0.45,0.28)],["#ff8a3d",K(-0.15,-0.1,0.75,0.75,0.16)],["#d9dde3",C(0.8,0.8,0.15)]]})],
+  g_bed:["ベッド", ()=>({shapes:[["#ff9ec1",E(0,0.35,0.98,0.48)]], detail:c=>{ fillP(c,"#ffd1e0",E(0,0.25,0.7,0.28)); }})],
+  g_teddy:["ぬいぐるみ", ()=>aniFace({head:"#c9853a", back:ears2("#c9853a",m=>C(-0.62*m,-0.62,0.26)), front:[["#f3d9a8",E(0,0.32,0.34,0.24)]], blush:false, extra:c=>withLine(c,"#8b5a2b",1,()=>{ ln(c,-0.55,0.55,-0.35,0.62); })})],
+  g_brush:["ブラシ", ()=>({shapes:[["#c9853a",K(0.2,0.2,0.85,0.85,0.22)],["#ff9ec1",E(-0.25,-0.25,0.6,0.42,0.78)]], detail:c=>{ c.fillStyle="#ffffff"; for (let k=0;k<6;k++){ const x=-0.55+(k%3)*0.3, y=-0.45+Math.floor(k/3)*0.3; dot(c,x+0.1,y+0.1,0.05); } c.fillStyle=INK; }})],
+  g_shampoo:["シャンプー", ()=>({shapes:[["#ffffff",R(-0.12,-0.95,0.24,0.3,0.05)],["#ffffff",R(-0.35,-0.68,0.7,0.2,0.05)],["#9fd6c7",R(-0.55,-0.5,1.1,1.45,0.2)]], detail:c=>{ fillP(c,"#ffffff",R(-0.35,-0.1,0.7,0.6,0.1)); pawDetail(c,"#9fd6c7",0,0.2,0.22); }})],
+};
+
 const MOTIFS = {};
 const GENRES = {};
-for (const [g, lib] of [["犬",DOG],["猫",CAT],["野菜",{...VEG,...VEG2}],["記号",SYM]]){
+for (const [g, lib] of [["犬",DOG],["おすわり犬",SITDOG],["猫",CAT],["いきもの",ANIMAL],["小物",GOODS],["食べ物",FOOD],["季節",SEASON],["野菜",{...VEG,...VEG2}],["記号",SYM]]){
   GENRES[g] = Object.keys(lib);
   for (const [id,[label,make]] of Object.entries(lib)) MOTIFS[id] = {label, make, genre:g};
 }
