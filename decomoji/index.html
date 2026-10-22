@@ -102,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-10(パリのコラージュ:英字新聞・リネン・切手・筆記体)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-11(パリのコラージュをアンティーク加工・広告チラシ・古い手紙を追加)</span></p>
 </header>
 
 <div class="wrap">
@@ -159,7 +159,10 @@ body:not(.anim) .cell b{display:none}
       <span class="note" id="styleNote"></span>
       <div class="field parisbox" style="gap:8px">
         <span class="lbl">貼る素材</span>
-        <div class="seg" id="parisPaper"><button type="button" data-v="news">英字新聞</button><button type="button" data-v="linen">リネン</button><button type="button" data-v="stamp">切手</button><button type="button" data-v="mix">ミックス</button></div>
+        <div class="seg" id="parisPaper"><button type="button" data-v="news">英字新聞</button><button type="button" data-v="linen">リネン</button><button type="button" data-v="stamp">切手</button><button type="button" data-v="ad">広告チラシ</button><button type="button" data-v="letter">古い手紙</button><button type="button" data-v="mix">ミックス</button></div>
+        <label for="age">古さ(アンティーク加工)</label>
+        <div class="row"><input type="range" id="age" min="0" max="100" step="5"><span class="val" id="ageV"></span></div>
+        <span class="note">古さを上げるほど、黄ばみ・ふちの焼け・しみ・折りじわ・すり切れ・虫食いの穴・ぼろぼろの切り口が強くなります。</span>
       </div>
       <div class="field clipbox" style="gap:8px">
         <span class="lbl" id="clipPaperLbl">紙の種類</span>
@@ -518,7 +521,7 @@ const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", li
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
-  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true, parisPaper:"mix"};
+  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true, parisPaper:"mix", age:75};
 
 let S = Object.assign({}, DEF);
 try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
@@ -695,97 +698,157 @@ async function loadParisFonts(){
   try { await Promise.all(all.map(f=>document.fonts.load(`${f.style||""} ${f.w} 100px ${f.fam}`, ALL.slice(0,EMO_BASE).join("")+"PARIS"))); } catch(e){}
   redraw();
 }
-function stampPath(ctx, w, h, f){   // ぎざぎざ(ミシン目)の切手
-  const rr = 3.2*f, step = 8.4*f;
-  ctx.beginPath(); ctx.rect(-w/2,-h/2,w,h);
-  for (let x=-w/2+step/2; x<w/2; x+=step){ ctx.moveTo(x+rr,-h/2); ctx.arc(x,-h/2,rr,0,TAU); ctx.moveTo(x+rr,h/2); ctx.arc(x,h/2,rr,0,TAU); }
-  for (let y=-h/2+step/2; y<h/2; y+=step){ ctx.moveTo(-w/2+rr,y); ctx.arc(-w/2,y,rr,0,TAU); ctx.moveTo(w/2+rr,y); ctx.arc(w/2,y,rr,0,TAU); }
+// 色を混ぜる(#rrggbb どうし)
+function mixHex(a, b, t){ const p=h=>[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)); const x=p(a), y=p(b); return "#"+x.map((v,i)=>Math.round(v+(y[i]-v)*t).toString(16).padStart(2,"0")).join(""); }
+const ANTIQUE_INK = ["#3b2a20","#5b2a2a","#2a3550","#3d4a32","#2b2420","#6b3a24"];
+const AD_WORDS = ["SAVON","CHOCOLAT","PARFUMERIE","CAFÉ","THÉ","CONFISERIE","GRAND MAGASIN","PHARMACIE","BISCUITS","LIQUEUR","CHAPEAUX","PÂTISSERIE"];
+const AD_SUB = ["PARIS 1889","Prix 25c","Maison fondée 1872","Qualité supérieure","Rue de Rivoli","Exposition Universelle","No 12","Médaille d'Or"];
+const LETTER_WORDS = "mon cher ami je pense à vous chaque jour sous le ciel de paris les fleurs du jardin sont belles avec toute mon affection votre fidèle à bientôt".split(" ");
+// ぼろぼろのふち:細かくガタガタ・ところどころ大きく欠ける・角がちぎれる
+function tatteredPoints(r, sw, sh, f, age, soft){
+  const pts = [], n = Math.round(10 + age*16), J = (1.0 + age*(soft?2.4:4.2))*f;
+  const c = [[-sw/2,-sh/2],[sw/2,-sh/2],[sw/2,sh/2],[-sw/2,sh/2]].map(([x,y])=>[x+(r()-0.5)*0.06*sw, y+(r()-0.5)*0.06*sh]);
+  const cutCorner = r() < age*0.55 ? Math.floor(r()*4) : -1;
+  for (let e=0;e<4;e++){
+    const [ax,ay]=c[e], [bx,by]=c[(e+1)%4], nx=-(by-ay), ny=(bx-ax), L=Math.hypot(nx,ny)||1;
+    const bite = r() < age*0.45 ? {at: 0.2+r()*0.6, w: 0.08+r()*0.12, d: (5+r()*9)*f} : null;
+    for (let k=0;k<n;k++){
+      const t = k/n; if (e===cutCorner && t < 0.14) continue;           // 角がちぎれている
+      let j = (r()-0.5)*2*J;
+      if (bite && Math.abs(t-bite.at) < bite.w) j += bite.d * (1 - Math.abs(t-bite.at)/bite.w) * (0.7+r()*0.3);   // かじられたような欠け
+      pts.push([ax+(bx-ax)*t + nx/L*j, ay+(by-ay)*t + ny/L*j]);
+    }
+    if (e===(cutCorner+3)%4 && cutCorner>=0){ const [cx,cy]=c[(e+1)%4], [dx,dy]=c[(e+2)%4]; pts.push([cx+(dx-cx)*0.14+(r()-0.5)*3*f, cy+(dy-cy)*0.14+(r()-0.5)*3*f]); }
+  }
+  return pts;
+}
+function flourish(o, x, y, s, sx, sy){   // 角の飾り(くるりと巻いた唐草)
+  o.save(); o.translate(x,y); o.scale(sx,sy); o.beginPath();
+  o.moveTo(0, s*1.6); o.quadraticCurveTo(0, 0, s*1.6, 0);
+  o.moveTo(s*0.5, s*0.5); o.arc(s*0.75, s*0.75, s*0.3, Math.PI*1.25, Math.PI*3.0);
+  o.stroke(); o.beginPath(); o.arc(s*0.2, s*0.2, s*0.12, 0, TAU); o.fill(); o.restore();
 }
 function drawParisChar(ctx, ch, W, H, idx, noDeco){
   ctx.clearRect(0,0,W,H);
   const r = rng((S.clipSeed||1)*4241 + idx*9973);
-  const f = Math.min(W,H)/180, pad = Math.max(S.margin, 4)*f;
-  const kinds = S.parisPaper==="mix" ? ["news","linen","stamp"] : [S.parisPaper||"news"];
+  const f = Math.min(W,H)/180, pad = Math.max(S.margin, 4)*f, age = Math.max(0, Math.min(1, (S.age ?? 75)/100));
+  const kinds = S.parisPaper==="mix" ? ["news","linen","stamp","ad","letter"] : [S.parisPaper||"news"];
   const kind = kinds[Math.floor(r()*kinds.length)];
-  const pal = PARIS_PAPERS[kind][Math.floor(r()*PARIS_PAPERS[kind].length)];
-  const paper = pal[0], frame = pal[1];
+  const BASE = {
+    news:["#efe6d0","#e9dfc6","#f0e8d6","#e2d6bb"], linen:["#ddd0b8","#cfc4ac","#c9cdb8","#dcc6bc","#d8d0c0","#c3c9c8"],
+    stamp:["#f1e7d2","#ece2cc","#efe4d4"], ad:["#efe0bf","#e8d6b0","#f0e3c8","#e6d3b8"], letter:["#f2e8d5","#ece0c8"] }[kind];
+  const paper = mixHex(BASE[Math.floor(r()*BASE.length)], "#c8ab7e", age*0.28);
+  const frame = mixHex(["#5a6f86","#9a5a5a","#a8863a","#6a8466","#7a5a7a","#3f5a72","#8a4a3a"][Math.floor(r()*7)], "#a08a6a", age*0.18);
   const isLatin = /[A-Za-z]/.test(ch), isAscii = /[\x20-\x7e]/.test(ch);
   const font = isLatin ? PARIS_SCRIPT[Math.floor(r()*PARIS_SCRIPT.length)]
             : isAscii || /[÷×¥・「」、…♡♪↑↓→←○〒]/.test(ch) ? PARIS_SERIF[Math.floor(r()*PARIS_SERIF.length)]
             : PARIS_KANA[Math.floor(r()*PARIS_KANA.length)];
-  const ink = PARIS_INK[Math.floor(r()*PARIS_INK.length)];
-  const rot = (r()-0.5)*0.24, sw = (0.74 + r()*0.18)*W - 2*pad, sh = (0.8 + r()*0.16)*H - 2*pad;
-  ctx.save(); ctx.translate(W/2, H/2); ctx.rotate(rot);
+  const ink = mixHex(ANTIQUE_INK[Math.floor(r()*ANTIQUE_INK.length)], "#7a5a3a", age*0.3);
+  const rot = (r()-0.5)*0.26, sw = (0.74 + r()*0.18)*W - 2*pad, sh = (0.8 + r()*0.16)*H - 2*pad;
+  const o = document.createElement("canvas"); o.width=W; o.height=H; const x = o.getContext("2d");
+  x.translate(W/2, H/2); x.rotate(rot);
+  // ---- 紙のかたち ----
   let shape;
-  if (kind==="stamp"){ shape = () => stampPath(ctx, sw-6*f, sh-6*f, f); }
-  else { const pts = edgePoints(r, sw, sh, kind==="linen" ? true : (S.clipTorn && r()<0.3), f*(kind==="linen"?0.45:1)); shape = () => { ctx.beginPath(); pts.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); }; }
-  // 紙(切手は穴を抜くので別の紙に描く)
-  const off = document.createElement("canvas"); off.width=W; off.height=H; const o = off.getContext("2d");
-  o.setTransform(ctx.getTransform());
   if (kind==="stamp"){
-    o.beginPath(); o.rect(-(sw-6*f)/2, -(sh-6*f)/2, sw-6*f, sh-6*f); o.fillStyle = paper; o.fill();
-    // ミシン目の穴を抜く
-    o.globalCompositeOperation = "destination-out";
-    const w2=sw-6*f, h2=sh-6*f, rr=3.2*f, step=8.4*f; o.beginPath();
-    for (let x=-w2/2+step/2; x<w2/2; x+=step){ o.moveTo(x+rr,-h2/2); o.arc(x,-h2/2,rr,0,TAU); o.moveTo(x+rr,h2/2); o.arc(x,h2/2,rr,0,TAU); }
-    for (let y=-h2/2+step/2; y<h2/2; y+=step){ o.moveTo(-w2/2+rr,y); o.arc(-w2/2,y,rr,0,TAU); o.moveTo(w2/2+rr,y); o.arc(w2/2,y,rr,0,TAU); }
-    o.fill(); o.globalCompositeOperation = "source-over";
-    // 内側の色わく・小さな文字・消印
-    const iw = w2-12*f, ih = h2-12*f;
-    o.fillStyle = frame; o.fillRect(-iw/2,-ih/2,iw,ih);
-    o.fillStyle = paper; o.fillRect(-iw/2+4*f,-ih/2+4*f,iw-8*f,ih-8*f);
-    o.fillStyle = frame; o.font = `700 ${7*f}px "Cormorant Garamond", serif`; o.textBaseline="top"; o.textAlign="left";
-    o.fillText(["20c","50c","1F","2F","75c"][Math.floor(r()*5)], -iw/2+6*f, -ih/2+5.5*f);
-    o.textAlign="right"; o.textBaseline="bottom"; o.fillText(["PARIS","FRANCE","POSTE","RF"][Math.floor(r()*4)], iw/2-6*f, ih/2-5*f);
-    if (r()<0.7){ o.save(); o.beginPath(); o.rect(-w2/2+rr,-h2/2+rr,w2-2*rr,h2-2*rr); o.clip(); o.strokeStyle="rgba(40,40,60,0.35)"; o.lineWidth=1.3*f; const cx=iw*0.18, cy=-ih*0.12;
-      o.beginPath(); o.arc(cx,cy,ih*0.28,0,TAU); o.stroke();
-      for (let k=0;k<4;k++){ o.beginPath(); for (let x=-iw*0.1; x<iw*0.7; x+=2*f) o.lineTo(x, cy+(k-1.5)*5*f + Math.sin(x/(4*f))*1.6*f); o.stroke(); }
-      o.restore(); }
+    const w2=sw-6*f, h2=sh-6*f; shape = () => { x.beginPath(); x.rect(-w2/2,-h2/2,w2,h2); };
   } else {
-    o.beginPath(); (()=>{ const pts = edgePoints(rng((S.clipSeed||1)*4241 + idx*9973 + 1), sw, sh, kind==="linen", f*(kind==="linen"?0.5:1)); pts.forEach(([x,y],k)=>k?o.lineTo(x,y):o.moveTo(x,y)); })(); o.closePath();
-    o.fillStyle = paper; o.fill(); o.save(); o.clip();
-    if (kind==="news"){   // 英字新聞:段組みの細かい英文と見出し
-      o.fillStyle = "rgba(35,35,35,0.45)"; o.textBaseline="top"; o.textAlign="left";
-      const fs = 5.4*f, lineH = 6.6*f, colW = (sw-6*f)/2;
-      if (r()<0.6){ o.font = `700 ${11*f}px "Playfair Display", "Bodoni Moda", serif`; o.fillText(["Le Journal","PARIS","The Times","Chronicle","La Mode"][Math.floor(r()*5)], -sw/2+3*f, -sh/2+2*f); }
-      o.font = `500 ${fs}px "Cormorant Garamond", "Times New Roman", serif`;
-      for (let c=0;c<2;c++) for (let y=-sh/2+16*f; y<sh/2; y+=lineH){ let x = -sw/2+3*f + c*colW, line="";
-        while (o.measureText(line).width < colW-5*f) line += EN_WORDS[Math.floor(r()*EN_WORDS.length)] + " ";
-        o.fillText(line, x, y); }
-      o.fillStyle = "rgba(35,35,35,0.3)"; o.fillRect(-sw/2+colW+1*f, -sh/2+15*f, 0.7*f, sh);
-    } else {   // リネン:織り目
-      o.globalAlpha = 0.16; o.strokeStyle = "#5a4a38"; o.lineWidth = 0.7*f;
-      for (let x=-sw/2; x<sw/2; x+=2.2*f){ o.beginPath(); o.moveTo(x,-sh/2); o.lineTo(x+(r()-0.5)*f,sh/2); o.stroke(); }
-      o.globalAlpha = 0.12; for (let y=-sh/2; y<sh/2; y+=2.2*f){ o.beginPath(); o.moveTo(-sw/2,y); o.lineTo(sw/2,y+(r()-0.5)*f); o.stroke(); }
-      o.globalAlpha = 0.08; o.fillStyle = "#3a2a1a"; for (let k=0;k<40;k++) o.fillRect(-sw/2+r()*sw, -sh/2+r()*sh, (2+r()*6)*f, 0.9*f);
-      o.globalAlpha = 1;
-    }
-    o.globalAlpha = 0.12; o.fillStyle = grainPattern(o); o.setTransform(1,0,0,1,0,0); o.fillRect(0,0,W,H); o.globalAlpha = 1;
-    o.restore();
+    const pts = tatteredPoints(r, sw, sh, f, age, kind==="linen");
+    shape = () => { x.beginPath(); pts.forEach(([px,py],k)=>k?x.lineTo(px,py):x.moveTo(px,py)); x.closePath(); };
   }
-  ctx.restore();
-  // かげを付けて貼る
-  ctx.save(); ctx.shadowColor="rgba(60,40,20,0.32)"; ctx.shadowBlur=4*f; ctx.shadowOffsetX=1.5*f; ctx.shadowOffsetY=2.5*f; ctx.drawImage(off,0,0); ctx.restore();
-  // 文字
-  ctx.save(); ctx.translate(W/2, H/2); ctx.rotate(rot + (r()-0.5)*0.12);
+  shape(); x.fillStyle = paper; x.fill();
+  if (kind==="stamp"){   // ミシン目(ところどころ欠けたり不ぞろい)
+    const w2=sw-6*f, h2=sh-6*f, step=8.4*f; x.save(); x.globalCompositeOperation="destination-out"; x.beginPath();
+    const hole=(hx,hy)=>{ const rr=(2.6+r()*1.4+age*0.8)*f; x.moveTo(hx+rr,hy); x.arc(hx,hy,rr,0,TAU); };
+    for (let px=-w2/2+step/2; px<w2/2; px+=step){ hole(px,-h2/2); hole(px,h2/2); }
+    for (let py=-h2/2+step/2; py<h2/2; py+=step){ hole(-w2/2,py); hole(w2/2,py); }
+    if (r()<age*0.6){ const cx=(r()<0.5?-1:1)*w2/2, cy=(r()<0.5?-1:1)*h2/2; x.moveTo(cx+9*f,cy); x.arc(cx,cy,(6+r()*6)*f,0,TAU); }   // 角のちぎれ
+    x.fill(); x.restore();
+  }
+  x.save(); shape(); if (kind==="stamp"){ x.restore(); x.save(); } else x.clip();
+  // ---- 素材ごとの柄 ----
+  const fade = a => `rgba(50,35,20,${a})`;
+  if (kind==="news"){
+    x.fillStyle = fade(0.5); x.textBaseline="top"; x.textAlign="left";
+    const fs = 5.3*f, lineH = 6.4*f, colW = (sw-6*f)/2;
+    if (r()<0.7){ x.font = `700 ${11*f}px "Playfair Display", "Bodoni Moda", serif`; x.fillText(["Le Journal","PARIS","Le Petit Parisien","Gazette","La Mode Illustrée"][Math.floor(r()*5)], -sw/2+3*f, -sh/2+2*f);
+      x.fillRect(-sw/2+3*f, -sh/2+14*f, sw-6*f, 0.6*f); x.fillRect(-sw/2+3*f, -sh/2+15.4*f, sw-6*f, 0.3*f); }
+    x.font = `500 ${fs}px "Cormorant Garamond", "Times New Roman", serif`;
+    for (let c=0;c<2;c++) for (let yy=-sh/2+17*f; yy<sh/2; yy+=lineH){ let line=""; while (x.measureText(line).width < colW-5*f) line += EN_WORDS[Math.floor(r()*EN_WORDS.length)] + " "; x.fillText(line, -sw/2+3*f + c*colW, yy); }
+    x.fillRect(-sw/2+colW+1*f, -sh/2+16*f, 0.6*f, sh);
+  } else if (kind==="linen"){
+    x.globalAlpha = 0.18; x.strokeStyle = "#4a3a28"; x.lineWidth = 0.7*f;
+    for (let px=-sw/2; px<sw/2; px+=2.2*f){ x.beginPath(); x.moveTo(px,-sh/2); x.lineTo(px+(r()-0.5)*f,sh/2); x.stroke(); }
+    x.globalAlpha = 0.14; for (let py=-sh/2; py<sh/2; py+=2.2*f){ x.beginPath(); x.moveTo(-sw/2,py); x.lineTo(sw/2,py+(r()-0.5)*f); x.stroke(); }
+    x.globalAlpha = 0.1; x.fillStyle = "#3a2a1a"; for (let k=0;k<50;k++) x.fillRect(-sw/2+r()*sw, -sh/2+r()*sh, (2+r()*7)*f, 0.9*f);
+    x.globalAlpha = 1;
+  } else if (kind==="ad"){   // 古い広告チラシ:二重の飾りわく・角の唐草・品名
+    x.strokeStyle = fade(0.55); x.fillStyle = fade(0.55); x.lineWidth = 1.2*f;
+    x.strokeRect(-sw/2+5*f, -sh/2+5*f, sw-10*f, sh-10*f); x.lineWidth = 0.5*f; x.strokeRect(-sw/2+7.5*f, -sh/2+7.5*f, sw-15*f, sh-15*f);
+    x.lineWidth = 0.9*f; const fs2 = 5*f;
+    flourish(x, -sw/2+9*f, -sh/2+9*f, fs2, 1, 1); flourish(x, sw/2-9*f, -sh/2+9*f, fs2, -1, 1); flourish(x, -sw/2+9*f, sh/2-9*f, fs2, 1, -1); flourish(x, sw/2-9*f, sh/2-9*f, fs2, -1, -1);
+    x.textAlign="center"; x.textBaseline="top"; x.font = `700 ${7.2*f}px "Bodoni Moda", "Playfair Display", serif`;
+    const word = AD_WORDS[Math.floor(r()*AD_WORDS.length)]; x.fillText(word.split("").join(" "), 0, -sh/2+10*f);
+    x.textBaseline="bottom"; x.font = `italic 600 ${6*f}px "Cormorant Garamond", serif`; x.fillText(AD_SUB[Math.floor(r()*AD_SUB.length)], 0, sh/2-10*f);
+    x.lineWidth = 0.7*f; x.beginPath(); x.ellipse(0, 1*f, sw*0.32, sh*0.3, 0, 0, TAU); x.stroke();
+    x.fillStyle = mixHex(paper, "#ffffff", 0.25); x.beginPath(); x.ellipse(0, 1*f, sw*0.31, sh*0.29, 0, 0, TAU); x.fill();
+  } else if (kind==="letter"){   // 古い手紙:罫線と手書きの筆記体
+    x.strokeStyle = "rgba(90,110,150,0.4)"; x.lineWidth = 0.7*f;
+    for (let py=-sh/2+8*f; py<sh/2; py+=7.5*f){ x.beginPath(); x.moveTo(-sw/2,py); x.lineTo(sw/2,py); x.stroke(); }
+    x.strokeStyle = "rgba(170,60,60,0.3)"; x.beginPath(); x.moveTo(-sw/2+10*f,-sh/2); x.lineTo(-sw/2+10*f,sh/2); x.stroke();
+    x.fillStyle = "rgba(40,40,90,0.5)"; x.font = `400 ${7.5*f}px "Great Vibes", "Parisienne", cursive`; x.textBaseline="bottom"; x.textAlign="left";
+    for (let py=-sh/2+8*f; py<sh/2; py+=7.5*f){ let line=""; while (x.measureText(line).width < sw-14*f) line += LETTER_WORDS[Math.floor(r()*LETTER_WORDS.length)] + " "; x.fillText(line, -sw/2+12*f, py-0.5*f); }
+  } else if (kind==="stamp"){   // 古い切手:彫刻のような細線のわく・角の飾り・額面・消印
+    const w2=sw-6*f, h2=sh-6*f, iw=w2-12*f, ih=h2-12*f;
+    x.fillStyle = frame; x.fillRect(-iw/2,-ih/2,iw,ih);
+    x.save(); x.beginPath(); x.rect(-iw/2,-ih/2,iw,ih); x.rect(-iw/2+5*f,-ih/2+5*f,iw-10*f,ih-10*f); x.clip("evenodd");
+    x.strokeStyle = mixHex(paper,"#ffffff",0.2); x.lineWidth = 0.5*f; for (let k=-iw; k<iw; k+=1.8*f){ x.beginPath(); x.moveTo(k,-ih/2); x.lineTo(k+ih,ih/2); x.stroke(); }
+    x.restore();
+    x.fillStyle = paper; x.fillRect(-iw/2+5*f,-ih/2+5*f,iw-10*f,ih-10*f);
+    x.strokeStyle = frame; x.lineWidth = 0.5*f; x.strokeRect(-iw/2+7*f,-ih/2+7*f,iw-14*f,ih-14*f);
+    x.fillStyle = frame; for (const [cx,cy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){ x.beginPath(); x.arc(cx*(iw/2-2.5*f), cy*(ih/2-2.5*f), 2*f, 0, TAU); x.fill(); }
+    x.font = `700 ${6.5*f}px "Bodoni Moda", serif`; x.fillStyle = mixHex(paper,"#ffffff",0.6); x.textBaseline="middle"; x.textAlign="center";
+    x.fillText(["RÉPUBLIQUE FRANÇAISE","POSTES","PARIS","FRANCE"][Math.floor(r()*4)], 0, -ih/2+2.6*f);
+    x.fillText(["10 c","25 c","50 c","1 F","5 F"][Math.floor(r()*5)], 0, ih/2-2.6*f);
+  }
+  x.restore();
+  // ---- 文字 ----
+  x.save(); x.rotate((r()-0.5)*0.12);
   const fstr = px => `${font.style||""} ${font.w} ${px}px ${font.fam}, "Shippori Mincho B1", serif`;
   mctx.font = fstr(100);
   const m = mctx.measureText(ch), gl=m.actualBoundingBoxLeft, gr2=m.actualBoundingBoxRight, ga=m.actualBoundingBoxAscent, gd=m.actualBoundingBoxDescent;
-  const inner = kind==="stamp" ? 0.6 : 0.74;
+  const inner = kind==="stamp" ? 0.56 : kind==="ad" ? 0.56 : 0.74;
   const k = Math.min(sw*inner/Math.max(gl+gr2,1), sh*inner/Math.max(ga+gd,1));
-  ctx.font = fstr(100*k); ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.lineJoin="round";
-  const tx = -(gr2-gl)/2*k, ty = (ga-gd)/2*k;
-  if (kind==="news"){ ctx.strokeStyle = paper; ctx.lineWidth = 6*f; ctx.strokeText(ch, tx, ty); }
-  const t = document.createElement("canvas"); t.width=W; t.height=H; const tc = t.getContext("2d");
-  tc.setTransform(ctx.getTransform()); tc.font = ctx.font; tc.textBaseline="alphabetic"; tc.fillStyle = kind==="stamp" ? frame.replace(/^#/,"#") : ink; tc.fillText(ch, tx, ty);
-  if (kind==="stamp"){ tc.fillStyle = ink; tc.globalAlpha = 0.55; tc.fillText(ch, tx, ty); tc.globalAlpha = 1; }
-  tc.setTransform(1,0,0,1,0,0); tc.globalCompositeOperation="destination-out"; tc.globalAlpha = kind==="linen" ? 0.35 : 0.25; tc.fillStyle = grainPattern(tc); tc.fillRect(0,0,W,H);
-  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(t,0,0); ctx.restore();
-  ctx.restore();
-  // 和紙テープ
-  if (S.clipTape && r() < 0.3){ ctx.save(); ctx.translate(W/2 + (r()-0.5)*sw*0.3, H/2 - sh/2 + 3*f); ctx.rotate((r()-0.5)*0.6);
-    const tw = sw*0.42, th = 12*f; ctx.fillStyle = ["rgba(233,214,190,0.8)","rgba(214,226,214,0.8)","rgba(236,208,210,0.8)"][Math.floor(r()*3)];
-    ctx.beginPath(); for (let k2=0;k2<=6;k2++) ctx.lineTo(-tw/2 + (k2%2)*1.5*f, -th/2 + k2*th/6); for (let k2=6;k2>=0;k2--) ctx.lineTo(tw/2 - (k2%2)*1.5*f, -th/2 + k2*th/6); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  x.font = fstr(100*k); x.textAlign="left"; x.textBaseline="alphabetic"; x.lineJoin="round";
+  const tx = -(gr2-gl)/2*k, ty = (ga-gd)/2*k + (kind==="ad" ? 1*f : 0);
+  if (kind==="news" || kind==="letter"){ x.strokeStyle = paper; x.lineWidth = 6*f; x.strokeText(ch, tx, ty); }
+  x.fillStyle = kind==="stamp" ? mixHex(frame, ink, 0.5) : ink; x.fillText(ch, tx, ty);
+  x.restore();
+  // ---- 古びさせる(紙の上だけ) ----
+  x.setTransform(1,0,0,1,0,0);
+  x.globalCompositeOperation = "source-atop";
+  x.fillStyle = `rgba(150,105,50,${0.06*age})`; x.fillRect(0,0,W,H);                         // 全体の黄ばみ
+  const burn = x.createRadialGradient(W/2,H/2,Math.min(sw,sh)*0.25, W/2,H/2,Math.max(sw,sh)*0.62);   // ふちの焼け
+  burn.addColorStop(0,"rgba(110,70,30,0)"); burn.addColorStop(1,`rgba(100,60,25,${0.08+0.32*age})`); x.fillStyle = burn; x.fillRect(0,0,W,H);
+  for (let k2=0, n=Math.floor(2+12*age); k2<n; k2++){ x.fillStyle = `rgba(${110+r()*30},${70+r()*20},${30+r()*15},${0.06+r()*0.18*age})`;   // しみ(フォクシング)
+    x.beginPath(); x.ellipse(W/2+(r()-0.5)*sw, H/2+(r()-0.5)*sh, (1+r()*4)*f, (1+r()*3.5)*f, r()*3, 0, TAU); x.fill(); }
+  if (r() < age*0.45){ const cx=W/2+(r()-0.5)*sw*0.8, cy=H/2+(r()-0.5)*sh*0.8, rr=(18+r()*20)*f;   // コーヒーのしみの輪
+    x.strokeStyle = `rgba(120,75,35,${0.18+0.12*age})`; x.lineWidth = 2.2*f; x.beginPath(); x.arc(cx,cy,rr,r()*TAU,r()*TAU+5.2); x.stroke();
+    x.fillStyle = "rgba(140,90,40,0.06)"; x.beginPath(); x.arc(cx,cy,rr,0,TAU); x.fill(); }
+  if (r() < age*0.65){ const a1 = r()*Math.PI, cx=W/2+(r()-0.5)*sw*0.4, cy=H/2+(r()-0.5)*sh*0.4, dx=Math.cos(a1)*W, dy=Math.sin(a1)*W;   // 折りじわ
+    x.lineWidth = 1.4*f; x.strokeStyle = "rgba(255,248,230,0.55)"; x.beginPath(); x.moveTo(cx-dx,cy-dy); x.lineTo(cx+dx,cy+dy); x.stroke();
+    x.lineWidth = 0.9*f; x.strokeStyle = `rgba(80,55,30,${0.2+0.2*age})`; x.beginPath(); x.moveTo(cx-dx+1.2*f,cy-dy+1.2*f); x.lineTo(cx+dx+1.2*f,cy+dy+1.2*f); x.stroke(); }
+  x.globalAlpha = 0.04 + 0.1*age; x.fillStyle = grainPattern(x); x.fillRect(0,0,W,H); x.globalAlpha = 1;   // 汚れの粒
+  x.globalCompositeOperation = "destination-out";                                               // すり切れ・色あせ
+  x.globalAlpha = 0.06 + 0.2*age; x.save(); x.translate(r()*40, r()*40); x.scale(1.3,1.3); x.fillStyle = grainPattern(x); x.fillRect(-W,-H,W*3,H*3); x.restore(); x.globalAlpha = 1;
+  for (let k2=0, n=Math.floor(age*7); k2<n; k2++){ const ang=r()*TAU, rr=(0.42+r()*0.08); x.beginPath(); x.arc(W/2+Math.cos(ang)*sw*rr, H/2+Math.sin(ang)*sh*rr, (0.8+r()*2.2)*f, 0, TAU); x.fill(); }   // 虫食いの小さな穴
+  x.globalCompositeOperation = "source-over";
+  // かげを付けて貼る
+  ctx.save(); ctx.shadowColor="rgba(70,45,20,0.38)"; ctx.shadowBlur=4*f; ctx.shadowOffsetX=1.5*f; ctx.shadowOffsetY=2.5*f; ctx.drawImage(o,0,0); ctx.restore();
+  // 古いテープ
+  if (S.clipTape && r() < 0.32){ ctx.save(); ctx.translate(W/2 + (r()-0.5)*sw*0.3, H/2 - sh/2 + 3*f); ctx.rotate((r()-0.5)*0.6);
+    const tw = sw*0.42, th = 12*f; ctx.fillStyle = [`rgba(222,196,150,${0.65})`,`rgba(200,206,180,0.6)`,`rgba(220,190,180,0.6)`][Math.floor(r()*3)];
+    ctx.beginPath(); for (let k2=0;k2<=6;k2++) ctx.lineTo(-tw/2 + (k2%2)*1.5*f, -th/2 + k2*th/6); for (let k2=6;k2>=0;k2--) ctx.lineTo(tw/2 - (k2%2)*1.5*f, -th/2 + k2*th/6); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 0.25*age; ctx.fillStyle = grainPattern(ctx); ctx.fill(); ctx.restore(); }
   const bb = {l:W/2-sw/2, r:W/2+sw/2, t:H/2-sh/2, b:H/2+sh/2};
   const place = decoPlace(idx, bb, W, H);
   if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
@@ -1829,7 +1892,7 @@ syncers.push(bindSeg("fillMode","fill",()=>{fillNote();redraw();}));
 syncers.push(bindSeg("fitMode","fit",redraw));
 const STYLE_NOTES = {
   normal:"", clip:"",
-  paris:"英字新聞・リネン・切手を継ぎはぎして貼ったような、パリ風のコラージュです。アルファベットは筆記体、かなは上品な明朝や手書きのフォントになります。",
+  paris:"英字新聞・リネン・切手・広告チラシ・古い手紙を継ぎはぎして貼ったような、アンティークなパリ風コラージュです。アルファベットは筆記体、かなは上品な明朝や手書きのフォントになります。",
   hanko:"赤いはんこを押したような、かすれた文字です。「1文字ずつ色替え」以外では、文字の色(色1)がインクの色になります。",
   neon:"光るネオン管のような文字です。暗いトーク背景で映えます。色は塗り方の色を使います。",
   pukkuri:"あめ玉のようにツヤのある、ぷっくりした文字です。色・ふちは今の設定を使います。",
@@ -1843,6 +1906,7 @@ $("clipTorn").addEventListener("change", e=>{ S.clipTorn=e.target.checked; save(
 $("clipTape").addEventListener("change", e=>{ S.clipTape=e.target.checked; save(); redraw(); });
 syncers.push(bindSeg("clipPaper","clipPaper",redraw));
 syncers.push(bindSeg("parisPaper","parisPaper",redraw));
+syncers.push(bindRange("age", redraw, "%"));
 $("clipShuffleBtn").addEventListener("click", ()=>{ S.clipSeed = Math.floor(Math.random()*1e9)+1; save(); redraw(); });
 syncers.push(bindSeg("gridBg","gridBg",applyGridBg));
 for (const id of ["line1","line2","bold","margin"]) syncers.push(bindRange(id, redraw));
@@ -2129,6 +2193,7 @@ $("exportBtn").addEventListener("click", async ()=>{
       (missing.size ? `<span class="ng">⚠ フォントにない字:${[...missing].map(g=>ALL[g]).join(" ")}(ほかのフォントで描かれています)</span>` : "")+
       `<span class="${okKB?"ok":"ng"}">${okKB?"✓":"✕"} いちばん重い画像 ${maxName}:${maxKB.toFixed(1)}KB(上限1MB)</span>`+
       `<span class="${okMB?"ok":"ng"}">${okMB?"✓":"✕"} ZIP ${mb.toFixed(2)}MB(上限20MB)</span>`+
+      (!okMB ? `<span class="ng">→ 軽くするには:${anim ? `コマ数を${Math.max(5, Math.floor(S.frames*19/mb))}くらいに減らす、` : ""}紙の種類を少なめの柄(雑誌・リネンなど)にする、または「古さ」を下げると小さくなります。</span>` : "")+
       (anim ? `<span class="ok">✓ ${S.frames}コマ・${S.sec}秒×${S.loops}回(合計${+S.sec*+S.loops}秒)・縮小${Math.round(fitS*100)}%</span>`+
         (sameList.length ? `<span class="ng">✕ 前と同じコマがある字:${sameList.join(", ")}(動きを強くするか変えてください)</span>` : `<span class="ok">✓ どの字も全コマ動いています</span>`) : "");
     const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = `decomoji_${PK().short}${PK().emo?emoCount():""}${anim?"_anim":""}.zip`;
