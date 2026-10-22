@@ -100,7 +100,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-5(自分の絵の読み込み・貼り付け)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-6(取り込んだ画像の自動カット)</span></p>
 </header>
 
 <div class="wrap">
@@ -228,9 +228,13 @@ body:not(.anim) .cell b{display:none}
         <button class="btn2" id="custPasteBtn" type="button">📋 貼り付け</button>
         <input type="file" id="custFile" class="hidden-file" accept="image/*" multiple>
       </div>
+      <div class="row">
+        <label class="row" style="gap:6px"><input type="checkbox" id="autoBg"> 背景を自動で消す</label>
+        <label class="row" style="gap:6px"><input type="checkbox" id="autoSplit"> 並んだ絵は1つずつに分ける</label>
+      </div>
       <div id="pasteBox" class="pastebox" contenteditable="true" aria-label="画像の貼り付け場所">iPhone・iPadは、ここを長押しして「ペースト」</div>
       <div class="row"><button class="btn2" id="custDelBtn" type="button">自分の絵をぜんぶ消す</button><span class="note" id="custCount"></span></div>
-      <span class="note">透過PNGがおすすめです。まわりの透明な余白は自動で切り取ります。パソコンでは、画面のどこでも Ctrl+V(Macは ⌘+V)で貼り付けられます。</span>
+      <span class="note">取り込むと自動でカットします。白などの背景は透明に、まわりの余白は切り取り、何個か並んだシート画像は1つずつの絵に分けます。パソコンでは、画面のどこでも Ctrl+V(Macは ⌘+V)で貼り付けられます。</span>
       <span class="note">ガイドラインでは、絵文字は小さく表示されるので飾りはシンプルに、とされています。文字が読めるよう、大きくしすぎないのがおすすめです。</span>
     </div>
 
@@ -484,7 +488,7 @@ const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", li
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
-  decoMotions:null, decoMpool:null, customs:[]};
+  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true};
 
 let S = Object.assign({}, DEF);
 try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
@@ -1815,35 +1819,118 @@ function refreshCustomUI(){
   $("custCount").textContent = S.customs.length ? `自分の絵 ${S.customs.length}枚` : "";
   if (typeof drawSel==="function" && cells.length) drawSel();
 }
-async function addCustomFromBlob(blob, name){
+// ---- 取り込んだ画像を自動でカットする ----
+// 1) 背景が透明でなければ、まわりの背景色を消す  2) 何個か並んでいれば1つずつに分ける  3) 余白を切り取る
+async function blobToCanvas(blob, maxSide=1200){
   const url = URL.createObjectURL(blob), im = new Image();
   await new Promise((ok,ng)=>{ im.onload=ok; im.onerror=()=>ng(new Error("画像を開けませんでした")); im.src=url; });
-  // 大きすぎる写真はまず縮める
-  const pre = Math.min(1, 1200/Math.max(im.naturalWidth, im.naturalHeight));
-  const w = Math.max(1,Math.round(im.naturalWidth*pre)), h = Math.max(1,Math.round(im.naturalHeight*pre));
-  const c = document.createElement("canvas"); c.width=w; c.height=h;
-  const x = c.getContext("2d", {willReadFrequently:true}); x.drawImage(im,0,0,w,h); URL.revokeObjectURL(url);
-  // まわりの透明な余白を切り取る
-  const d = x.getImageData(0,0,w,h).data; let x0=w,y0=h,x1=-1,y1=-1;
-  for (let yy=0;yy<h;yy++) for (let xx=0;xx<w;xx++) if (d[(yy*w+xx)*4+3]>8){ if(xx<x0)x0=xx; if(xx>x1)x1=xx; if(yy<y0)y0=yy; if(yy>y1)y1=yy; }
-  if (x1<0){ x0=0; y0=0; x1=w-1; y1=h-1; }
-  const cw=x1-x0+1, ch=y1-y0+1, sc=Math.min(1, 400/Math.max(cw,ch));
-  const o = document.createElement("canvas"); o.width=Math.max(1,Math.round(cw*sc)); o.height=Math.max(1,Math.round(ch*sc));
-  o.getContext("2d").drawImage(c, x0,y0,cw,ch, 0,0,o.width,o.height);
-  const id = "u" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
-  S.customs.push({id, name: name || `自分の絵${S.customs.length+1}`, img: o.toDataURL("image/png")});
-  return id;
+  const pre = Math.min(1, maxSide/Math.max(im.naturalWidth, im.naturalHeight));
+  const c = document.createElement("canvas"); c.width=Math.max(1,Math.round(im.naturalWidth*pre)); c.height=Math.max(1,Math.round(im.naturalHeight*pre));
+  c.getContext("2d", {willReadFrequently:true}).drawImage(im,0,0,c.width,c.height); URL.revokeObjectURL(url);
+  return c;
+}
+function removeBackground(c){
+  const w=c.width, h=c.height, x=c.getContext("2d",{willReadFrequently:true}), img=x.getImageData(0,0,w,h), d=img.data;
+  // ふちがほぼ不透明なときだけ(もともと透過の画像はそのまま)
+  let edge=0, opaque=0;
+  const border = [];
+  for (let i=0;i<w;i++){ border.push(i, (h-1)*w+i); } for (let j=0;j<h;j++){ border.push(j*w, j*w+w-1); }
+  for (const p of border){ edge++; if (d[p*4+3]>240) opaque++; }
+  if (opaque/edge < 0.9) return false;
+  // ふちの色のうち一番多い色を背景色とする
+  const cnt = new Map(); let best=null, bc=0;
+  for (const p of border){ const k=((d[p*4]>>4)<<8)|((d[p*4+1]>>4)<<4)|(d[p*4+2]>>4); const n=(cnt.get(k)||0)+1; cnt.set(k,n); if(n>bc){bc=n;best=p;} }
+  const br=d[best*4], bg=d[best*4+1], bb=d[best*4+2];
+  const dist = p => Math.abs(d[p*4]-br)+Math.abs(d[p*4+1]-bg)+Math.abs(d[p*4+2]-bb);
+  const T = 60, seen = new Uint8Array(w*h), stack = [];
+  for (const p of border) if (!seen[p] && dist(p)<=T){ seen[p]=1; stack.push(p); }
+  while (stack.length){
+    const p = stack.pop(); d[p*4+3] = 0;
+    const px=p%w, py=(p/w)|0;
+    for (const q of [px>0?p-1:-1, px<w-1?p+1:-1, py>0?p-w:-1, py<h-1?p+w:-1]) if (q>=0 && !seen[q] && dist(q)<=T){ seen[q]=1; stack.push(q); }
+  }
+  // 消したところのとなりは少しだけ透かして、ギザギザを目立たなくする
+  for (let p=0;p<w*h;p++){ if (d[p*4+3]===0) continue; const px=p%w, py=(p/w)|0;
+    if ((px>0&&d[(p-1)*4+3]===0)||(px<w-1&&d[(p+1)*4+3]===0)||(py>0&&d[(p-w)*4+3]===0)||(py<h-1&&d[(p+w)*4+3]===0)){ const k=dist(p); if (k<T*2.5) d[p*4+3]=Math.min(d[p*4+3], Math.round(255*k/(T*2.5))); } }
+  x.putImageData(img,0,0); return true;
+}
+function splitPieces(c, doSplit){
+  const w=c.width, h=c.height, d=c.getContext("2d",{willReadFrequently:true}).getImageData(0,0,w,h).data;
+  // 小さい格子で見て、近い部分はひとかたまりにする
+  const g = Math.max(1, Math.round(Math.max(w,h)/240)), gw=Math.ceil(w/g), gh=Math.ceil(h/g), on=new Uint8Array(gw*gh);
+  for (let y=0;y<h;y++) for (let x=0;x<w;x++) if (d[(y*w+x)*4+3]>20) on[((y/g)|0)*gw+((x/g)|0)]=1;
+  const R = doSplit ? 2 : 1e9, lab = new Int32Array(gw*gh).fill(-1), comps=[];
+  for (let i=0;i<gw*gh;i++){ if (!on[i] || lab[i]>=0) continue;
+    const id=comps.length, st=[i]; lab[i]=id; let x0=gw,y0=gh,x1=0,y1=0,n=0;
+    while (st.length){ const p=st.pop(), px=p%gw, py=(p/gw)|0; n++; if(px<x0)x0=px; if(px>x1)x1=px; if(py<y0)y0=py; if(py>y1)y1=py;
+      for (let dy=-R;dy<=R;dy++){ const yy=py+dy; if (yy<0||yy>=gh) continue; for (let dx=-R;dx<=R;dx++){ const xx=px+dx; if (xx<0||xx>=gw) continue; const q=yy*gw+xx; if (on[q] && lab[q]<0){ lab[q]=id; st.push(q); } } }
+      if (!doSplit) break;
+    }
+    comps.push({id,n,x0,y0,x1,y1});
+  }
+  if (!doSplit || !comps.length){
+    let x0=w,y0=h,x1=-1,y1=-1;
+    for (let y=0;y<h;y++) for (let x=0;x<w;x++) if (d[(y*w+x)*4+3]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+    if (x1<0){ x0=0;y0=0;x1=w-1;y1=h-1; }
+    return [{x0,y0,x1,y1,label:null}];
+  }
+  const big = Math.max(...comps.map(c=>c.n));
+  // 左上から右へ、行ごとに並べる(行は絵の真ん中の高さで判断)
+  const keep = comps.filter(c=>c.n >= big*0.08);
+  const hs = keep.map(c=>c.y1-c.y0+1).sort((a,b)=>a-b), rowH = Math.max(1, hs[hs.length>>1]*0.6);
+  return keep.sort((a,b)=>(Math.round((a.y0+a.y1)/2/rowH)-Math.round((b.y0+b.y1)/2/rowH))||(a.x0-b.x0)).slice(0,40)
+    .map(c=>({x0:c.x0*g, y0:c.y0*g, x1:Math.min(w-1,(c.x1+1)*g-1), y1:Math.min(h-1,(c.y1+1)*g-1), label:c.id, g, gw, lab}));
+}
+function cropPiece(c, pc, maxOut){
+  const cw=pc.x1-pc.x0+1, ch=pc.y1-pc.y0+1;
+  const t = document.createElement("canvas"); t.width=cw; t.height=ch;
+  const tx = t.getContext("2d",{willReadFrequently:true}); tx.drawImage(c, pc.x0,pc.y0,cw,ch, 0,0,cw,ch);
+  if (pc.label!==null){   // となりの絵がはみ出して入らないよう、ほかのかたまりは消す
+    const im = tx.getImageData(0,0,cw,ch), d = im.data;
+    for (let y=0;y<ch;y++) for (let x=0;x<cw;x++){ const l = pc.lab[(((y+pc.y0)/pc.g)|0)*pc.gw + (((x+pc.x0)/pc.g)|0)]; if (l>=0 && l!==pc.label) d[(y*cw+x)*4+3]=0; }
+    tx.putImageData(im,0,0);
+  }
+  // 余白をもう一度きっちり切る
+  const d=tx.getImageData(0,0,cw,ch).data; let x0=cw,y0=ch,x1=-1,y1=-1;
+  for (let y=0;y<ch;y++) for (let x=0;x<cw;x++) if (d[(y*cw+x)*4+3]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
+  if (x1<0){ x0=0;y0=0;x1=cw-1;y1=ch-1; }
+  const fw=x1-x0+1, fh=y1-y0+1, sc=Math.min(1, maxOut/Math.max(fw,fh));
+  const o = document.createElement("canvas"); o.width=Math.max(1,Math.round(fw*sc)); o.height=Math.max(1,Math.round(fh*sc));
+  const ox=o.getContext("2d"); ox.imageSmoothingQuality="high"; ox.drawImage(t, x0,y0,fw,fh, 0,0,o.width,o.height);
+  return o;
+}
+async function cutImage(blob, {split=S.autoSplit!==false, bg=S.autoBg!==false, maxOut=400}={}){
+  const c = await blobToCanvas(blob);
+  const removed = bg ? removeBackground(c) : false;
+  const pieces = splitPieces(c, split).map(pc=>cropPiece(c, pc, maxOut));
+  return {pieces, removed};
+}
+async function addCustomFromBlob(blob, name){
+  const {pieces, removed} = await cutImage(blob);
+  const ids = [];
+  pieces.forEach((o,k)=>{
+    const id = "u" + Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+    const nm = (name || "自分の絵") + (pieces.length>1 ? `-${k+1}` : (name ? "" : `${S.customs.length+1}`));
+    S.customs.push({id, name: nm, img: o.toDataURL("image/png")});
+    ids.push(id);
+  });
+  return {ids, removed};
 }
 async function addCustoms(blobs){
-  const ids = [], errsC = [];
-  for (const b of blobs){ try{ ids.push(await addCustomFromBlob(b, (b.name||"").replace(/\.[^.]+$/,"").slice(0,12) || "")); }catch(err){ errsC.push(err.message); } }
+  const ids = [], errsC = []; let removedAny = false, splitAny = 0;
+  for (const b of blobs){ try{ const r = await addCustomFromBlob(b, (b.name||"").replace(/\.[^.]+$/,"").slice(0,12) || ""); ids.push(...r.ids); if (r.removed) removedAny = true; if (r.ids.length>1) splitAny += r.ids.length; }catch(err){ errsC.push(err.message); } }
   if (!ids.length){ $("report").innerHTML = `<span class="ng">画像を足せませんでした${errsC.length?":"+errsC[0]:""}</span>`; return; }
   registerCustoms();
   S.decoView = "自分の絵"; S.decoPool = GENRES["自分の絵"].slice();
   if (S.decoOn==="on") shuffleDeco();
   save(); refreshCustomUI(); syncDecoPool(); redraw();
-  $("report").innerHTML = `<span class="ok">✓ 自分の絵を${ids.length}枚足しました(全部で${S.customs.length}枚)。飾りの絵は「自分の絵」ジャンルになっています。</span>`;
+  $("report").innerHTML = `<span class="ok">✓ 自分の絵を${ids.length}枚足しました(全部で${S.customs.length}枚)。飾りの絵は「自分の絵」ジャンルになっています。</span>` +
+    (splitAny ? `<span class="ok">✓ 並んでいた絵を${splitAny}枚に分けました</span>` : "") +
+    (removedAny ? `<span class="ok">✓ 背景を消して透明にしました</span>` : "");
 }
+$("autoBg").checked = S.autoBg!==false; $("autoSplit").checked = S.autoSplit!==false;
+$("autoBg").addEventListener("change", e=>{ S.autoBg = e.target.checked; save(); });
+$("autoSplit").addEventListener("change", e=>{ S.autoSplit = e.target.checked; save(); });
 $("custAddBtn").addEventListener("click", ()=>$("custFile").click());
 $("custFile").addEventListener("change", e=>{ const fs=[...e.target.files]; e.target.value=""; if (fs.length) addCustoms(fs); });
 $("custPasteBtn").addEventListener("click", async ()=>{
@@ -1895,13 +1982,12 @@ $("emoImgBtn").addEventListener("click", ()=>$("emoImgFile").click());
 $("emoImgFile").addEventListener("change", async e=>{
   const file = e.target.files[0]; e.target.value = ""; if (!file || !isEmo(S.sel)) return;
   try{
-    const url = URL.createObjectURL(file); const im = new Image();
-    await new Promise((ok,ng)=>{ im.onload=ok; im.onerror=()=>ng(new Error("画像を開けませんでした")); im.src=url; });
-    // 保存しやすいよう、最大360pxに縮めてPNGで覚える
-    const sc = Math.min(1, 360/Math.max(im.naturalWidth, im.naturalHeight));
-    const c = document.createElement("canvas"); c.width = Math.round(im.naturalWidth*sc); c.height = Math.round(im.naturalHeight*sc);
-    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); URL.revokeObjectURL(url);
-    S.emojis[S.sel-EMO_BASE] = {img: c.toDataURL("image/png")};
+    // 背景を消して余白を切り、並んでいたら選んだ枠から順に入れる
+    const {pieces, removed} = await cutImage(file, {maxOut:360});
+    const start = S.sel-EMO_BASE;
+    pieces.slice(0, EMO_MAX-start).forEach((o,k)=>{ S.emojis[start+k] = {img: o.toDataURL("image/png")}; });
+    if (pieces.length>1 && start+pieces.length > emoCount()){ S.emojiCount = Math.min(EMO_MAX, start+pieces.length); syncEmoUI(); refreshPackage(); }
+    $("report").innerHTML = `<span class="ok">✓ 画像を入れました${pieces.length>1?`(${pieces.length}枚に分けて、${num(LIST().indexOf(S.sel))}番から順に)`:""}${removed?"・背景を透明にしました":""}</span>`;
     loadEmojiImgs(); save(); redraw();
   }catch(err){ $("report").innerHTML = `<span class="ng">${err.message}</span>`; }
 });
