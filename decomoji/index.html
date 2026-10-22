@@ -100,7 +100,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-8(切り抜き文字・探偵のメッセージ風)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-9(リアルな新聞の切り抜き・はんこ・ネオン・ぷっくり・ステッチ)</span></p>
 </header>
 
 <div class="wrap">
@@ -145,12 +145,24 @@ body:not(.anim) .cell b{display:none}
     </div>
     <div class="field">
       <span class="lbl">文字のスタイル</span>
-      <div class="seg" id="textStyle"><button type="button" data-v="normal">ふつう</button><button type="button" data-v="clip">✂ 切り抜き(探偵のメッセージ風)</button></div>
+      <div class="seg" id="textStyle">
+        <button type="button" data-v="normal">ふつう</button>
+        <button type="button" data-v="clip">✂ 切り抜き(探偵風)</button>
+        <button type="button" data-v="hanko">㊞ はんこ</button>
+        <button type="button" data-v="neon">💡 ネオン</button>
+        <button type="button" data-v="pukkuri">🍬 ぷっくり</button>
+        <button type="button" data-v="stitch">🧵 ステッチ</button>
+      </div>
+      <span class="note" id="styleNote"></span>
       <div class="field clipbox" style="gap:8px">
         <span class="lbl">紙の種類</span>
         <div class="seg" id="clipPaper"><button type="button" data-v="news">新聞</button><button type="button" data-v="mag">雑誌(カラー)</button><button type="button" data-v="mix">ミックス</button></div>
+        <div class="row">
+          <label class="row" style="gap:6px"><input type="checkbox" id="clipTorn"> やぶった紙を混ぜる</label>
+          <label class="row" style="gap:6px"><input type="checkbox" id="clipTape"> マスキングテープ</label>
+        </div>
         <button class="btn2" id="clipShuffleBtn" type="button" style="font-weight:900">🎲 切り抜きを作り直す(紙・フォント・角度)</button>
-        <span class="note">1文字ずつ、紙の色・フォント・かたむきがランダムになります。フォント・塗り方の設定は使わず、ふち(内側)の色と太さは紙のふちに少しだけ使います。</span>
+        <span class="note">1文字ずつ、紙の色・フォント・かたむきがランダムになります。新聞は、縦書きの小さな記事の文字・段の線・写真の網点・紙の粒・インクのかすれまで描きます。</span>
       </div>
     </div>
 
@@ -499,7 +511,7 @@ const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", li
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
-  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix"};
+  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true};
 
 let S = Object.assign({}, DEF);
 try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
@@ -567,45 +579,162 @@ async function loadClipFonts(){
   try { await Promise.all(CLIP_FONTS.map(f=>document.fonts.load(`${f.w} 100px ${f.fam}`, ALL.slice(0,EMO_BASE).join("")))); } catch(e){}
   redraw();
 }
+// ざらざらの点(インクのかすれ・紙の粒)
+let _grain = null;
+function grainPattern(ctx){
+  if (!_grain){
+    _grain = document.createElement("canvas"); _grain.width = _grain.height = 96;
+    const g = _grain.getContext("2d"), r = rng(12345), im = g.createImageData(96,96);
+    for (let i=0;i<96*96;i++){ const v = r(); im.data[i*4]=im.data[i*4+1]=im.data[i*4+2]=0; im.data[i*4+3] = v<0.16 ? Math.round(80+r()*175) : 0; }
+    g.putImageData(im,0,0);
+  }
+  return ctx.createPattern(_grain, "repeat");
+}
+const NEWS_TEXT = "日本経済新聞社会政治事件記者警察発表調査関係市民生活文化地域今年来月首相国会予算住民対策東京大阪報道情報企業市場価格開発計画年度会議委員長続報検討結果実施方針問題";
+// 紙のふちの形(はさみで切った少しガタガタの線 or やぶいたギザギザ)
+function edgePoints(r, sw, sh, torn, f){
+  const pts = [], n = torn ? 14 : 5, J = torn ? 4.5*f : 1.4*f;
+  const c = [[-sw/2,-sh/2],[sw/2,-sh/2],[sw/2,sh/2],[-sw/2,sh/2]].map(([x,y])=>[x+(r()-0.5)*0.07*sw, y+(r()-0.5)*0.07*sh]);
+  for (let e=0;e<4;e++){ const [ax,ay]=c[e], [bx,by]=c[(e+1)%4];
+    for (let k=0;k<n;k++){ const t=k/n, nx=-(by-ay), ny=(bx-ax), L=Math.hypot(nx,ny)||1; const j=(r()-0.5)*2*J*(torn?1:0.6);
+      pts.push([ax+(bx-ax)*t + nx/L*j, ay+(by-ay)*t + ny/L*j]); } }
+  return pts;
+}
 function drawClipChar(ctx, ch, W, H, idx, noDeco){
   ctx.clearRect(0,0,W,H);
   const r = rng((S.clipSeed||1)*7919 + idx*104729);
   const f = Math.min(W,H)/180, pad = Math.max(S.margin, 4)*f;
-  const papers = S.clipPaper==="news" ? PAPERS_NEWS : S.clipPaper==="mag" ? PAPERS_MAG : PAPERS_NEWS.concat(PAPERS_MAG);
-  const [paper, ink, lines] = papers[Math.floor(r()*papers.length)];
+  const kind = S.clipPaper==="news" ? "news" : S.clipPaper==="mag" ? "mag" : (r()<0.55 ? "news" : "mag");
+  let paper, ink, texture;
+  if (kind==="news"){
+    const p = r();
+    if (p < 0.14){ paper="#1f1f1f"; ink="#f2ede0"; texture="none"; }          // 黒地に白抜きの見出し
+    else if (p < 0.24){ paper="#efe8d8"; ink="#b3261e"; texture="text"; }     // 赤い見出し
+    else { paper=["#efe9da","#e8e0cc","#f2eee4","#e3dac6","#ece4d2"][Math.floor(r()*5)]; ink="#1a1a1a"; texture = r()<0.25 ? "dots" : "text"; }
+  } else {
+    [paper, ink] = PAPERS_MAG[Math.floor(r()*PAPERS_MAG.length)]; texture = r()<0.5 ? "dots" : "none";
+  }
   const font = CLIP_FONTS[Math.floor(r()*CLIP_FONTS.length)];
-  // 紙のかたち:少しゆがんだ四角を少し回す
-  const rot = (r()-0.5) * 0.28, sw = (0.72 + r()*0.2)*W - 2*pad, sh = (0.78 + r()*0.18)*H - 2*pad;
-  const j = () => (r()-0.5) * Math.min(W,H)*0.07;
-  const pts = [[-sw/2+j(),-sh/2+j()],[sw/2+j(),-sh/2+j()],[sw/2+j(),sh/2+j()],[-sw/2+j(),sh/2+j()]];
+  const torn = S.clipTorn && r() < 0.35, tape = S.clipTape && r() < 0.3;
+  const rot = (r()-0.5) * 0.3, sw = (0.72 + r()*0.2)*W - 2*pad, sh = (0.78 + r()*0.18)*H - 2*pad;
+  const pts = edgePoints(r, sw, sh, torn, f);
   ctx.save(); ctx.translate(W/2, H/2); ctx.rotate(rot);
   const path = () => { ctx.beginPath(); pts.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); };
-  ctx.save(); ctx.translate(2.5*f, 3*f); path(); ctx.fillStyle = "rgba(0,0,0,0.28)"; ctx.fill(); ctx.restore();   // かげ
-  path(); ctx.fillStyle = paper; ctx.fill();
-  if (S.line1 > 0){ ctx.lineWidth = Math.max(1, S.line1*0.25)*f; ctx.strokeStyle = S.lc1; ctx.stroke(); }
-  if (lines){   // 新聞の細かい文字の線
-    ctx.save(); path(); ctx.clip(); ctx.fillStyle = "rgba(0,0,0,0.13)";
-    for (let y=-sh/2+4*f; y<sh/2; y+=7*f) for (let x=-sw/2+3*f; x<sw/2; x+= (6+r()*16)*f){ const len=(4+r()*12)*f; ctx.fillRect(x, y, len, 2.2*f); x+=len; }
-    ctx.restore();
+  // かげ(ぼかし)
+  ctx.save(); ctx.shadowColor="rgba(0,0,0,0.35)"; ctx.shadowBlur=4*f; ctx.shadowOffsetX=1.5*f; ctx.shadowOffsetY=2.5*f; path(); ctx.fillStyle=paper; ctx.fill(); ctx.restore();
+  // やぶいた紙は白い繊維のふち
+  if (torn){ ctx.save(); path(); ctx.lineWidth=3*f; ctx.strokeStyle="rgba(255,255,255,0.85)"; ctx.stroke(); ctx.restore(); }
+  ctx.save(); path(); ctx.clip();
+  // 紙のよごれ・粒
+  ctx.globalAlpha = kind==="news" ? 0.18 : 0.08; ctx.fillStyle = grainPattern(ctx); ctx.fillRect(-W,-H,W*2,H*2); ctx.globalAlpha = 1;
+  if (kind==="news"){ const gr = ctx.createLinearGradient(-sw/2,-sh/2,sw/2,sh/2); gr.addColorStop(0,"rgba(120,90,40,0.10)"); gr.addColorStop(1,"rgba(120,90,40,0)"); ctx.fillStyle=gr; ctx.fillRect(-W,-H,W*2,H*2); }
+  if (texture==="text"){   // 縦書きの小さな記事の文字と段の線
+    const fs = 6.2*f, colW = 7.6*f; ctx.font = `500 ${fs}px "Shippori Mincho B1", "Hiragino Mincho ProN", serif`; ctx.fillStyle = "rgba(30,30,30,0.42)"; ctx.textBaseline="top";
+    let t = Math.floor(r()*NEWS_TEXT.length);
+    for (let x = sw/2 - colW; x > -sw/2 - colW; x -= colW) for (let y = -sh/2 - r()*fs; y < sh/2; y += fs*1.05){ ctx.fillText(NEWS_TEXT[t++ % NEWS_TEXT.length], x, y); }
+    ctx.fillStyle = "rgba(30,30,30,0.35)"; const band = -sh/2 + (0.2 + r()*0.5)*sh; ctx.fillRect(-sw/2, band, sw, 0.8*f);
+  } else if (texture==="dots"){   // 写真の網点
+    ctx.fillStyle = kind==="news" ? "rgba(30,30,30,0.28)" : "rgba(255,255,255,0.28)";
+    for (let y=-sh/2; y<sh/2; y+=4*f) for (let x=-sw/2+((y/(4*f))%2)*2*f; x<sw/2; x+=4*f){ const rr = (0.5 + 0.9*Math.abs(Math.sin(x*0.03/f + y*0.02/f)))*f; ctx.beginPath(); ctx.arc(x,y,rr,0,TAU); ctx.fill(); }
   }
-  // 文字:紙の中にできるだけ大きく
-  mctx.font = `${font.w} 100px ${font.fam}, "Hiragino Sans", sans-serif`;
-  const m = mctx.measureText(ch), gl=m.actualBoundingBoxLeft, gr=m.actualBoundingBoxRight, ga=m.actualBoundingBoxAscent, gd=m.actualBoundingBoxDescent;
-  const inner = 0.78, k = Math.min(sw*inner/Math.max(gl+gr,1), sh*inner/Math.max(ga+gd,1));
-  ctx.rotate((r()-0.5)*0.2);
-  ctx.font = `${font.w} ${100*k}px ${font.fam}, "Hiragino Sans", sans-serif`;
-  ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.fillStyle = ink;
-  ctx.fillText(ch, -(gr-gl)/2*k, (ga-gd)/2*k);
   ctx.restore();
-  // 飾りの絵は紙のかどに
+  // 文字:見出しのように紙の色でふちどってから、インクで刷る
+  mctx.font = `${font.w} 100px ${font.fam}, "Hiragino Sans", sans-serif`;
+  const m = mctx.measureText(ch), gl=m.actualBoundingBoxLeft, gr2=m.actualBoundingBoxRight, ga=m.actualBoundingBoxAscent, gd=m.actualBoundingBoxDescent;
+  const k = Math.min(sw*0.76/Math.max(gl+gr2,1), sh*0.76/Math.max(ga+gd,1));
+  ctx.rotate((r()-0.5)*0.18);
+  ctx.font = `${font.w} ${100*k}px ${font.fam}, "Hiragino Sans", sans-serif`;
+  ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.lineJoin="round";
+  const tx = -(gr2-gl)/2*k, ty = (ga-gd)/2*k;
+  if (texture!=="none"){ ctx.strokeStyle = paper; ctx.lineWidth = 7*f; ctx.strokeText(ch, tx, ty); }
+  // インクのかすれ:別の紙に刷ってから重ねる
+  const off = document.createElement("canvas"); off.width = W; off.height = H; const o = off.getContext("2d");
+  o.setTransform(ctx.getTransform()); o.font = ctx.font; o.textBaseline="alphabetic"; o.fillStyle = ink; o.fillText(ch, tx, ty);
+  o.setTransform(1,0,0,1,0,0); o.globalCompositeOperation = "destination-out"; o.globalAlpha = kind==="news" ? 0.55 : 0.3; o.fillStyle = grainPattern(o); o.fillRect(0,0,W,H);
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(off,0,0); ctx.restore();
+  ctx.restore();
+  // マスキングテープ
+  if (tape){ ctx.save(); ctx.translate(W/2 + (r()-0.5)*sw*0.3, H/2 - sh/2 + 2*f); ctx.rotate((r()-0.5)*0.6);
+    const tw = sw*0.45, th = 13*f; ctx.fillStyle = ["rgba(255,214,120,0.75)","rgba(170,215,240,0.75)","rgba(255,170,190,0.75)"][Math.floor(r()*3)];
+    ctx.beginPath(); for (let k2=0;k2<=6;k2++) ctx.lineTo(-tw/2 + (k2%2)*1.5*f, -th/2 + k2*th/6); for (let k2=6;k2>=0;k2--) ctx.lineTo(tw/2 - (k2%2)*1.5*f, -th/2 + k2*th/6); ctx.closePath(); ctx.fill(); ctx.restore(); }
   const bb = {l:W/2-sw/2, r:W/2+sw/2, t:H/2-sh/2, b:H/2+sh/2};
   const place = decoPlace(idx, bb, W, H);
   if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
   return {place};
 }
 
+// ---- そのほかのスタイル(はんこ・ネオン・ぷっくり・ステッチ) ----
+const hexA = (hex, a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
+const mix = (hex, t, to=255) => { const n=parseInt(hex.slice(1),16); const c=[n>>16&255,n>>8&255,n&255].map(v=>Math.round(v+(to-v)*t)); return `rgb(${c[0]},${c[1]},${c[2]})`; };
+function drawStyled(ctx, ch, W, H, idx, noDeco){
+  ctx.clearRect(0,0,W,H);
+  const st = S.textStyle, f = Math.min(W,H)/180, r = rng((S.clipSeed||1)*31 + idx*7);
+  const base = st==="hanko" ? 0.62 : st==="neon" ? 0.72 : 0.8;
+  const extra = st==="neon" ? 14*f : st==="pukkuri" ? (Math.max(S.line1,4))*f : st==="stitch" ? (Math.max(S.line1,5)+3)*f : 0;
+  const pad = S.margin*f + extra;
+  const fam = fontOf(), fstr = px => `${fam.w} ${px}px ${fam.fam}, "Hiragino Maru Gothic ProN", sans-serif`;
+  mctx.font = fstr(100);
+  const m = mctx.measureText(ch), gl=m.actualBoundingBoxLeft, gr=m.actualBoundingBoxRight, ga=m.actualBoundingBoxAscent, gd=m.actualBoundingBoxDescent;
+  const sc = st==="hanko" ? base : 1;
+  let k, y;
+  if (S.fit==="common" && metrics && W===H){   // 「フォントどおり」:小さい字は小さいまま
+    k = Math.min((W-2*pad)*sc/metrics.w, (H-2*pad)*sc/(metrics.asc+metrics.desc)); y = H/2 + (metrics.asc-metrics.desc)/2*k;
+  } else { k = Math.min((W-2*pad)*sc/Math.max(gl+gr,1), (H-2*pad)*sc/Math.max(ga+gd,1)); y = H/2 + (ga-gd)/2*k; }
+  const x = W/2 - (gr-gl)/2*k;
+  ctx.font = fstr(100*k); ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.lineJoin="round"; ctx.lineCap="round";
+  const fill = S.fill==="cycle" ? CYCLE[idx % CYCLE.length] : S.c1;
+  if (st==="hanko"){
+    const red = S.fill==="cycle" ? "#d63a2e" : S.c1;
+    const off = document.createElement("canvas"); off.width=W; off.height=H; const o = off.getContext("2d");
+    o.translate(W/2,H/2); o.rotate((r()-0.5)*0.25); o.translate(-W/2,-H/2);
+    o.strokeStyle = red; o.fillStyle = red; o.lineWidth = 7*f;
+    const R = Math.min(W,H)/2 - S.margin*f - 5*f;
+    if (r() < 0.5){ o.beginPath(); o.arc(W/2,H/2,R,0,TAU); o.stroke(); }
+    else { o.beginPath(); o.roundRect(W/2-R,H/2-R,2*R,2*R,10*f); o.stroke(); }
+    o.font = ctx.font; o.textBaseline="alphabetic"; o.fillText(ch, x, y);
+    o.globalCompositeOperation="destination-out"; o.globalAlpha=0.7; o.fillStyle=grainPattern(o); o.fillRect(0,0,W,H);
+    o.globalAlpha=0.35; o.save(); o.translate(r()*20,r()*20); o.scale(1.7,1.7); o.fillStyle=grainPattern(o); o.fillRect(-W,-H,W*2,H*2); o.restore();
+    ctx.drawImage(off,0,0);
+  } else if (st==="neon"){
+    const c = fill;
+    ctx.save(); ctx.shadowColor = c; 
+    for (const [blur, lw, col] of [[18*f, 9*f, hexA(c,0.55)], [8*f, 6*f, c], [0, 2.6*f, mix(c,0.75)]]){
+      ctx.shadowBlur = blur; ctx.strokeStyle = col; ctx.lineWidth = lw; ctx.strokeText(ch, x, y);
+    }
+    ctx.restore();
+  } else if (st==="pukkuri"){
+    const l1 = Math.max(S.line1,4)*f;
+    ctx.strokeStyle = S.lc1; ctx.lineWidth = 2*l1; ctx.strokeText(ch,x,y);
+    const off = document.createElement("canvas"); off.width=W; off.height=H; const o = off.getContext("2d");
+    o.font = ctx.font; o.textBaseline="alphabetic";
+    const g = o.createLinearGradient(0, y-ga*k, 0, y+gd*k); g.addColorStop(0, mix(fill,0.45)); g.addColorStop(0.55, fill); g.addColorStop(1, mix(fill,0.25,0));
+    o.fillStyle = g; o.fillText(ch, x, y);
+    o.globalCompositeOperation = "source-atop";
+    o.fillStyle = "rgba(255,255,255,0.75)"; o.beginPath(); o.ellipse(W/2 - (gl+gr)*k*0.12, y-ga*k*0.78, (gl+gr)*k*0.32, ga*k*0.13, -0.2, 0, TAU); o.fill();
+    o.fillStyle = "rgba(255,255,255,0.9)"; o.beginPath(); o.arc(W/2 + (gl+gr)*k*0.22, y-ga*k*0.72, 3.2*f, 0, TAU); o.fill();
+    ctx.drawImage(off,0,0);
+  } else if (st==="stitch"){
+    const l1 = Math.max(S.line1,5)*f;
+    ctx.strokeStyle = S.lc1; ctx.lineWidth = 2*(l1+3*f); ctx.strokeText(ch,x,y);
+    ctx.strokeStyle = fill; ctx.lineWidth = 2*(3*f); ctx.strokeText(ch,x,y);
+    ctx.fillStyle = fill; ctx.fillText(ch,x,y);
+    // 布の目
+    const off = document.createElement("canvas"); off.width=W; off.height=H; const o = off.getContext("2d");
+    o.font = ctx.font; o.textBaseline="alphabetic"; o.fillStyle="#000"; o.lineJoin="round"; o.lineWidth=6*f; o.strokeStyle="#000"; o.strokeText(ch,x,y); o.fillText(ch,x,y);
+    o.globalCompositeOperation="source-in"; o.fillStyle="rgba(255,255,255,0.18)";
+    for (let yy=0; yy<H; yy+=3*f) o.fillRect(0,yy,W,1*f);
+    ctx.drawImage(off,0,0);
+    // ぬい目(点線)
+    ctx.save(); ctx.setLineDash([5*f, 3.5*f]); ctx.lineWidth = 1.8*f; ctx.strokeStyle = "rgba(255,255,255,0.95)"; ctx.strokeText(ch,x,y); ctx.restore();
+  }
+  const place = decoPlace(idx, {l:x-gl*k, r:x+gr*k, t:y-ga*k, b:y+gd*k}, W, H);
+  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  return {place};
+}
+
 function drawChar(ctx, ch, W, H, idx, noDeco=false){
   if (S.textStyle==="clip") return drawClipChar(ctx, ch, W, H, idx, noDeco);
+  if (["hanko","neon","pukkuri","stitch"].includes(S.textStyle)) return drawStyled(ctx, ch, W, H, idx, noDeco);
   if (!metrics) return null;
   ctx.clearRect(0,0,W,H);
   const f = Math.min(W,H)/180;                       // タブ画像用に線と余白を縮める
@@ -1365,7 +1494,7 @@ function checkGlyphs(){
   const shot = (ch, fam) => { x.clearRect(0,0,64,64); x.font = `${f.w} 48px ${fam}`; x.textBaseline="middle"; x.fillText(ch, 8, 32); return x.getImageData(0,0,64,64).data; };
   const same = (a,b) => { for (let k=3;k<a.length;k+=16) if (a[k]!==b[k]) return false; return true; };
   missing = new Set();
-  if (S.textStyle==="clip"){ cellBtns.forEach(b=>b.classList.remove("nofont")); $("fontWarn").innerHTML = ""; return; }
+  if (S.textStyle==="clip"){ cellBtns.forEach(b=>b.classList.remove("nofont")); $("fontWarn").innerHTML = ""; return; }   // 切り抜きは字ごとにフォントが変わる
   for (const g of LIST()){
     if (isEmo(g)) continue;
     const ch = ALL[g];
@@ -1566,7 +1695,19 @@ function fillNote(){
 const syncers = [];
 syncers.push(bindSeg("fillMode","fill",()=>{fillNote();redraw();}));
 syncers.push(bindSeg("fitMode","fit",redraw));
-syncers.push(bindSeg("textStyle","textStyle",()=>{ checkGlyphs(); redraw(); }));
+const STYLE_NOTES = {
+  normal:"", clip:"",
+  hanko:"赤いはんこを押したような、かすれた文字です。「1文字ずつ色替え」以外では、文字の色(色1)がインクの色になります。",
+  neon:"光るネオン管のような文字です。暗いトーク背景で映えます。色は塗り方の色を使います。",
+  pukkuri:"あめ玉のようにツヤのある、ぷっくりした文字です。色・ふちは今の設定を使います。",
+  stitch:"フェルトに刺しゅうしたような、ぬい目のある文字です。わんこグッズの雰囲気に合います。",
+};
+const syncStyleNote = ()=>{ $("styleNote").textContent = STYLE_NOTES[S.textStyle]||""; };
+syncers.push(bindSeg("textStyle","textStyle",()=>{ syncStyleNote(); checkGlyphs(); redraw(); }));
+syncStyleNote();
+$("clipTorn").checked = S.clipTorn!==false; $("clipTape").checked = S.clipTape!==false;
+$("clipTorn").addEventListener("change", e=>{ S.clipTorn=e.target.checked; save(); redraw(); });
+$("clipTape").addEventListener("change", e=>{ S.clipTape=e.target.checked; save(); redraw(); });
 syncers.push(bindSeg("clipPaper","clipPaper",redraw));
 $("clipShuffleBtn").addEventListener("click", ()=>{ S.clipSeed = Math.floor(Math.random()*1e9)+1; save(); redraw(); });
 syncers.push(bindSeg("gridBg","gridBg",applyGridBg));
