@@ -14,7 +14,7 @@
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&family=M+PLUS+Rounded+1c:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yusei+Magic&family=Kosugi+Maru&family=Yuji+Syuku&family=Yuji+Boku&family=Yuji+Mai&family=Zen+Kurenaido&family=Kaisei+Tokumin:wght@800&family=Shippori+Mincho+B1:wght@800&family=Zen+Antique&family=Klee+One:wght@600&family=Yomogi&family=Slackside+One&family=Darumadrop+One&family=DotGothic16&family=Rampart+One&family=Train+One&family=Stick&family=Chokokutai&family=Palette+Mosaic&family=Rock+3D&family=Kaisei+Decol:wght@700&family=Cherry+Bomb+One&family=Shizuru&family=Reggae+One&family=Potta+One&family=Mochiy+Pop+P+One&family=M+PLUS+1:wght@900&family=Murecho:wght@900&family=Zen+Kaku+Gothic+New:wght@900&family=Kiwi+Maru:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;900&family=M+PLUS+Rounded+1c:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=RocknRoll+One&family=Hachi+Maru+Pop&family=Yusei+Magic&family=Kosugi+Maru&family=Yuji+Syuku&family=Yuji+Boku&family=Yuji+Mai&family=Zen+Kurenaido&family=Kaisei+Tokumin:wght@800&family=Shippori+Mincho+B1:wght@800&family=Zen+Antique&family=Klee+One:wght@600&family=Yomogi&family=Slackside+One&family=Darumadrop+One&family=DotGothic16&family=Rampart+One&family=Train+One&family=Stick&family=Chokokutai&family=Palette+Mosaic&family=Rock+3D&family=Kaisei+Decol:wght@700&family=Cherry+Bomb+One&family=Shizuru&family=Reggae+One&family=Potta+One&family=Mochiy+Pop+P+One&family=M+PLUS+1:wght@900&family=Murecho:wght@900&family=Zen+Kaku+Gothic+New:wght@900&family=Kiwi+Maru:wght@500&family=Great+Vibes&family=Dancing+Script:wght@700&family=Pinyon+Script&family=Parisienne&family=Allura&family=Alex+Brush&family=Petit+Formal+Script&family=Playfair+Display:ital,wght@1,700&family=Cormorant+Garamond:wght@600&family=Bodoni+Moda:wght@700&family=Abril+Fatface&family=Shippori+Mincho+B1:wght@600&display=swap">
 <style>
 /* Layout: 左に設定パネル、右にデコ文字の一覧。スマホでは縦に積む */
 :root{
@@ -84,7 +84,9 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 .mchip canvas{width:26px;height:26px}
 body:not(.anim) .animbox{display:none}
 body:not(.deco) .decobox{display:none}
-body:not(.clip) .clipbox{display:none}
+body:not(.clip):not(.paris) .clipbox{display:none}
+body:not(.paris) .parisbox{display:none}
+body.paris #clipPaper, body.paris #clipPaperLbl, body.paris #clipTornLbl{display:none}
 .pastebox{border:2px dashed var(--line);border-radius:10px;padding:12px;text-align:center;color:var(--muted);font-size:.85rem;min-height:44px;outline:none;overflow:hidden;max-height:60px}
 .pastebox:focus{border-color:var(--accent)}
 body:not(.emo) .emobox{display:none}
@@ -100,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-9(リアルな新聞の切り抜き・はんこ・ネオン・ぷっくり・ステッチ)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-10(パリのコラージュ:英字新聞・リネン・切手・筆記体)</span></p>
 </header>
 
 <div class="wrap">
@@ -148,17 +150,22 @@ body:not(.anim) .cell b{display:none}
       <div class="seg" id="textStyle">
         <button type="button" data-v="normal">ふつう</button>
         <button type="button" data-v="clip">✂ 切り抜き(探偵風)</button>
+        <button type="button" data-v="paris">🇫🇷 パリのコラージュ</button>
         <button type="button" data-v="hanko">㊞ はんこ</button>
         <button type="button" data-v="neon">💡 ネオン</button>
         <button type="button" data-v="pukkuri">🍬 ぷっくり</button>
         <button type="button" data-v="stitch">🧵 ステッチ</button>
       </div>
       <span class="note" id="styleNote"></span>
+      <div class="field parisbox" style="gap:8px">
+        <span class="lbl">貼る素材</span>
+        <div class="seg" id="parisPaper"><button type="button" data-v="news">英字新聞</button><button type="button" data-v="linen">リネン</button><button type="button" data-v="stamp">切手</button><button type="button" data-v="mix">ミックス</button></div>
+      </div>
       <div class="field clipbox" style="gap:8px">
-        <span class="lbl">紙の種類</span>
+        <span class="lbl" id="clipPaperLbl">紙の種類</span>
         <div class="seg" id="clipPaper"><button type="button" data-v="news">新聞</button><button type="button" data-v="mag">雑誌(カラー)</button><button type="button" data-v="mix">ミックス</button></div>
         <div class="row">
-          <label class="row" style="gap:6px"><input type="checkbox" id="clipTorn"> やぶった紙を混ぜる</label>
+          <label class="row" style="gap:6px" id="clipTornLbl"><input type="checkbox" id="clipTorn"> やぶった紙を混ぜる</label>
           <label class="row" style="gap:6px"><input type="checkbox" id="clipTape"> マスキングテープ</label>
         </div>
         <button class="btn2" id="clipShuffleBtn" type="button" style="font-weight:900">🎲 切り抜きを作り直す(紙・フォント・角度)</button>
@@ -511,7 +518,7 @@ const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", li
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
   decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
-  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true};
+  decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true, parisPaper:"mix"};
 
 let S = Object.assign({}, DEF);
 try { const saved = JSON.parse(localStorage.getItem("decomoji-v1")||"null"); if (saved) S = Object.assign(S, saved); } catch(e){}
@@ -663,6 +670,128 @@ function drawClipChar(ctx, ch, W, H, idx, noDeco){
   return {place};
 }
 
+// ---- パリのコラージュ(英字新聞・リネン・切手の継ぎはぎ) ----
+const PARIS_SCRIPT = [ // アルファベット:筆記体
+  {fam:'"Great Vibes"', w:"400"}, {fam:'"Dancing Script"', w:"700"}, {fam:'"Pinyon Script"', w:"400"}, {fam:'"Parisienne"', w:"400"},
+  {fam:'"Allura"', w:"400"}, {fam:'"Alex Brush"', w:"400"}, {fam:'"Petit Formal Script"', w:"400"},
+];
+const PARIS_SERIF = [ // 数字・記号やアクセント用のエレガントなセリフ
+  {fam:'"Playfair Display"', w:"700", style:"italic"}, {fam:'"Bodoni Moda"', w:"700"}, {fam:'"Abril Fatface"', w:"400"}, {fam:'"Cormorant Garamond"', w:"600"},
+];
+const PARIS_KANA = [ // かな:上品な明朝・手書き
+  {fam:'"Shippori Mincho B1"', w:"600"}, {fam:'"Kaisei Decol"', w:"700"}, {fam:'"Zen Antique"', w:"400"}, {fam:'"Klee One"', w:"600"}, {fam:'"Yuji Mai"', w:"400"}, {fam:'"Kaisei Tokumin"', w:"800"},
+];
+const PARIS_INK = ["#1f2a44","#7a1f2b","#3b2a20","#1d1d1d","#2f4a3a"];
+const PARIS_PAPERS = {
+  news:  [["#f1ece0"],["#ebe4d4"],["#f4f0e6"],["#e6dcc8"]],
+  linen: [["#e7dccb"],["#d9cdb8"],["#cfd6c6"],["#ead2cc"],["#f0ebe2"],["#c9d4dc"]],
+  stamp: [["#f6f1e7","#8aa3b8"],["#f6f1e7","#c98a8a"],["#f6f1e7","#c9a24a"],["#f6f1e7","#8ea98a"],["#f2e6e9","#9a6a8a"],["#eef2f4","#4f6f8f"]],
+};
+const EN_WORDS = "le journal paris la vie en rose café amour bonjour merci rue des fleurs avec du soleil the daily news chronicle morning edition fashion week art de vivre boulangerie croissant élégance printemps été automne hiver".split(" ");
+let parisFontsLoaded = false;
+async function loadParisFonts(){
+  if (parisFontsLoaded) return; parisFontsLoaded = true;
+  const all = [...PARIS_SCRIPT, ...PARIS_SERIF, ...PARIS_KANA];
+  try { await Promise.all(all.map(f=>document.fonts.load(`${f.style||""} ${f.w} 100px ${f.fam}`, ALL.slice(0,EMO_BASE).join("")+"PARIS"))); } catch(e){}
+  redraw();
+}
+function stampPath(ctx, w, h, f){   // ぎざぎざ(ミシン目)の切手
+  const rr = 3.2*f, step = 8.4*f;
+  ctx.beginPath(); ctx.rect(-w/2,-h/2,w,h);
+  for (let x=-w/2+step/2; x<w/2; x+=step){ ctx.moveTo(x+rr,-h/2); ctx.arc(x,-h/2,rr,0,TAU); ctx.moveTo(x+rr,h/2); ctx.arc(x,h/2,rr,0,TAU); }
+  for (let y=-h/2+step/2; y<h/2; y+=step){ ctx.moveTo(-w/2+rr,y); ctx.arc(-w/2,y,rr,0,TAU); ctx.moveTo(w/2+rr,y); ctx.arc(w/2,y,rr,0,TAU); }
+}
+function drawParisChar(ctx, ch, W, H, idx, noDeco){
+  ctx.clearRect(0,0,W,H);
+  const r = rng((S.clipSeed||1)*4241 + idx*9973);
+  const f = Math.min(W,H)/180, pad = Math.max(S.margin, 4)*f;
+  const kinds = S.parisPaper==="mix" ? ["news","linen","stamp"] : [S.parisPaper||"news"];
+  const kind = kinds[Math.floor(r()*kinds.length)];
+  const pal = PARIS_PAPERS[kind][Math.floor(r()*PARIS_PAPERS[kind].length)];
+  const paper = pal[0], frame = pal[1];
+  const isLatin = /[A-Za-z]/.test(ch), isAscii = /[\x20-\x7e]/.test(ch);
+  const font = isLatin ? PARIS_SCRIPT[Math.floor(r()*PARIS_SCRIPT.length)]
+            : isAscii || /[÷×¥・「」、…♡♪↑↓→←○〒]/.test(ch) ? PARIS_SERIF[Math.floor(r()*PARIS_SERIF.length)]
+            : PARIS_KANA[Math.floor(r()*PARIS_KANA.length)];
+  const ink = PARIS_INK[Math.floor(r()*PARIS_INK.length)];
+  const rot = (r()-0.5)*0.24, sw = (0.74 + r()*0.18)*W - 2*pad, sh = (0.8 + r()*0.16)*H - 2*pad;
+  ctx.save(); ctx.translate(W/2, H/2); ctx.rotate(rot);
+  let shape;
+  if (kind==="stamp"){ shape = () => stampPath(ctx, sw-6*f, sh-6*f, f); }
+  else { const pts = edgePoints(r, sw, sh, kind==="linen" ? true : (S.clipTorn && r()<0.3), f*(kind==="linen"?0.45:1)); shape = () => { ctx.beginPath(); pts.forEach(([x,y],k)=>k?ctx.lineTo(x,y):ctx.moveTo(x,y)); ctx.closePath(); }; }
+  // 紙(切手は穴を抜くので別の紙に描く)
+  const off = document.createElement("canvas"); off.width=W; off.height=H; const o = off.getContext("2d");
+  o.setTransform(ctx.getTransform());
+  if (kind==="stamp"){
+    o.beginPath(); o.rect(-(sw-6*f)/2, -(sh-6*f)/2, sw-6*f, sh-6*f); o.fillStyle = paper; o.fill();
+    // ミシン目の穴を抜く
+    o.globalCompositeOperation = "destination-out";
+    const w2=sw-6*f, h2=sh-6*f, rr=3.2*f, step=8.4*f; o.beginPath();
+    for (let x=-w2/2+step/2; x<w2/2; x+=step){ o.moveTo(x+rr,-h2/2); o.arc(x,-h2/2,rr,0,TAU); o.moveTo(x+rr,h2/2); o.arc(x,h2/2,rr,0,TAU); }
+    for (let y=-h2/2+step/2; y<h2/2; y+=step){ o.moveTo(-w2/2+rr,y); o.arc(-w2/2,y,rr,0,TAU); o.moveTo(w2/2+rr,y); o.arc(w2/2,y,rr,0,TAU); }
+    o.fill(); o.globalCompositeOperation = "source-over";
+    // 内側の色わく・小さな文字・消印
+    const iw = w2-12*f, ih = h2-12*f;
+    o.fillStyle = frame; o.fillRect(-iw/2,-ih/2,iw,ih);
+    o.fillStyle = paper; o.fillRect(-iw/2+4*f,-ih/2+4*f,iw-8*f,ih-8*f);
+    o.fillStyle = frame; o.font = `700 ${7*f}px "Cormorant Garamond", serif`; o.textBaseline="top"; o.textAlign="left";
+    o.fillText(["20c","50c","1F","2F","75c"][Math.floor(r()*5)], -iw/2+6*f, -ih/2+5.5*f);
+    o.textAlign="right"; o.textBaseline="bottom"; o.fillText(["PARIS","FRANCE","POSTE","RF"][Math.floor(r()*4)], iw/2-6*f, ih/2-5*f);
+    if (r()<0.7){ o.save(); o.beginPath(); o.rect(-w2/2+rr,-h2/2+rr,w2-2*rr,h2-2*rr); o.clip(); o.strokeStyle="rgba(40,40,60,0.35)"; o.lineWidth=1.3*f; const cx=iw*0.18, cy=-ih*0.12;
+      o.beginPath(); o.arc(cx,cy,ih*0.28,0,TAU); o.stroke();
+      for (let k=0;k<4;k++){ o.beginPath(); for (let x=-iw*0.1; x<iw*0.7; x+=2*f) o.lineTo(x, cy+(k-1.5)*5*f + Math.sin(x/(4*f))*1.6*f); o.stroke(); }
+      o.restore(); }
+  } else {
+    o.beginPath(); (()=>{ const pts = edgePoints(rng((S.clipSeed||1)*4241 + idx*9973 + 1), sw, sh, kind==="linen", f*(kind==="linen"?0.5:1)); pts.forEach(([x,y],k)=>k?o.lineTo(x,y):o.moveTo(x,y)); })(); o.closePath();
+    o.fillStyle = paper; o.fill(); o.save(); o.clip();
+    if (kind==="news"){   // 英字新聞:段組みの細かい英文と見出し
+      o.fillStyle = "rgba(35,35,35,0.45)"; o.textBaseline="top"; o.textAlign="left";
+      const fs = 5.4*f, lineH = 6.6*f, colW = (sw-6*f)/2;
+      if (r()<0.6){ o.font = `700 ${11*f}px "Playfair Display", "Bodoni Moda", serif`; o.fillText(["Le Journal","PARIS","The Times","Chronicle","La Mode"][Math.floor(r()*5)], -sw/2+3*f, -sh/2+2*f); }
+      o.font = `500 ${fs}px "Cormorant Garamond", "Times New Roman", serif`;
+      for (let c=0;c<2;c++) for (let y=-sh/2+16*f; y<sh/2; y+=lineH){ let x = -sw/2+3*f + c*colW, line="";
+        while (o.measureText(line).width < colW-5*f) line += EN_WORDS[Math.floor(r()*EN_WORDS.length)] + " ";
+        o.fillText(line, x, y); }
+      o.fillStyle = "rgba(35,35,35,0.3)"; o.fillRect(-sw/2+colW+1*f, -sh/2+15*f, 0.7*f, sh);
+    } else {   // リネン:織り目
+      o.globalAlpha = 0.16; o.strokeStyle = "#5a4a38"; o.lineWidth = 0.7*f;
+      for (let x=-sw/2; x<sw/2; x+=2.2*f){ o.beginPath(); o.moveTo(x,-sh/2); o.lineTo(x+(r()-0.5)*f,sh/2); o.stroke(); }
+      o.globalAlpha = 0.12; for (let y=-sh/2; y<sh/2; y+=2.2*f){ o.beginPath(); o.moveTo(-sw/2,y); o.lineTo(sw/2,y+(r()-0.5)*f); o.stroke(); }
+      o.globalAlpha = 0.08; o.fillStyle = "#3a2a1a"; for (let k=0;k<40;k++) o.fillRect(-sw/2+r()*sw, -sh/2+r()*sh, (2+r()*6)*f, 0.9*f);
+      o.globalAlpha = 1;
+    }
+    o.globalAlpha = 0.12; o.fillStyle = grainPattern(o); o.setTransform(1,0,0,1,0,0); o.fillRect(0,0,W,H); o.globalAlpha = 1;
+    o.restore();
+  }
+  ctx.restore();
+  // かげを付けて貼る
+  ctx.save(); ctx.shadowColor="rgba(60,40,20,0.32)"; ctx.shadowBlur=4*f; ctx.shadowOffsetX=1.5*f; ctx.shadowOffsetY=2.5*f; ctx.drawImage(off,0,0); ctx.restore();
+  // 文字
+  ctx.save(); ctx.translate(W/2, H/2); ctx.rotate(rot + (r()-0.5)*0.12);
+  const fstr = px => `${font.style||""} ${font.w} ${px}px ${font.fam}, "Shippori Mincho B1", serif`;
+  mctx.font = fstr(100);
+  const m = mctx.measureText(ch), gl=m.actualBoundingBoxLeft, gr2=m.actualBoundingBoxRight, ga=m.actualBoundingBoxAscent, gd=m.actualBoundingBoxDescent;
+  const inner = kind==="stamp" ? 0.6 : 0.74;
+  const k = Math.min(sw*inner/Math.max(gl+gr2,1), sh*inner/Math.max(ga+gd,1));
+  ctx.font = fstr(100*k); ctx.textAlign="left"; ctx.textBaseline="alphabetic"; ctx.lineJoin="round";
+  const tx = -(gr2-gl)/2*k, ty = (ga-gd)/2*k;
+  if (kind==="news"){ ctx.strokeStyle = paper; ctx.lineWidth = 6*f; ctx.strokeText(ch, tx, ty); }
+  const t = document.createElement("canvas"); t.width=W; t.height=H; const tc = t.getContext("2d");
+  tc.setTransform(ctx.getTransform()); tc.font = ctx.font; tc.textBaseline="alphabetic"; tc.fillStyle = kind==="stamp" ? frame.replace(/^#/,"#") : ink; tc.fillText(ch, tx, ty);
+  if (kind==="stamp"){ tc.fillStyle = ink; tc.globalAlpha = 0.55; tc.fillText(ch, tx, ty); tc.globalAlpha = 1; }
+  tc.setTransform(1,0,0,1,0,0); tc.globalCompositeOperation="destination-out"; tc.globalAlpha = kind==="linen" ? 0.35 : 0.25; tc.fillStyle = grainPattern(tc); tc.fillRect(0,0,W,H);
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0); ctx.drawImage(t,0,0); ctx.restore();
+  ctx.restore();
+  // 和紙テープ
+  if (S.clipTape && r() < 0.3){ ctx.save(); ctx.translate(W/2 + (r()-0.5)*sw*0.3, H/2 - sh/2 + 3*f); ctx.rotate((r()-0.5)*0.6);
+    const tw = sw*0.42, th = 12*f; ctx.fillStyle = ["rgba(233,214,190,0.8)","rgba(214,226,214,0.8)","rgba(236,208,210,0.8)"][Math.floor(r()*3)];
+    ctx.beginPath(); for (let k2=0;k2<=6;k2++) ctx.lineTo(-tw/2 + (k2%2)*1.5*f, -th/2 + k2*th/6); for (let k2=6;k2>=0;k2--) ctx.lineTo(tw/2 - (k2%2)*1.5*f, -th/2 + k2*th/6); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  const bb = {l:W/2-sw/2, r:W/2+sw/2, t:H/2-sh/2, b:H/2+sh/2};
+  const place = decoPlace(idx, bb, W, H);
+  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  return {place};
+}
+
 // ---- そのほかのスタイル(はんこ・ネオン・ぷっくり・ステッチ) ----
 const hexA = (hex, a) => { const n=parseInt(hex.slice(1),16); return `rgba(${n>>16&255},${n>>8&255},${n&255},${a})`; };
 const mix = (hex, t, to=255) => { const n=parseInt(hex.slice(1),16); const c=[n>>16&255,n>>8&255,n&255].map(v=>Math.round(v+(to-v)*t)); return `rgb(${c[0]},${c[1]},${c[2]})`; };
@@ -734,6 +863,7 @@ function drawStyled(ctx, ch, W, H, idx, noDeco){
 
 function drawChar(ctx, ch, W, H, idx, noDeco=false){
   if (S.textStyle==="clip") return drawClipChar(ctx, ch, W, H, idx, noDeco);
+  if (S.textStyle==="paris") return drawParisChar(ctx, ch, W, H, idx, noDeco);
   if (["hanko","neon","pukkuri","stitch"].includes(S.textStyle)) return drawStyled(ctx, ch, W, H, idx, noDeco);
   if (!metrics) return null;
   ctx.clearRect(0,0,W,H);
@@ -1494,7 +1624,7 @@ function checkGlyphs(){
   const shot = (ch, fam) => { x.clearRect(0,0,64,64); x.font = `${f.w} 48px ${fam}`; x.textBaseline="middle"; x.fillText(ch, 8, 32); return x.getImageData(0,0,64,64).data; };
   const same = (a,b) => { for (let k=3;k<a.length;k+=16) if (a[k]!==b[k]) return false; return true; };
   missing = new Set();
-  if (S.textStyle==="clip"){ cellBtns.forEach(b=>b.classList.remove("nofont")); $("fontWarn").innerHTML = ""; return; }   // 切り抜きは字ごとにフォントが変わる
+  if (S.textStyle==="clip" || S.textStyle==="paris"){ cellBtns.forEach(b=>b.classList.remove("nofont")); $("fontWarn").innerHTML = ""; return; }   // 切り抜きは字ごとにフォントが変わる
   for (const g of LIST()){
     if (isEmo(g)) continue;
     const ch = ALL[g];
@@ -1639,7 +1769,9 @@ function redraw(){
     document.body.classList.toggle("anim", S.mode==="anim");
     document.body.classList.toggle("deco", S.decoOn==="on");
     document.body.classList.toggle("clip", S.textStyle==="clip");
+    document.body.classList.toggle("paris", S.textStyle==="paris");
     if (S.textStyle==="clip") loadClipFonts();
+    if (S.textStyle==="paris") loadParisFonts();
     refreshPackage();
     const n = LIST().length;
     $("exportBtn").textContent = S.mode==="anim" ? `動く${n}個 + tab をZIPで保存` : `${n}個 + tab をZIPで保存`;
@@ -1697,6 +1829,7 @@ syncers.push(bindSeg("fillMode","fill",()=>{fillNote();redraw();}));
 syncers.push(bindSeg("fitMode","fit",redraw));
 const STYLE_NOTES = {
   normal:"", clip:"",
+  paris:"英字新聞・リネン・切手を継ぎはぎして貼ったような、パリ風のコラージュです。アルファベットは筆記体、かなは上品な明朝や手書きのフォントになります。",
   hanko:"赤いはんこを押したような、かすれた文字です。「1文字ずつ色替え」以外では、文字の色(色1)がインクの色になります。",
   neon:"光るネオン管のような文字です。暗いトーク背景で映えます。色は塗り方の色を使います。",
   pukkuri:"あめ玉のようにツヤのある、ぷっくりした文字です。色・ふちは今の設定を使います。",
@@ -1709,6 +1842,7 @@ $("clipTorn").checked = S.clipTorn!==false; $("clipTape").checked = S.clipTape!=
 $("clipTorn").addEventListener("change", e=>{ S.clipTorn=e.target.checked; save(); redraw(); });
 $("clipTape").addEventListener("change", e=>{ S.clipTape=e.target.checked; save(); redraw(); });
 syncers.push(bindSeg("clipPaper","clipPaper",redraw));
+syncers.push(bindSeg("parisPaper","parisPaper",redraw));
 $("clipShuffleBtn").addEventListener("click", ()=>{ S.clipSeed = Math.floor(Math.random()*1e9)+1; save(); redraw(); });
 syncers.push(bindSeg("gridBg","gridBg",applyGridBg));
 for (const id of ["line1","line2","bold","margin"]) syncers.push(bindRange(id, redraw));
