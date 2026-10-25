@@ -102,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.25-1(絵を背景いっぱいにして止め、文字だけ動かす)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.25-2(大きく重ねる絵:重なり順・動かすものを選べる)</span></p>
 </header>
 
 <div class="wrap">
@@ -238,8 +238,16 @@ body:not(.anim) .cell b{display:none}
       </div>
       <div class="field">
         <span class="lbl">位置</span>
-        <div class="seg" id="decoPos"><button type="button" data-v="tr">右上</button><button type="button" data-v="tl">左上</button><button type="button" data-v="br">右下</button><button type="button" data-v="bl">左下</button><button type="button" data-v="rand">ランダム</button><button type="button" data-v="bg">🖼 背景いっぱい(絵は動かさない)</button></div>
-        <span class="note" id="bgNote">絵を文字のうしろに大きく置いて止めたまま、デコ文字だけが動きます。文字が読めるよう、ふちを太めにするのがおすすめです。</span>
+        <div class="seg" id="decoPos"><button type="button" data-v="tr">右上</button><button type="button" data-v="tl">左上</button><button type="button" data-v="br">右下</button><button type="button" data-v="bl">左下</button><button type="button" data-v="rand">ランダム</button><button type="button" data-v="bg">🖼 大きく重ねる</button></div>
+        <div class="field" id="bgNote" style="gap:8px">
+          <span class="lbl">重なり順</span>
+          <div class="seg" id="bigOrder"><button type="button" data-v="text">文字が手前(絵は奥)</button><button type="button" data-v="deco">絵が手前(文字は奥)</button></div>
+          <span class="lbl">動かすもの(アニメのとき)</span>
+          <div class="seg" id="bigMove"><button type="button" data-v="text">文字だけ</button><button type="button" data-v="deco">絵だけ</button><button type="button" data-v="both">両方</button></div>
+          <label for="bigSize">絵の大きさ(枠に対して)</label>
+          <div class="row"><input type="range" id="bigSize" min="40" max="100" step="5"><span class="val" id="bigSizeV"></span></div>
+          <span class="note">「絵だけ」にすると文字は止まったまま、絵の動きは下の「絵に使う動き」から付きます。手前にしたものが大きいと奥のものが隠れるので、大きさで調整してください。</span>
+        </div>
         <div class="field" id="cornerBox">
           <span class="lbl">ランダムに使う位置(タップで入れる/外す)</span>
           <div class="seg" id="decoCorners"><button type="button" data-v="tl">左上</button><button type="button" data-v="tr">右上</button><button type="button" data-v="bl">左下</button><button type="button" data-v="br">右下</button></div>
@@ -521,7 +529,7 @@ const DMID = Object.fromEntries(DECO_MOTIONS.map(m=>[m.id,m]));
 const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", line1:8, lc2:"#ffffff", line2:0,
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
-  decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, decoCorners:["tr","tl","br","bl"],
+  decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, bigOrder:"text", bigMove:"text", bigSize:100, decoCorners:["tr","tl","br","bl"],
   decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true, parisPaper:"mix", age:75};
 
 let S = Object.assign({}, DEF);
@@ -1636,7 +1644,7 @@ function renderMotif(c, id, d, lw){
 // 飾りの絵を描く(背景いっぱいのときは文字のうしろに)
 function drawDecoAt(ctx, place){
   ctx.save();
-  if (place.bg) ctx.globalCompositeOperation = "destination-over";
+  if (place.bg && S.bigOrder!=="deco") ctx.globalCompositeOperation = "destination-over";   // 文字が手前なら絵はうしろ
   ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw);
   ctx.restore();
 }
@@ -1645,7 +1653,7 @@ function decoPlace(idx, box, W, H){
   const e = S.decoMap[idx]; if (!e || !MOTIFS[e.m]) return null;
   if (S.decoPos==="bg"){   // 背景いっぱい:絵をできるだけ大きく、真ん中に
     const f = Math.min(W,H)/180, lw = Math.max(2, S.line1*0.7)*f, half = Math.min(W,H)/2 - S.margin*f*0.5 - lw;
-    return {cx: W/2, cy: H/2, d: half/0.44, lw, m: e.m, bg: true};
+    return {cx: W/2, cy: H/2, d: half/0.44 * (S.bigSize||100)/100, lw, m: e.m, bg: true};
   }
   const corner = S.decoPos==="rand" ? e.c : S.decoPos;
   const d = Math.min(W,H) * S.decoSize/100, lw = d*0.075, half = d/2+lw;
@@ -1775,10 +1783,19 @@ function motionMatrix(moId, bx, p, s, A = S.amp/100){
     .scale((o.sx??1)*sc, (o.sy??1)*sc).translate(-px,-py);
 }
 const frameMatrix = (i, p, s) => motionMatrix(S.motions[i], boxes[i], p, s);
+const bigMode = i => places[i] && places[i].bg;
+// 文字の動き:大きく重ねる絵で「絵だけ動かす」なら文字は止める
+const textMatrix = (i, p) => (bigMode(i) && S.bigMove==="deco") ? new DOMMatrix() : frameMatrix(i, p, fitS);
 const decoHalf = pl => pl.d*0.44 + pl.lw;
 function decoMatrix(i, p, s){
   const pl = places[i], dm = S.decoMotions[i];
-  if (pl.bg) return new DOMMatrix().translate(pl.cx, pl.cy);   // 背景いっぱいの絵は縮めず・動かさない
+  if (pl.bg){   // 大きく重ねる絵:縮めない。「文字だけ動かす」なら止める
+    if (S.bigMove==="text" || dm==="still") return new DOMMatrix().translate(pl.cx, pl.cy);
+    const A = (S.amp/100) * (S.decoAmp/100), h = decoHalf(pl) * 0.5, bm = DMID[dm];
+    if (dm==="follow") return textMatrix(i, p).translate(pl.cx, pl.cy);
+    if (bm && bm.big){ const q = bm.pos(p, A, pl, h); return new DOMMatrix().translate(q.x, q.y).rotate(q.rot||0).scale(q.sc||1); }
+    return motionMatrix(dm, {x0:pl.cx-h, y0:pl.cy-h, x1:pl.cx+h, y1:pl.cy+h}, p, 1, A).translate(pl.cx, pl.cy);
+  }
   if (dm==="follow") return frameMatrix(i, p, s).translate(pl.cx, pl.cy);
   if (dm==="still") return new DOMMatrix().translate(90,90).scale(s).translate(-90,-90).translate(pl.cx, pl.cy);
   const h = decoHalf(pl), A = (S.amp/100) * (S.decoAmp/100);
@@ -1798,7 +1815,7 @@ function computeFit(){
       const b = boxes[i], pts = [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];
       const pl = places[i], h = pl ? decoHalf(pl) : 0, dpts = [[-h,-h],[h,-h],[-h,h],[h,h]];
       for (let f=0; f<n; f++){
-        if (!inside(frameMatrix(i, f/n, s), pts)) return false;
+        if (!(bigMode(i) && S.bigMove==="deco") && !inside(frameMatrix(i, f/n, s), pts)) return false;
         if (pl && !pl.bg && !(DMID[S.decoMotions[i]]||{}).big && !inside(decoMatrix(i, f/n, s), dpts)) return false;
       }
     }
@@ -1811,11 +1828,13 @@ function drawFrame(ctx, i, f){
   const p = f/S.frames;
   ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,180,180);
   const pl = places[i];
-  if (pl && pl.bg){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); }   // 先に背景の絵
-  ctx.setTransform(frameMatrix(i, p, fitS).multiply(new DOMMatrix().scale(0.5)));
+  const decoBehind = pl && pl.bg && S.bigOrder!=="deco";
+  const drawDeco = () => { if (pl){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); } };
+  if (decoBehind) drawDeco();                     // 文字が手前:先に絵
+  ctx.setTransform(textMatrix(i, p).multiply(new DOMMatrix().scale(0.5)));
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(rests[i], 0, 0);
-  if (pl && !pl.bg){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); }
+  if (!decoBehind) drawDeco();                    // 絵が手前(ふつうの飾りも)
   ctx.setTransform(1,0,0,1,0,0);
 }
 
@@ -1964,6 +1983,10 @@ if (Array.isArray(S.decoMap) && S.decoMap.length<ALL.length && !S.decoMap.some(e
 if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length || S.decoMap.some(e=>e && !MOTIFS[e.m])) shuffleDeco();
 syncers.push(bindSeg("decoOn","decoOn",redraw));
 syncers.push(bindSeg("decoPos","decoPos",()=>{ syncCorners(); redraw(); }));
+syncers.push(bindSeg("bigOrder","bigOrder",redraw));
+syncers.push(bindSeg("bigMove","bigMove",reanimOrRedraw));
+syncers.push(bindRange("bigSize", redraw, "%"));
+function reanimOrRedraw(){ if (S.mode==="anim") reanim(); else redraw(); }
 function syncCorners(){
   $("cornerBox").hidden = S.decoPos!=="rand";
   $("bgNote").hidden = S.decoPos!=="bg";
