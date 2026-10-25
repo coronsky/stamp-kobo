@@ -102,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.26-1(Claudeのアプリ内でも保存できるように)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.26-2(動きを軽く)</span></p>
 </header>
 
 <div class="wrap">
@@ -1686,6 +1686,10 @@ ALL.forEach((ch,i)=>{
   b.addEventListener("click", ()=>{ S.sel=i; save(); drawSel(); markSel(); });
   cells.push(cv);
 });
+// 画面に見えている字だけ動かす(見えていない字は描かない)
+const visible = new Set();
+const io = new IntersectionObserver(es=>{ for (const e of es){ const g = +e.target.dataset.g; if (e.isIntersecting) visible.add(g); else visible.delete(g); } }, {rootMargin:"200px"});
+cellBtns.forEach((b,g)=>{ b.dataset.g = g; io.observe(b); });
 // パッケージに合わせて、見せる字と番号を切り替える
 function refreshPackage(){
   const list = LIST(), on = new Set(list);
@@ -1733,7 +1737,7 @@ function drawSel(){
   $("selDecoMotion").value = S.decoMotions[S.sel];
   for (const id of ["bigA","bigB","bigC"]){
     const ctx = $(id).getContext("2d");
-    if (S.mode==="anim"){ ctx.clearRect(0,0,180,180); ctx.drawImage(cells[S.sel],0,0); }
+    if (S.mode==="anim"){ if (rests[S.sel]) drawFrame(ctx, S.sel, 0); }
     else drawItem(ctx, S.sel, 180, 180);
   }
 }
@@ -1754,6 +1758,7 @@ function buildBubble(){
   paintBubble();
 }
 function paintBubble(){
+  if (S.mode==="anim") return;   // アニメのときは動きのループが描く
   for (const [cv,i] of bubbleCvs){ const x=cv.getContext("2d"); x.clearRect(0,0,180,180); x.drawImage(cells[i],0,0); }
 }
 const drawBubble = buildBubble;
@@ -1762,18 +1767,35 @@ const drawBubble = buildBubble;
 const rests = [], boxes = [];
 let fitS = 1;
 const places = [];
-function buildRests(){
-  for (const i of LIST()){
-    if (!rests[i]){ rests[i]=document.createElement("canvas"); rests[i].width=360; rests[i].height=360; }
-    const ctx = rests[i].getContext("2d", {willReadFrequently:true});
-    const res = drawItem(ctx, i, 360, 360, true);     // 文字だけ(絵は別に動かす)
-    const pl = res && res.place;
-    places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m, bg:pl.bg} : null;
-    const d = ctx.getImageData(0,0,360,360).data;
-    let x0=360,y0=360,x1=-1,y1=-1;
-    for (let y=0;y<360;y++) for (let x=0;x<360;x++) if (d[(y*360+x)*4+3]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
-    boxes[i] = x1<0 ? {x0:80,y0:80,x1:100,y1:100} : {x0:x0/2, y0:y0/2, x1:(x1+1)/2, y1:(y1+1)/2};
+function buildRest(i){
+  if (!rests[i]){ rests[i]=document.createElement("canvas"); rests[i].width=360; rests[i].height=360; }
+  const ctx = rests[i].getContext("2d", {willReadFrequently:true});
+  const res = drawItem(ctx, i, 360, 360, true);     // 文字だけ(絵は別に動かす)
+  const pl = res && res.place;
+  places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m, bg:pl.bg} : null;
+  // 文字の範囲:ふちから内側へ探して、見つかったらすぐ止める(速い)
+  const px = new Uint32Array(ctx.getImageData(0,0,360,360).data.buffer), W = 360;
+  const on = k => (px[k]>>>24) > 8;
+  let y0=-1,y1=-1,x0=-1,x1=-1;
+  for (let y=0;y<W && y0<0;y++) for (let x=0;x<W;x++) if (on(y*W+x)){ y0=y; break; }
+  if (y0<0){ boxes[i] = {x0:80,y0:80,x1:100,y1:100}; return; }
+  for (let y=W-1;y>=y0 && y1<0;y--) for (let x=0;x<W;x++) if (on(y*W+x)){ y1=y; break; }
+  for (let x=0;x<W && x0<0;x++) for (let y=y0;y<=y1;y++) if (on(y*W+x)){ x0=x; break; }
+  for (let x=W-1;x>=x0 && x1<0;x--) for (let y=y0;y<=y1;y++) if (on(y*W+x)){ x1=x; break; }
+  boxes[i] = {x0:x0/2, y0:y0/2, x1:(x1+1)/2, y1:(y1+1)/2};
+}
+function buildRests(){ for (const i of LIST()) buildRest(i); }
+// 画面を止めないよう、少しずつ作る(見えている字から先に)
+let buildToken = 0;
+async function buildRestsAsync(){
+  const my = ++buildToken, list = LIST();
+  const order = list.filter(i=>visible.has(i)).concat(list.filter(i=>!visible.has(i)));
+  let t0 = performance.now();
+  for (const i of order){
+    buildRest(i);
+    if (performance.now() - t0 > 24){ await new Promise(r=>setTimeout(r,0)); if (my !== buildToken) return false; t0 = performance.now(); }
   }
+  return my === buildToken;
 }
 function motionMatrix(moId, bx, p, s, A = S.amp/100){
   const mo = MID[moId] || MOTIONS[0];
@@ -1812,28 +1834,47 @@ function decoMatrix(i, p, s){
 }
 function computeFit(){
   if (S.textLock){ fitS = 1; return; }   // 文字を動かさないときは縮めない(最大のまま)
-  const n = S.frames;
-  const inside = (m, pts) => pts.every(([x,y])=>{ const q = m.transformPoint({x,y}); return q.x>=1 && q.y>=1 && q.x<=179 && q.y<=179; });
-  const fits = s => {
-    for (const i of LIST()){
-      const b = boxes[i], pts = [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];
-      const pl = places[i], h = pl ? decoHalf(pl) : 0, dpts = [[-h,-h],[h,-h],[-h,h],[h,h]];
-      for (let f=0; f<n; f++){
-        if (!(bigMode(i) && S.bigMove==="deco") && !inside(frameMatrix(i, f/n, s), pts)) return false;
-        if (pl && !pl.bg && !(DMID[S.decoMotions[i]]||{}).big && !inside(decoMatrix(i, f/n, s), dpts)) return false;
-      }
+  // 縮める前(s=1)の位置で、真ん中からいちばん遠い点を探し、そこから一度で縮める割合を出す
+  const n = S.frames; let far = 0;
+  const reach = (m, pts) => { for (const [x,y] of pts){ const q = m.transformPoint({x,y}); far = Math.max(far, Math.abs(q.x-90), Math.abs(q.y-90)); } };
+  for (const i of LIST()){
+    const b = boxes[i]; if (!b) continue;
+    const pts = [[b.x0,b.y0],[b.x1,b.y0],[b.x0,b.y1],[b.x1,b.y1]];
+    const pl = places[i], h = pl ? decoHalf(pl) : 0, dpts = [[-h,-h],[h,-h],[-h,h],[h,h]];
+    const textMoves = !(bigMode(i) && S.bigMove==="deco");
+    const decoChecked = pl && !pl.bg && !(DMID[S.decoMotions[i]]||{}).big;
+    for (let f=0; f<n; f++){
+      if (textMoves) reach(frameMatrix(i, f/n, 1), pts);
+      if (decoChecked) reach(decoMatrix(i, f/n, 1), dpts);
     }
-    return true;
-  };
-  let s = 1; while (s>0.3 && !fits(s)) s -= 0.02;
-  fitS = s;
+  }
+  fitS = far <= 89 ? 1 : Math.max(0.3, Math.floor(89/far*100)/100);
+}
+// 飾りの絵は毎コマ描き直さず、一度描いた画像を使い回す
+const spriteCache = new Map();
+function motifSprite(id, d, lw){
+  const key = `${id}|${d.toFixed(1)}|${lw.toFixed(2)}|${S.lc1}`;
+  let sp = spriteCache.get(key);
+  if (!sp){
+    const k = 2, size = Math.ceil((d*1.25 + lw*4) * k);
+    const c = document.createElement("canvas"); c.width = c.height = size;
+    const x = c.getContext("2d"); x.translate(size/2, size/2); x.scale(k,k); renderMotif(x, id, d, lw);
+    sp = {c, size, k}; spriteCache.set(key, sp);
+    if (spriteCache.size > 400) spriteCache.delete(spriteCache.keys().next().value);
+  }
+  return sp;
+}
+function drawMotifFast(ctx, id, d, lw){
+  const m = MOTIFS[id]; if (m && m.custom){ renderMotif(ctx, id, d, lw); return; }
+  const sp = motifSprite(id, d, lw); ctx.drawImage(sp.c, -sp.size/sp.k/2, -sp.size/sp.k/2, sp.size/sp.k, sp.size/sp.k);
 }
 function drawFrame(ctx, i, f){
+  if (!boxes[i] || !rests[i]) return;
   const p = f/S.frames;
   ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,180,180);
   const pl = places[i];
   const decoBehind = pl && pl.bg && S.bigOrder!=="deco";
-  const drawDeco = () => { if (pl){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); } };
+  const drawDeco = () => { if (pl){ ctx.setTransform(decoMatrix(i, p, fitS)); drawMotifFast(ctx, pl.m, pl.d, pl.lw); } };
   if (decoBehind) drawDeco();                     // 文字が手前:先に絵
   ctx.setTransform(textMatrix(i, p).multiply(new DOMMatrix().scale(0.5)));
   ctx.imageSmoothingQuality = "high";
@@ -1848,10 +1889,16 @@ function startAnim(){
   if (S.mode!=="anim") return;
   const n = S.frames, per = (+S.sec*1000)/n;
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const drawn = new Set();
   const step = ()=>{
+    if (document.hidden) return;
     const f = reduce ? 0 : tick % n;
-    for (const i of LIST()) drawFrame(cells[i].getContext("2d"), i, f);
-    drawSel(); paintBubble(); tick++;
+    for (const i of LIST()){
+      if (visible.has(i) || !drawn.has(i)){ drawFrame(cells[i].getContext("2d"), i, f); drawn.add(i); }
+    }
+    for (const id of ["bigA","bigB","bigC"]) drawFrame($(id).getContext("2d"), S.sel, f);
+    for (const [cv,i] of bubbleCvs) drawFrame(cv.getContext("2d"), i, f);
+    tick++;
   };
   step(); if (!reduce) timer = setInterval(step, Math.max(per, 50));
 }
@@ -1862,10 +1909,17 @@ function drawTab(){
   drawItem($("tabCv").getContext("2d"), i, 96, 74);
 }
 
-let raf = 0;
+let raf = 0, redrawTimer = 0;
+// スライダーを動かしている間は何度も描き直さず、手を止めたら1回だけ描く
 function redraw(){
+  clearTimeout(redrawTimer);
+  redrawTimer = setTimeout(redrawNow, 90);
+}
+let staticToken = 0;
+function redrawNow(){
   cancelAnimationFrame(raf);
-  raf = requestAnimationFrame(()=>{
+  spriteCache.clear();
+  raf = requestAnimationFrame(async ()=>{
     document.body.classList.toggle("anim", S.mode==="anim");
     document.body.classList.toggle("deco", S.decoOn==="on");
     document.body.classList.toggle("clip", S.textStyle==="clip");
@@ -1876,16 +1930,29 @@ function redraw(){
     const n = LIST().length;
     $("exportBtn").textContent = S.mode==="anim" ? `動く${n}個 + tab をZIPで保存` : `${n}個 + tab をZIPで保存`;
     labelMotions();
-    if (S.mode==="anim"){ buildRests(); computeFit(); drawTab(); buildBubble(); startAnim(); }
-    else {
-      clearInterval(timer);
-      for (const i of LIST()) drawItem(cells[i].getContext("2d"), i, 180, 180);
+    if (S.mode==="anim"){
+      clearInterval(timer); ++staticToken; drawTab(); buildBubble();
+      $("gridTitle").textContent = `${n}個の一覧(準備中…)`;
+      if (!(await buildRestsAsync())) return;              // 途中で設定が変わったら、やり直しに任せる
+      $("gridTitle").textContent = `${n}個の一覧`;
+      computeFit(); startAnim();
+    } else {
+      clearInterval(timer); ++buildToken;
+      const my = ++staticToken, list = LIST();
+      const order = list.filter(i=>visible.has(i)).concat(list.filter(i=>!visible.has(i)));
       drawSel(); drawTab(); buildBubble();
+      let t0 = performance.now();
+      for (const i of order){
+        drawItem(cells[i].getContext("2d"), i, 180, 180);
+        if (performance.now() - t0 > 24){ paintBubble(); await new Promise(r=>setTimeout(r,0)); if (my !== staticToken) return; t0 = performance.now(); }
+      }
+      paintBubble();
     }
   });
 }
 // 動きの設定だけ変えたとき(文字の描き直し不要)
-function reanim(){ if (S.mode!=="anim") return; labelMotions(); computeFit(); startAnim(); }
+let reanimTimer = 0;
+function reanim(){ if (S.mode!=="anim") return; clearTimeout(reanimTimer); reanimTimer = setTimeout(()=>{ if (!rests[LIST()[0]]) { redraw(); return; } labelMotions(); computeFit(); startAnim(); }, 60); }
 
 // ---- UI ----
 function fillFontSelect(){
