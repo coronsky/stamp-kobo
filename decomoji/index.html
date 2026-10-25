@@ -102,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.25-3(文字は動かさないボタン・文字を最大にするボタン)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.26-1(Claudeのアプリ内でも保存できるように)</span></p>
 </header>
 
 <div class="wrap">
@@ -2248,8 +2248,7 @@ $("exportBtn").addEventListener("click", async ()=>{
       (!okMB ? `<span class="ng">→ 軽くするには:${anim ? `コマ数を${Math.max(5, Math.floor(S.frames*19/mb))}くらいに減らす、` : ""}紙の種類を少なめの柄(雑誌・リネンなど)にする、または「古さ」を下げると小さくなります。</span>` : "")+
       (anim ? `<span class="ok">✓ ${S.frames}コマ・${S.sec}秒×${S.loops}回(合計${+S.sec*+S.loops}秒)・縮小${Math.round(fitS*100)}%</span>`+
         (sameList.length ? `<span class="ng">✕ 前と同じコマがある字:${sameList.join(", ")}(動きを強くするか変えてください)</span>` : `<span class="ok">✓ どの字も全コマ動いています</span>`) : "");
-    const a=document.createElement("a"); a.href=URL.createObjectURL(zip); a.download = `decomoji_${PK().short}${PK().emo?emoCount():""}${anim?"_anim":""}.zip`;
-    document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
+    await saveFile(zip, `decomoji_${PK().short}${PK().emo?emoCount():""}${anim?"_anim":""}.zip`);
   }catch(err){ rep.innerHTML = `<span class="ng">保存できませんでした:${err.message}</span>`; }
   btn.disabled = false;
   if (anim) startAnim();
@@ -2459,15 +2458,34 @@ $("emoImgFile").addEventListener("change", async e=>{
 $("emoImgClear").addEventListener("click", ()=>{ if (!isEmo(S.sel)) return; const pool = GENRES[S.emojiGenre]||GENRES["犬"]; S.emojis[S.sel-EMO_BASE] = {m: pick(pool)}; loadEmojiImgs(); save(); redraw(); });
 
 // ---- 途中の作業を保存・読み込み ----
-function downloadBlob(blob, name){
+function downloadBlob(blob, name){ return saveFile(blob, name); }
+// ファイルを保存する:Claudeのアプリ内では「保存の確認」を通して、ふつうのブラウザ(GitHub Pages)では直接ダウンロード
+const dlCap = (window.claude && typeof window.claude.use === "function") ? window.claude.use("downloads").catch(()=>null) : Promise.resolve(null);
+async function saveFile(blob, name){
+  const dl = await dlCap;
+  if (dl){
+    try { await dl.save({filename: name, data: blob}); return true; }
+    catch (err){
+      const code = err && err.code;
+      const msg = code==="declined" ? "保存をキャンセルしました。もう一度ボタンを押すと保存できます。"
+        : code==="rate_limited" ? "保存の確認がまだ開いています。閉じてから、もう一度押してください。"
+        : code==="too_large" ? "ファイルが大きすぎて保存できませんでした。コマ数を減らすなどして小さくしてください。"
+        : "この画面では保存できませんでした。ブラウザで coronsky.github.io/stamp-kobo/decomoji/ を開いて保存してください。";
+      const rep = document.getElementById("report"); if (rep) rep.insertAdjacentHTML("beforeend", `<span class="ng">${msg}</span>`);
+      return false;
+    }
+  }
   const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name;
   document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href), 10000);
+  return true;
 }
-$("projSaveBtn").addEventListener("click", ()=>{
+$("projSaveBtn").addEventListener("click", async ()=>{
   const f = fontList[S.font] || fontList[0];
   const data = {app:"Mon Chein デコ文字工房", version:1, savedAt:new Date().toISOString(), fontLabel:f.label, userFont: S.font >= FONTS.length, state:S};
   const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
-  downloadBlob(new Blob([JSON.stringify(data)], {type:"application/json"}), `decomoji_work_${stamp}.json`);
+  $("report").innerHTML = "";
+  const ok = await downloadBlob(new Blob([JSON.stringify(data)], {type:"application/json"}), `decomoji_work_${stamp}.json`);
+  if (!ok) return;
   $("report").innerHTML = `<span class="ok">✓ 作業を保存しました(decomoji_work_${stamp}.json)</span>` +
     (data.userFont ? `<span class="note">手持ちのフォント「${f.label}」はファイルに入らないので、読み込んだあとにもう一度フォントを読み込んでください。</span>` : "");
 });
