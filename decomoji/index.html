@@ -102,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.25-2(大きく重ねる絵:重なり順・動かすものを選べる)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.25-3(文字は動かさないボタン・文字を最大にするボタン)</span></p>
 </header>
 
 <div class="wrap">
@@ -218,6 +218,7 @@ body:not(.anim) .cell b{display:none}
         <button type="button" data-v="each">1文字ずつ最大</button>
       </div>
       <span class="note">「フォントどおり」は ぁ・っ などの小さい字が小さいまま、並べたときの高さがそろいます。</span>
+      <button class="btn2" id="maxTextBtn" type="button" style="font-weight:900">⬛ 文字を最大にする(枠いっぱい)</button>
     </div>
 
     <hr class="sep">
@@ -293,6 +294,8 @@ body:not(.anim) .cell b{display:none}
     <div class="field animbox" id="animBox">
       <span class="lbl">ランダムに使う動き(タップで入れる/外す)</span>
       <div class="seg" id="pool"></div>
+      <button class="btn2" id="textLockBtn" type="button" style="font-weight:900" aria-pressed="false">🔒 文字は動かさない(最大のまま固定)</button>
+      <span class="note" id="textLockNote">オンにすると、全部の字の文字が止まり、はみ出し防止の縮小もかからないので文字は大きいままです。飾りの絵は動かせます。</span>
       <button class="btn2" id="shuffleBtn" type="button" style="font-weight:900">🎲 161個を一括でランダムに動かす</button>
       <div class="row"><select id="allMotion" aria-label="全部に付ける動き" style="width:auto;flex:1"></select><button class="btn2" id="allSameBtn" type="button">全部この動きに</button></div>
       <div class="field">
@@ -529,7 +532,7 @@ const DMID = Object.fromEntries(DECO_MOTIONS.map(m=>[m.id,m]));
 const DEF = {font:0, fill:"cycle", c1:"#f07fa6", c2:"#f6e27a", lc1:"#3a1f1a", line1:8, lc2:"#ffffff", line2:0,
   bold:0, margin:6, fit:"common", tab:"あ", gridBg:"checker", sel:0, pkg:"kana", emojiCount:16, emojis:null, emojiGenre:"犬",
   mode:"still", pool:MOTIONS.map(m=>m.id), motions:null, amp:100, sec:"2", frames:12, loops:"1",
-  decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, bigOrder:"text", bigMove:"text", bigSize:100, decoCorners:["tr","tl","br","bl"],
+  decoOn:"off", decoPool:null, decoPos:"tr", decoSize:34, decoRate:100, decoMap:null, decoView:"犬", decoAmp:100, bigOrder:"text", bigMove:"text", bigSize:100, textLock:false, decoCorners:["tr","tl","br","bl"],
   decoMotions:null, decoMpool:null, customs:[], autoBg:true, autoSplit:true, textStyle:"normal", clipSeed:1, clipPaper:"mix", clipTorn:true, clipTape:true, parisPaper:"mix", age:75};
 
 let S = Object.assign({}, DEF);
@@ -1785,7 +1788,7 @@ function motionMatrix(moId, bx, p, s, A = S.amp/100){
 const frameMatrix = (i, p, s) => motionMatrix(S.motions[i], boxes[i], p, s);
 const bigMode = i => places[i] && places[i].bg;
 // 文字の動き:大きく重ねる絵で「絵だけ動かす」なら文字は止める
-const textMatrix = (i, p) => (bigMode(i) && S.bigMove==="deco") ? new DOMMatrix() : frameMatrix(i, p, fitS);
+const textMatrix = (i, p) => (S.textLock || (bigMode(i) && S.bigMove==="deco")) ? new DOMMatrix() : frameMatrix(i, p, fitS);
 const decoHalf = pl => pl.d*0.44 + pl.lw;
 function decoMatrix(i, p, s){
   const pl = places[i], dm = S.decoMotions[i];
@@ -1796,7 +1799,7 @@ function decoMatrix(i, p, s){
     if (bm && bm.big){ const q = bm.pos(p, A, pl, h); return new DOMMatrix().translate(q.x, q.y).rotate(q.rot||0).scale(q.sc||1); }
     return motionMatrix(dm, {x0:pl.cx-h, y0:pl.cy-h, x1:pl.cx+h, y1:pl.cy+h}, p, 1, A).translate(pl.cx, pl.cy);
   }
-  if (dm==="follow") return frameMatrix(i, p, s).translate(pl.cx, pl.cy);
+  if (dm==="follow") return (S.textLock ? new DOMMatrix() : frameMatrix(i, p, s)).translate(pl.cx, pl.cy);
   if (dm==="still") return new DOMMatrix().translate(90,90).scale(s).translate(-90,-90).translate(pl.cx, pl.cy);
   const h = decoHalf(pl), A = (S.amp/100) * (S.decoAmp/100);
   const base = new DOMMatrix().translate(90,90).scale(s).translate(-90,-90);
@@ -1808,6 +1811,7 @@ function decoMatrix(i, p, s){
   return motionMatrix(dm, {x0:pl.cx-h, y0:pl.cy-h, x1:pl.cx+h, y1:pl.cy+h}, p, s, A).translate(pl.cx, pl.cy);
 }
 function computeFit(){
+  if (S.textLock){ fitS = 1; return; }   // 文字を動かさないときは縮めない(最大のまま)
   const n = S.frames;
   const inside = (m, pts) => pts.every(([x,y])=>{ const q = m.transformPoint({x,y}); return q.x>=1 && q.y>=1 && q.x<=179 && q.y<=179; });
   const fits = s => {
@@ -1984,6 +1988,16 @@ if (!Array.isArray(S.decoMap) || S.decoMap.length!==ALL.length || S.decoMap.some
 syncers.push(bindSeg("decoOn","decoOn",redraw));
 syncers.push(bindSeg("decoPos","decoPos",()=>{ syncCorners(); redraw(); }));
 syncers.push(bindSeg("bigOrder","bigOrder",redraw));
+function syncTextLock(){ $("textLockBtn").setAttribute("aria-pressed", !!S.textLock); $("textLockBtn").textContent = S.textLock ? "🔒 文字は動かさない:オン(押すと解除)" : "🔒 文字は動かさない(最大のまま固定)"; }
+$("textLockBtn").addEventListener("click", ()=>{
+  S.textLock = !S.textLock; syncTextLock(); save(); reanimOrRedraw();
+  if (S.textLock && S.decoOn!=="on") $("report").innerHTML = `<span class="note">文字を止めると、飾りの絵がない字は全コマ同じになり、アニメとしては提出できません。飾りの絵を付けて動かすか、静止画で保存してください。</span>`;
+});
+syncers.push(syncTextLock); syncTextLock();
+$("maxTextBtn").addEventListener("click", ()=>{
+  S.fit = "each"; S.margin = 2; syncers.forEach(fn=>fn()); save(); redraw();
+  $("report").innerHTML = `<span class="ok">✓ 文字を1文字ずつ枠いっぱいの大きさにしました(大きさ:1文字ずつ最大・余白2px)。アニメで動かすと、はみ出さないよう少し縮みます。止めたいときは「🔒 文字は動かさない」をオンにしてください。</span>`;
+});
 syncers.push(bindSeg("bigMove","bigMove",reanimOrRedraw));
 syncers.push(bindRange("bigSize", redraw, "%"));
 function reanimOrRedraw(){ if (S.mode==="anim") reanim(); else redraw(); }
