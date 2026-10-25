@@ -102,7 +102,7 @@ body:not(.anim) .cell b{display:none}
 
 <header>
   <h1>Mon Chein デコ文字工房</h1>
-  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.22-11(パリのコラージュをアンティーク加工・広告チラシ・古い手紙を追加)</span></p>
+  <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.25-1(絵を背景いっぱいにして止め、文字だけ動かす)</span></p>
 </header>
 
 <div class="wrap">
@@ -238,7 +238,8 @@ body:not(.anim) .cell b{display:none}
       </div>
       <div class="field">
         <span class="lbl">位置</span>
-        <div class="seg" id="decoPos"><button type="button" data-v="tr">右上</button><button type="button" data-v="tl">左上</button><button type="button" data-v="br">右下</button><button type="button" data-v="bl">左下</button><button type="button" data-v="rand">ランダム</button></div>
+        <div class="seg" id="decoPos"><button type="button" data-v="tr">右上</button><button type="button" data-v="tl">左上</button><button type="button" data-v="br">右下</button><button type="button" data-v="bl">左下</button><button type="button" data-v="rand">ランダム</button><button type="button" data-v="bg">🖼 背景いっぱい(絵は動かさない)</button></div>
+        <span class="note" id="bgNote">絵を文字のうしろに大きく置いて止めたまま、デコ文字だけが動きます。文字が読めるよう、ふちを太めにするのがおすすめです。</span>
         <div class="field" id="cornerBox">
           <span class="lbl">ランダムに使う位置(タップで入れる/外す)</span>
           <div class="seg" id="decoCorners"><button type="button" data-v="tl">左上</button><button type="button" data-v="tr">右上</button><button type="button" data-v="bl">左下</button><button type="button" data-v="br">右下</button></div>
@@ -669,7 +670,7 @@ function drawClipChar(ctx, ch, W, H, idx, noDeco){
     ctx.beginPath(); for (let k2=0;k2<=6;k2++) ctx.lineTo(-tw/2 + (k2%2)*1.5*f, -th/2 + k2*th/6); for (let k2=6;k2>=0;k2--) ctx.lineTo(tw/2 - (k2%2)*1.5*f, -th/2 + k2*th/6); ctx.closePath(); ctx.fill(); ctx.restore(); }
   const bb = {l:W/2-sw/2, r:W/2+sw/2, t:H/2-sh/2, b:H/2+sh/2};
   const place = decoPlace(idx, bb, W, H);
-  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  if (place && !noDeco) drawDecoAt(ctx, place);
   return {place};
 }
 
@@ -851,7 +852,7 @@ function drawParisChar(ctx, ch, W, H, idx, noDeco){
     ctx.globalAlpha = 0.25*age; ctx.fillStyle = grainPattern(ctx); ctx.fill(); ctx.restore(); }
   const bb = {l:W/2-sw/2, r:W/2+sw/2, t:H/2-sh/2, b:H/2+sh/2};
   const place = decoPlace(idx, bb, W, H);
-  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  if (place && !noDeco) drawDecoAt(ctx, place);
   return {place};
 }
 
@@ -920,7 +921,7 @@ function drawStyled(ctx, ch, W, H, idx, noDeco){
     ctx.save(); ctx.setLineDash([5*f, 3.5*f]); ctx.lineWidth = 1.8*f; ctx.strokeStyle = "rgba(255,255,255,0.95)"; ctx.strokeText(ch,x,y); ctx.restore();
   }
   const place = decoPlace(idx, {l:x-gl*k, r:x+gr*k, t:y-ga*k, b:y+gd*k}, W, H);
-  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  if (place && !noDeco) drawDecoAt(ctx, place);
   return {place};
 }
 
@@ -963,7 +964,7 @@ function drawChar(ctx, ch, W, H, idx, noDeco=false){
   if (bold > 0){ ctx.strokeStyle=fill; ctx.lineWidth=2*bold; ctx.strokeText(ch,x,y); }
   ctx.fillStyle = fill; ctx.fillText(ch,x,y);
   const place = decoPlace(idx, {l:x-gl*k, r:x+gr*k, t:y-ga*k, b:y+gd*k}, W, H);
-  if (place && !noDeco){ ctx.save(); ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw); ctx.restore(); }
+  if (place && !noDeco) drawDecoAt(ctx, place);
   return {place};
 }
 
@@ -1632,9 +1633,20 @@ function renderMotif(c, id, d, lw){
   if (spec.detail){ c.fillStyle=INK; c.strokeStyle=INK; c.lineWidth=L*0.8; spec.detail(c); }
   c.restore();
 }
+// 飾りの絵を描く(背景いっぱいのときは文字のうしろに)
+function drawDecoAt(ctx, place){
+  ctx.save();
+  if (place.bg) ctx.globalCompositeOperation = "destination-over";
+  ctx.translate(place.cx, place.cy); renderMotif(ctx, place.m, place.d, place.lw);
+  ctx.restore();
+}
 function decoPlace(idx, box, W, H){
   if (S.decoOn!=="on" || !S.decoMap) return null;
   const e = S.decoMap[idx]; if (!e || !MOTIFS[e.m]) return null;
+  if (S.decoPos==="bg"){   // 背景いっぱい:絵をできるだけ大きく、真ん中に
+    const f = Math.min(W,H)/180, lw = Math.max(2, S.line1*0.7)*f, half = Math.min(W,H)/2 - S.margin*f*0.5 - lw;
+    return {cx: W/2, cy: H/2, d: half/0.44, lw, m: e.m, bg: true};
+  }
   const corner = S.decoPos==="rand" ? e.c : S.decoPos;
   const d = Math.min(W,H) * S.decoSize/100, lw = d*0.075, half = d/2+lw;
   let cx = corner[1]==="l" ? box.l + d*0.12 : box.r - d*0.12;
@@ -1745,7 +1757,7 @@ function buildRests(){
     const ctx = rests[i].getContext("2d", {willReadFrequently:true});
     const res = drawItem(ctx, i, 360, 360, true);     // 文字だけ(絵は別に動かす)
     const pl = res && res.place;
-    places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m} : null;
+    places[i] = pl ? {cx:pl.cx/2, cy:pl.cy/2, d:pl.d/2, lw:pl.lw/2, m:pl.m, bg:pl.bg} : null;
     const d = ctx.getImageData(0,0,360,360).data;
     let x0=360,y0=360,x1=-1,y1=-1;
     for (let y=0;y<360;y++) for (let x=0;x<360;x++) if (d[(y*360+x)*4+3]>8){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; }
@@ -1766,6 +1778,7 @@ const frameMatrix = (i, p, s) => motionMatrix(S.motions[i], boxes[i], p, s);
 const decoHalf = pl => pl.d*0.44 + pl.lw;
 function decoMatrix(i, p, s){
   const pl = places[i], dm = S.decoMotions[i];
+  if (pl.bg) return new DOMMatrix().translate(pl.cx, pl.cy);   // 背景いっぱいの絵は縮めず・動かさない
   if (dm==="follow") return frameMatrix(i, p, s).translate(pl.cx, pl.cy);
   if (dm==="still") return new DOMMatrix().translate(90,90).scale(s).translate(-90,-90).translate(pl.cx, pl.cy);
   const h = decoHalf(pl), A = (S.amp/100) * (S.decoAmp/100);
@@ -1786,7 +1799,7 @@ function computeFit(){
       const pl = places[i], h = pl ? decoHalf(pl) : 0, dpts = [[-h,-h],[h,-h],[-h,h],[h,h]];
       for (let f=0; f<n; f++){
         if (!inside(frameMatrix(i, f/n, s), pts)) return false;
-        if (pl && !(DMID[S.decoMotions[i]]||{}).big && !inside(decoMatrix(i, f/n, s), dpts)) return false;
+        if (pl && !pl.bg && !(DMID[S.decoMotions[i]]||{}).big && !inside(decoMatrix(i, f/n, s), dpts)) return false;
       }
     }
     return true;
@@ -1797,11 +1810,12 @@ function computeFit(){
 function drawFrame(ctx, i, f){
   const p = f/S.frames;
   ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,180,180);
+  const pl = places[i];
+  if (pl && pl.bg){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); }   // 先に背景の絵
   ctx.setTransform(frameMatrix(i, p, fitS).multiply(new DOMMatrix().scale(0.5)));
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(rests[i], 0, 0);
-  const pl = places[i];
-  if (pl){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); }
+  if (pl && !pl.bg){ ctx.setTransform(decoMatrix(i, p, fitS)); renderMotif(ctx, pl.m, pl.d, pl.lw); }
   ctx.setTransform(1,0,0,1,0,0);
 }
 
@@ -1952,6 +1966,7 @@ syncers.push(bindSeg("decoOn","decoOn",redraw));
 syncers.push(bindSeg("decoPos","decoPos",()=>{ syncCorners(); redraw(); }));
 function syncCorners(){
   $("cornerBox").hidden = S.decoPos!=="rand";
+  $("bgNote").hidden = S.decoPos!=="bg";
   $("decoCorners").querySelectorAll("button").forEach(b=>b.setAttribute("aria-pressed", cornerPool().includes(b.dataset.v)));
 }
 $("decoCorners").addEventListener("click", e=>{
