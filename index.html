@@ -587,9 +587,12 @@ select, input[type=number] { border-color: var(--line-strong); }
           <p class="note" id="textNone">文字画像は重ねていません。上の文字の一覧からタップしてください。</p>
         </div>
         <button type="button" class="btn" id="textRemove">文字を外す</button>
-        <p class="sub">動き</p>
+        <p class="sub">全体の動き</p>
         <p class="note">いくつか選ぶと、動きが組み合わさります。</p>
-        <div class="chips" id="tchips" role="group" aria-label="文字画像の動き"></div>
+        <div class="chips" id="tchips" role="group" aria-label="文字画像の動き(全体)"></div>
+        <p class="sub">1文字ずつの動き</p>
+        <p class="note">文字を1文字ずつに分けて動かします。上の「全体の動き」と組み合わせることもできます。</p>
+        <div class="chips" id="tchips2" role="group" aria-label="文字画像の動き(1文字ずつ)"></div>
         <div class="stage-bar">
           <button type="button" class="btn" id="tStopOne">このスタンプの動きを全部止める</button>
           <button type="button" class="btn" id="tStopAll">全スタンプの動きをすべて止める</button>
@@ -1555,6 +1558,24 @@ function findTextCells(bg, W, H, opt) {
   };
   const easeInOut = (t) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
 
+  const cl01 = (v) => (v < 0 ? 0 : v > 1 ? 1 : v);
+  // 1文字ずつの動きの部品
+  const pcm = (label, note, pc) => ({ label, note, textOnly: true, group: 'char', anchor: 'center', once: false, f: () => ({}), pc });
+  // 順番に登場: 1コマ目は全部そろった状態 → 1文字ずつ入る(全体の約7割の時間で) → 残りは止まる
+  function seqIn(t, j, n, each) {
+    if (t < 0.04) return 1;
+    const st = n > 1 ? (0.7 - each) * (j / (n - 1)) : 0;
+    return cl01((t - 0.04 - st) / each);
+  }
+  // 1周の中で、j文字目の番のときだけ 0→1 に進む(番でないときは -1)
+  function seqWin(t, j, n, w) {
+    const st = n > 1 ? (1 - w) * (j / (n - 1)) : (1 - w) / 2;
+    const u = (t - st) / w;
+    return u >= 0 && u <= 1 ? u : -1;
+  }
+  // j文字目の番に、山なりに 0→1→0
+  const seqBump = (t, j, n, w) => { const u = seqWin(t, j, n, w); return u < 0 ? 0 : Math.sin(Math.PI * u); };
+
   // t は 0〜1。once=true の動きは最終コマで止まる登場アニメ。
   const MOTIONS = {
     bounce: { label: 'ぴょんぴょん', anchor: 'bottom', once: false, f: (t, k, W, H) => {
@@ -1630,8 +1651,41 @@ function findTextCells(bg, W, H, opt) {
     } },
     // 文字画像専用。1コマ目は1文字目を表示 → 1文字ずつ増える → 全部そろったら少し止まる。
     // 文字のすき間を自動で探して区切る。区切れない文字画像は、左から(縦長なら上から)なめらかに見せていく。
-    typewriter: { label: 'タイプライター', note: '1文字ずつパッと', textOnly: true, anchor: 'center', once: false, f: (t) => ({ type: Math.min(1, t / 0.7) }) },
-    typefade: { label: 'タイプふわっ', note: '1文字ずつふわっと', textOnly: true, anchor: 'center', once: false, f: (t) => ({ type: Math.min(1, t / 0.7), typeSoft: true }) },
+    typewriter: { label: 'タイプライター', note: '1文字ずつパッと', textOnly: true, group: 'char', anchor: 'center', once: false, f: (t) => ({ type: Math.min(1, t / 0.7) }) },
+    typefade: { label: 'タイプふわっ', note: '1文字ずつふわっと', textOnly: true, group: 'char', anchor: 'center', once: false, f: (t) => ({ type: Math.min(1, t / 0.7), typeSoft: true }) },
+    // ---- 1文字ずつの動き(文字画像専用)。pc(t, j, n, k, cs) は j文字目(全n文字)の動き。cs は1文字の大きさ ----
+    // 登場する動きは、1コマ目だけ全部そろった状態にする(LINE絵文字で1コマ目が空にならないように)
+    pcpop: pcm('ポンポン', '順番にポンッ', (t, j, n) => { const u = seqIn(t, j, n, 0.22), s = Math.max(0, easeOutBack(u)); return { sx: s, sy: s, alpha: cl01(u * 4) }; }),
+    pcdrop: pcm('ストンストン', '上から順番に', (t, j, n, k, cs) => { const u = seqIn(t, j, n, 0.28); return { dy: -(1 - easeOutBounce(u)) * cs * 1.6 * k, alpha: cl01(u * 6) }; }),
+    pcrise: pcm('にょきにょき', '下から順番に', (t, j, n, k, cs) => { const u = seqIn(t, j, n, 0.25), e = 1 - Math.pow(1 - u, 3); return { dy: (1 - e) * cs * 0.7 * k, alpha: e }; }),
+    pcslide: pcm('スッスッ', '右から順番に', (t, j, n, k, cs) => { const u = seqIn(t, j, n, 0.25), e = 1 - Math.pow(1 - u, 3); return { dx: (1 - e) * cs * 1.2 * k, alpha: e }; }),
+    pcspin: pcm('くるくる登場', '回って順番に', (t, j, n) => { const u = seqIn(t, j, n, 0.3), s = Math.max(0, easeOutBack(u)); return { rot: -(1 - easeInOut(u)) * TAU * 0.75, sx: s, sy: s, alpha: cl01(u * 3) }; }),
+    pczoom: pcm('ドンドン', '大きく→ぴたっ', (t, j, n, k) => { const u = seqIn(t, j, n, 0.22), e = 1 - Math.pow(1 - u, 3), s = 1 + (1 - e) * 1.8 * k; return { sx: s, sy: s, alpha: e }; }),
+    pcflip: pcm('ぱたぱた', 'めくって順番に', (t, j, n) => { const u = seqIn(t, j, n, 0.25); return { sx: Math.max(0.02, Math.sin((u * Math.PI) / 2)), alpha: u > 0 ? 1 : 0 }; }),
+    pcscatter: pcm('バラバラ集合', '四方から集まる', (t, j, n, k, cs) => {
+      const u = t < 0.04 ? 1 : cl01((t - 0.04) / 0.55), e = 1 - Math.pow(1 - u, 3), a = rnd(j + 1) * TAU, d = cs * (1.2 + rnd(j + 7)) * k * (1 - e);
+      return { dx: Math.cos(a) * d, dy: Math.sin(a) * d, rot: (rnd(j + 3) - 0.5) * 2 * (1 - e), alpha: cl01(u * 3) };
+    }),
+    pcinout: pcm('出て消える', '消えてまた出る', (t, j, n) => {
+      const st = n > 1 ? (0.3 - 0.12) * (j / (n - 1)) : 0;
+      if (t < 0.3) return {};
+      if (t < 0.6) { const u = cl01((t - 0.3 - st) / 0.12); return { sx: 1 - u * 0.6, sy: 1 - u * 0.6, alpha: 1 - u }; }
+      const u = cl01((t - 0.62 - st) / 0.14), s = Math.max(0, easeOutBack(u));
+      return { sx: s, sy: s, alpha: cl01(u * 4) };
+    }),
+    pcwave: pcm('ウェーブ', '波打つ', (t, j, n, k, cs) => ({ dy: -Math.sin(TAU * t - j * 0.75) * cs * 0.12 * k })),
+    pcbounce: pcm('順番ぴょん', '1文字ずつ跳ねる', (t, j, n, k, cs) => { const b = seqBump(t, j, n, 0.3); return { dy: -b * cs * 0.35 * k }; }),
+    pcbeat: pcm('順番ドキッ', '1文字ずつふくらむ', (t, j, n, k) => { const s = 1 + 0.35 * k * seqBump(t, j, n, 0.3); return { sx: s, sy: s }; }),
+    pcspot: pcm('スポットライト', '順番に大きく', (t, j, n, k, cs) => { const b = seqBump(t, j, n, 0.42); return { sx: 1 + 0.3 * k * b, sy: 1 + 0.3 * k * b, dy: -b * cs * 0.08 * k }; }),
+    pcturn: pcm('順番くるっ', '1文字ずつ回る', (t, j, n) => { const u = seqWin(t, j, n, 0.3); return u < 0 ? {} : { sx: Math.cos(TAU * u) }; }),
+    pcblink: pcm('チカチカ', '順番に点滅', (t, j, n, k) => ({ alpha: 1 - 0.8 * Math.min(1, k) * seqBump(t, j, n, 0.35) })),
+    pcshake: pcm('ガタガタ', 'バラバラに震える', (t, j, n, k, cs) => ({
+      dx: Math.sin(TAU * t * 5 + j * 2.1) * cs * 0.04 * k, dy: Math.cos(TAU * t * 4 + j * 1.3) * cs * 0.04 * k, rot: Math.sin(TAU * t * 3 + j) * 0.08 * k
+    })),
+    pcsway: pcm('ゆらゆら文字', '1文字ずつ揺れる', (t, j, n, k) => ({ rot: Math.sin(TAU * t + j * 0.9) * 0.22 * k })),
+    pcjelly: pcm('ぷるぷる文字', '1文字ずつ弾む', (t, j, n, k) => { const w = 0.12 * k * Math.sin(TAU * t * 2 + j * 1.2); return { sx: 1 + w, sy: 1 - w }; }),
+    pcfloat: pcm('ふわふわ文字', '1文字ずつ浮く', (t, j, n, k, cs) => ({ dy: Math.sin(TAU * t + j * 1.1) * cs * 0.08 * k, dx: Math.cos(TAU * t + j * 1.7) * cs * 0.03 * k })),
+    pcswing: pcm('ふりこ文字', '交互に振れる', (t, j, n, k) => ({ rot: Math.sin(TAU * t) * 0.25 * k * (j % 2 ? -1 : 1) })),
     zigzag: { label: 'ぴょこぴょこ', note: '横に跳ねる', anchor: 'bottom', once: false, f: (t, k, W, H) => ({
       dx: Math.sin(TAU * t) * W * 0.06 * k,
       dy: -Math.abs(Math.sin(TAU * t * 2)) * H * 0.05 * k
@@ -1761,9 +1815,11 @@ function findTextCells(bg, W, H, opt) {
     const k = power / 100;
     const o = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1, type: 1, typeSoft: false };
     const keys = keysOf(motionKeys);
+    const pcs = [];
     keys.forEach((mk) => {
       const m = MOTIONS[mk];
       const t = m.once ? (N > 1 ? i / (N - 1) : 1) : i / N;
+      if (m.pc) pcs.push({ f: m.pc, t, k });
       const r = Object.assign({ dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1, type: 1, typeSoft: false }, m.f(t, k, W, H));
       o.dx += r.dx; o.dy += r.dy; o.rot += r.rot; o.sx *= r.sx; o.sy *= r.sy; o.alpha *= r.alpha;
       o.type = Math.min(o.type, r.type); o.typeSoft = o.typeSoft || r.typeSoft;
@@ -1782,7 +1838,8 @@ function findTextCells(bg, W, H, opt) {
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'high';
     const x0 = -pl.dw / 2, y0 = bottom ? -pl.dh : top ? 0 : -pl.dh / 2;
-    if (o.type < 1) drawTyped(g, src, x0, y0, pl.dw, pl.dh, o.type, o.typeSoft);
+    if (pcs.length) drawChars(g, src, x0, y0, pl.dw, pl.dh, o.type, o.typeSoft, pcs);
+    else if (o.type < 1) drawTyped(g, src, x0, y0, pl.dw, pl.dh, o.type, o.typeSoft);
     else g.drawImage(src, x0, y0, pl.dw, pl.dh);
     g.restore();
   }
@@ -1882,6 +1939,61 @@ function findTextCells(bg, W, H, opt) {
     const full = Math.min(n, Math.floor(p + 1e-6));
     clipDraw(0, edge(full), 1);
     if (soft && full < n) clipDraw(edge(full), edge(full + 1), p - full);
+  }
+  // 1文字ずつ、それぞれの動きを付けて描く(タイプライターと組み合わせると、出ている字だけ動く)
+  function drawChars(g, src, x0, y0, dw, dh, prog, soft, pcs) {
+    const { vertical, segs } = typeSegs(src);
+    const cs = vertical ? dw : dh;
+    const trOf = (j, n) => {
+      const o = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 };
+      pcs.forEach((p) => {
+        const r = Object.assign({ dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }, p.f(p.t, j, n, p.k, cs));
+        o.dx += r.dx; o.dy += r.dy; o.rot += r.rot; o.sx *= r.sx; o.sy *= r.sy; o.alpha *= r.alpha;
+      });
+      return o;
+    };
+    const place = (tr, cx, cy) => {
+      g.translate(cx + tr.dx, cy + tr.dy);
+      g.rotate(tr.rot);
+      g.scale(tr.sx, tr.sy);
+      g.translate(-cx, -cy);
+    };
+    const n = segs.length;
+    if (n < 2) {
+      // 1文字ずつに分けられないときは、全体を1文字として動かす
+      const tr = trOf(0, 1);
+      g.save();
+      g.globalAlpha *= cl01(tr.alpha);
+      place(tr, x0 + dw / 2, y0 + dh / 2);
+      if (prog < 1) drawTyped(g, src, x0, y0, dw, dh, prog, soft);
+      else g.drawImage(src, x0, y0, dw, dh);
+      g.restore();
+      return;
+    }
+    const edge = (j) => (j <= 0 ? 0 : j >= n ? 1 : (segs[j - 1].e + segs[j].s) / 2);
+    let full = n, part = 0;
+    if (prog < 1) {
+      const p = 1 + prog * (n - 1);
+      full = Math.min(n, Math.floor(p + 1e-6));
+      part = soft ? p - full : 0;
+    }
+    for (let j = 0; j < n; j++) {
+      const vis = j < full ? 1 : j === full ? part : 0;
+      if (vis <= 0) continue;
+      const tr = trOf(j, n);
+      const a = edge(j), b = edge(j + 1);
+      const cx = vertical ? x0 + dw / 2 : x0 + ((a + b) / 2) * dw;
+      const cy = vertical ? y0 + ((a + b) / 2) * dh : y0 + dh / 2;
+      g.save();
+      g.globalAlpha *= vis * cl01(tr.alpha);
+      place(tr, cx, cy);
+      g.beginPath();
+      if (vertical) g.rect(x0, y0 + a * dh, dw, (b - a) * dh);
+      else g.rect(x0 + a * dw, y0, (b - a) * dw, dh);
+      g.clip();
+      g.drawImage(src, x0, y0, dw, dh);
+      g.restore();
+    }
   }
   // 文字画像を置く場所(動きを付ける前の、止まった状態)
   function textPl(W, H, item) {
@@ -2799,7 +2911,8 @@ function findTextCells(bg, W, H, opt) {
     const box = $(containerId);
     Object.keys(MOTIONS).forEach((mk) => {
       const m = MOTIONS[mk];
-      if (m.textOnly && key !== 'tmotion') return; // タイプライターは文字画像だけ
+      if (m.textOnly && key !== 'tmotion') return; // タイプライター・1文字ずつの動きは文字画像だけ
+      const target = key === 'tmotion' && m.group === 'char' ? $('tchips2') : box;
       const label = document.createElement('label');
       label.className = 'chip';
       const inp = document.createElement('input');
@@ -2818,7 +2931,7 @@ function findTextCells(bg, W, H, opt) {
       });
       label.appendChild(inp);
       label.appendChild(span);
-      box.appendChild(label);
+      target.appendChild(label);
       radios[key].push(inp);
     });
   }
