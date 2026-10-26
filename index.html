@@ -1586,6 +1586,10 @@ function findTextCells(bg, W, H, opt) {
       const u = (t - 0.4) / 0.25;
       return { dx: W * 1.35 * Math.pow(u, 2.6) };
     } },
+    // 文字画像専用。1コマ目は1文字目を表示 → 1文字ずつ増える → 全部そろったら少し止まる。
+    // 文字のすき間を自動で探して区切る。区切れない文字画像は、左から(縦長なら上から)なめらかに見せていく。
+    typewriter: { label: 'タイプライター', note: '1文字ずつパッと', textOnly: true, anchor: 'center', once: false, f: (t) => ({ type: Math.min(1, t / 0.7) }) },
+    typefade: { label: 'タイプふわっ', note: '1文字ずつふわっと', textOnly: true, anchor: 'center', once: false, f: (t) => ({ type: Math.min(1, t / 0.7), typeSoft: true }) },
     zigzag: { label: 'ぴょこぴょこ', note: '横に跳ねる', anchor: 'bottom', once: false, f: (t, k, W, H) => ({
       dx: Math.sin(TAU * t) * W * 0.06 * k,
       dy: -Math.abs(Math.sin(TAU * t * 2)) * H * 0.05 * k
@@ -1713,13 +1717,14 @@ function findTextCells(bg, W, H, opt) {
   const keysOf = (v) => (Array.isArray(v) ? v : v && v !== 'none' ? [v] : []).filter((k) => MOTIONS[k] && k !== 'none');
   function drawLayer(g, W, H, i, N, src, motionKeys, power, pl, am) {
     const k = power / 100;
-    const o = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 };
+    const o = { dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1, type: 1, typeSoft: false };
     const keys = keysOf(motionKeys);
     keys.forEach((mk) => {
       const m = MOTIONS[mk];
       const t = m.once ? (N > 1 ? i / (N - 1) : 1) : i / N;
-      const r = Object.assign({ dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1 }, m.f(t, k, W, H));
+      const r = Object.assign({ dx: 0, dy: 0, rot: 0, sx: 1, sy: 1, alpha: 1, type: 1, typeSoft: false }, m.f(t, k, W, H));
       o.dx += r.dx; o.dy += r.dy; o.rot += r.rot; o.sx *= r.sx; o.sy *= r.sy; o.alpha *= r.alpha;
+      o.type = Math.min(o.type, r.type); o.typeSoft = o.typeSoft || r.typeSoft;
     });
     const anchors = keys.map((mk) => MOTIONS[mk].anchor);
     const top = anchors.indexOf('top') >= 0;
@@ -1734,8 +1739,107 @@ function findTextCells(bg, W, H, opt) {
     g.scale(o.sx, o.sy);
     g.imageSmoothingEnabled = true;
     g.imageSmoothingQuality = 'high';
-    g.drawImage(src, -pl.dw / 2, bottom ? -pl.dh : top ? 0 : -pl.dh / 2, pl.dw, pl.dh);
+    const x0 = -pl.dw / 2, y0 = bottom ? -pl.dh : top ? 0 : -pl.dh / 2;
+    if (o.type < 1) drawTyped(g, src, x0, y0, pl.dw, pl.dh, o.type, o.typeSoft);
+    else g.drawImage(src, x0, y0, pl.dw, pl.dh);
     g.restore();
+  }
+  // ---- タイプライター: 文字画像の中の「透明なすき間」から1文字ずつの区切りを探す(画像ごとに1回だけ計算) ----
+  const typeCache = new WeakMap();
+  function typeSegs(src) {
+    let r = typeCache.get(src);
+    if (r) return r;
+    const sw = src.width, sh = src.height;
+    const vertical = sh > sw * 1.4;
+    const k = Math.min(1, 480 / Math.max(sw, sh));
+    const w = Math.max(1, Math.round(sw * k)), h = Math.max(1, Math.round(sh * k));
+    const c = document.createElement('canvas');
+    c.width = w; c.height = h;
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.drawImage(src, 0, 0, w, h);
+    let px;
+    try { px = g.getImageData(0, 0, w, h).data; } catch (e) { px = null; }
+    const len = vertical ? h : w;
+    const prof = new Uint32Array(len);
+    let lo = Infinity, hi = -1; // 文字の太さ方向の広がり(1文字の大きさの目安)
+    if (px) {
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        if (px[(y * w + x) * 4 + 3] > 24) {
+          prof[vertical ? y : x]++;
+          const a = vertical ? x : y;
+          if (a < lo) lo = a;
+          if (a > hi) hi = a;
+        }
+      }
+    }
+    const runs = [];
+    let s = -1;
+    for (let p = 0; p <= len; p++) {
+      const on = p < len && prof[p] > 0;
+      if (on && s < 0) s = p;
+      if (!on && s >= 0) { runs.push({ s, e: p }); s = -1; }
+    }
+    // 「い」「ハ」のように1文字の中にすき間がある字は、となりとまとめて1文字にする
+    const size = hi >= lo ? hi - lo + 1 : len;
+    const segs = [];
+    runs.forEach((ru) => {
+      const last = segs[segs.length - 1];
+      if (last && ru.e - last.s <= size * 1.08 && (last.e - last.s < size * 0.55 || ru.e - ru.s < size * 0.55)) last.e = ru.e;
+      else segs.push({ s: ru.s, e: ru.e });
+    });
+    // ふち付き文字は、となりの字とふちがくっついて区切れないことがある。
+    // 1文字にしては長すぎるかたまりは、字数を見積もって、いちばん細くなっている所で切る。
+    const sm = (q) => { let t = 0, c2 = 0; for (let d = -2; d <= 2; d++) { const v = q + d; if (v >= 0 && v < len) { t += prof[v]; c2++; } } return t / c2; };
+    const out = [];
+    segs.forEach((q) => {
+      const wd = q.e - q.s, cnt = Math.round(wd / size);
+      if (wd < size * 1.5 || cnt < 2) { out.push(q); return; }
+      let st = q.s;
+      for (let j = 1; j < cnt; j++) {
+        const tgt = q.s + (wd * j) / cnt, win = (wd / cnt) * 0.32;
+        let best = Math.round(tgt), bv = Infinity;
+        for (let x = Math.round(tgt - win); x <= Math.round(tgt + win); x++) {
+          const v = sm(x);
+          if (v < bv) { bv = v; best = x; }
+        }
+        out.push({ s: st, e: best });
+        st = best;
+      }
+      out.push({ s: st, e: q.e });
+    });
+    r = { vertical, segs: out.map((q) => ({ s: q.s / len, e: q.e / len })) };
+    typeCache.set(src, r);
+    return r;
+  }
+  // prog: 0〜1。0でも1文字目は見せる(LINE絵文字で1コマ目が空にならないように)
+  function drawTyped(g, src, x0, y0, dw, dh, prog, soft) {
+    const { vertical, segs } = typeSegs(src);
+    const n = segs.length;
+    const clipDraw = (a, b, alpha) => {
+      if (b <= a || alpha <= 0) return;
+      g.save();
+      g.globalAlpha *= alpha;
+      g.beginPath();
+      if (vertical) g.rect(x0, y0 + a * dh, dw, (b - a) * dh);
+      else g.rect(x0 + a * dw, y0, (b - a) * dw, dh);
+      g.clip();
+      g.drawImage(src, x0, y0, dw, dh);
+      g.restore();
+    };
+    if (n < 2) {
+      // 区切れないときは、なめらかに見せていく
+      const b = 0.12 + 0.88 * prog;
+      if (!soft) { clipDraw(0, b, 1); return; }
+      clipDraw(0, Math.max(0, b - 0.1), 1);
+      for (let j = 0; j < 4; j++) clipDraw(b - 0.1 + j * 0.025, b - 0.1 + (j + 1) * 0.025, 1 - (j + 0.5) / 4);
+      return;
+    }
+    // j文字目までの境目(となりの字とのすき間の真ん中で切る)
+    const edge = (j) => (j <= 0 ? 0 : j >= n ? 1 : (segs[j - 1].e + segs[j].s) / 2);
+    const p = 1 + prog * (n - 1);
+    const full = Math.min(n, Math.floor(p + 1e-6));
+    clipDraw(0, edge(full), 1);
+    if (soft && full < n) clipDraw(edge(full), edge(full + 1), p - full);
   }
   // 文字画像を置く場所(動きを付ける前の、止まった状態)
   function textPl(W, H, item) {
@@ -2651,6 +2755,7 @@ function findTextCells(bg, W, H, opt) {
     const box = $(containerId);
     Object.keys(MOTIONS).forEach((mk) => {
       const m = MOTIONS[mk];
+      if (m.textOnly && key !== 'tmotion') return; // タイプライターは文字画像だけ
       const label = document.createElement('label');
       label.className = 'chip';
       const inp = document.createElement('input');
