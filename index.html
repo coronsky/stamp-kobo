@@ -186,6 +186,29 @@ input[type=number]:focus-visible { outline: 2px solid var(--accent); outline-off
 .check input { width: 20px; height: 20px; flex: 0 0 auto; margin: 2px 0 0; accent-color: var(--accent); }
 .nudge { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 12px; }
 .nudge .btn { padding: 0; min-width: 0; font-size: 18px; }
+.tm { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; padding: 4px 12px 12px; background: var(--surface); }
+.tm > summary { font-weight: 700; }
+.tm input[type=text] {
+  font: 400 16px/1.2 var(--font-body); min-height: 44px; padding: 0 12px; width: 100%; box-sizing: border-box;
+  border: 1px solid var(--line-strong, var(--line)); border-radius: 10px; background: var(--surface); color: var(--ink);
+}
+.tm input[type=text]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tm-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tm-row.mt { margin-top: 8px; }
+.tm-opt {
+  min-height: 40px; min-width: 40px; padding: 0 12px; border-radius: 10px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-size: 15px;
+}
+.tm-opt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); font-weight: 700; box-shadow: 0 0 0 1px var(--accent) inset; }
+.tm-opt:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tm-sw { width: 40px; padding: 0; position: relative; }
+.tm-sw i { position: absolute; inset: 7px; border-radius: 50%; border: 1px solid rgba(0,0,0,.18); }
+.tm-sw.none i { background: linear-gradient(135deg, transparent 45%, #c0392b 45%, #c0392b 55%, transparent 55%) !important; }
+.tm-prev {
+  display: block; width: 100%; height: auto; margin-top: 14px; border-radius: 10px; border: 1px solid var(--line);
+  background-color: #fff; background-image: linear-gradient(45deg,#e6e2da 25%,transparent 25%,transparent 75%,#e6e2da 75%),linear-gradient(45deg,#e6e2da 25%,transparent 25%,transparent 75%,#e6e2da 75%);
+  background-size: 16px 16px; background-position: 0 0, 8px 8px;
+}
 
 details > summary { cursor: pointer; list-style: none; display: flex; align-items: center; gap: 8px; min-height: 44px; margin: 0; }
 details > summary::-webkit-details-marker { display: none; }
@@ -489,6 +512,25 @@ select, input[type=number] { border-color: var(--line-strong); }
           <button type="button" class="btn" id="tDelAllBtn">文字画像をすべて削除</button>
         </div>
         <div id="fixText"></div>
+        <details class="tm" id="tmBox">
+          <summary>文字を入力して作る</summary>
+          <input type="text" id="tmText" maxlength="16" placeholder="例: おはよう" autocomplete="off">
+          <p class="sub">フォント</p>
+          <div class="tm-row" id="tmFont"></div>
+          <p class="sub">文字の色</p>
+          <div class="tm-row" id="tmColor"></div>
+          <p class="sub">ふち</p>
+          <div class="tm-row" id="tmEdge"></div>
+          <div class="tm-row mt" id="tmEdgeW"></div>
+          <p class="sub">向き</p>
+          <div class="tm-row" id="tmDir"></div>
+          <canvas id="tmPrev" class="tm-prev" width="600" height="200" aria-label="作る文字のプレビュー"></canvas>
+          <div class="stage-bar">
+            <button type="button" class="btn primary" id="tmAdd">文字画像として追加</button>
+            <button type="button" class="btn" id="tmRedo" disabled>選んでいる文字画像を作り直す</button>
+          </div>
+          <p class="note" id="tmNote">追加すると、選んでいるスタンプにそのまま重なります。ここで作った文字は1文字ずつの位置が分かるので、「タイプライター」でもきれいに1文字ずつ出ます。</p>
+        </details>
         <p class="note">文字画像をタップすると、選んでいるスタンプに重なります。パソコンでは、文字画像をプレビューにドラッグ&ドロップしても重ねられます(メイン画像の上にドロップすると、そのスタンプに重なります)。</p>
       </div>
 
@@ -2516,6 +2558,8 @@ function findTextCells(bg, W, H, opt) {
   function tapText(i) {
     state.tsel = i;
     renderTexts();
+    tmLoad(state.texts[i]);
+    tmSync();
     if (!cur()) { note('先にメイン画像(スタンプ)を選んでください。'); return; }
     assignText(state.texts[i], null, null);
   }
@@ -2982,6 +3026,213 @@ function findTextCells(bg, W, H, opt) {
   $('dogAddWholeFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('dog', fl, true); });
   $('textAddWhole').addEventListener('click', () => $('textAddWholeFile').click());
   $('textAddWholeFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('text', fl, true); });
+
+  // ---- 文字を入力して、背景透過の文字画像を作る(スタンプ用にシンプルに) ----
+  const TM_FONTS = [
+    { k: 'maru', label: 'まる', fam: '"Zen Maru Gothic"', w: 900 },
+    { k: 'pop', label: 'ポップ', fam: '"Mochiy Pop One"', w: 400 },
+    { k: 'bold', label: '太字', fam: '"Dela Gothic One"', w: 400 },
+    { k: 'hand', label: '手書き', fam: '"Yusei Magic"', w: 400 },
+    { k: 'cute', label: 'ゆるかわ', fam: '"Hachi Maru Pop"', w: 400 },
+    { k: 'mincho', label: '明朝', fam: '"Shippori Mincho B1"', w: 800 }
+  ];
+  const TM_COLORS = ['#2b2b2b', '#ffffff', '#e2557a', '#f08a24', '#e8b100', '#3aa55c', '#2f7fd8', '#7b55c7', '#8a5a3c'];
+  const TM_EDGES = [{ k: 'none', c: null }, { k: 'white', c: '#ffffff' }, { k: 'black', c: '#2b2b2b' }, { k: 'cream', c: '#fff1c9' }, { k: 'pink', c: '#ffd3df' }, { k: 'sky', c: '#cfe7ff' }];
+  const TM_WIDTHS = [{ k: 0.06, label: '細い' }, { k: 0.1, label: 'ふつう' }, { k: 0.15, label: '太い' }];
+  const tm = { font: 'maru', color: '#2b2b2b', edge: 'white', ew: 0.1, dir: 'h' };
+  let tmFontsLinked = null;
+  // フォントは「文字を入力して作る」を開いたときだけ読み込む(ページを重くしない)
+  function tmLinkFonts() {
+    if (tmFontsLinked) return tmFontsLinked;
+    tmFontsLinked = new Promise((res) => {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet';
+      l.href = 'https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@900&family=Mochiy+Pop+One&family=Dela+Gothic+One&family=Yusei+Magic&family=Hachi+Maru+Pop&family=Shippori+Mincho+B1:wght@800&display=swap';
+      l.addEventListener('load', () => { res(); tmPreview(); });
+      l.addEventListener('error', () => res());
+      setTimeout(res, 5000);
+      document.head.appendChild(l);
+    });
+    return tmFontsLinked;
+  }
+  const tmFontOf = (k) => TM_FONTS.find((f) => f.k === k) || TM_FONTS[0];
+  const tmCss = (f, px) => f.w + ' ' + px + 'px ' + f.fam + ', "Hiragino Maru Gothic ProN", "Hiragino Sans", "Yu Gothic", sans-serif';
+  async function tmReady(p) {
+    const f = tmFontOf(p.font);
+    await tmLinkFonts();
+    try { await document.fonts.load(tmCss(f, 100), p.text || 'あ'); } catch (e) { /* フォントが読めなくても、ふつうの字で作る */ }
+  }
+  // 縦書きで回す字・右上に寄せる字
+  const TM_ROT = 'ー―〜～…‥-─（）()「」『』【】〈〉《》[]';
+  const TM_SMALL = '、。，．,.';
+  function tmRender(p) {
+    const f = tmFontOf(p.font);
+    const S = 150, edge = (TM_EDGES.find((e) => e.k === p.edge) || TM_EDGES[0]).c;
+    const lw = edge ? Math.round(S * p.ew) * 2 : 0;
+    const pad = lw / 2 + 12;
+    const chars = Array.from(p.text);
+    const m = document.createElement('canvas').getContext('2d');
+    m.font = tmCss(f, S);
+    const vertical = p.dir === 'v';
+    const gap = S * 0.04;
+    const adv = chars.map((ch) => (vertical ? S * 1.04 : Math.max(S * 0.3, m.measureText(ch).width)));
+    const total = adv.reduce((a, b) => a + b, 0) + gap * Math.max(0, chars.length - 1);
+    const c = document.createElement('canvas');
+    c.width = Math.ceil((vertical ? S * 1.15 : total) + pad * 2);
+    c.height = Math.ceil((vertical ? total : S * 1.3) + pad * 2);
+    const g = c.getContext('2d', { willReadFrequently: true });
+    g.font = tmCss(f, S);
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    const cells = [];
+    let pos = pad;
+    chars.forEach((ch, i) => { cells.push([pos, pos + adv[i]]); pos += adv[i] + gap; });
+    const put = (ch, i, fn) => {
+      const mid = (cells[i][0] + cells[i][1]) / 2;
+      g.save();
+      if (vertical) {
+        g.translate(c.width / 2, mid);
+        if (TM_ROT.indexOf(ch) >= 0) g.rotate(Math.PI / 2);
+        else if (TM_SMALL.indexOf(ch) >= 0) g.translate(S * 0.32, -S * 0.32);
+      } else g.translate(mid, c.height / 2 + S * 0.04);
+      fn(ch);
+      g.restore();
+    };
+    if (edge) {
+      g.lineWidth = lw; g.strokeStyle = edge;
+      chars.forEach((ch, i) => put(ch, i, (t) => g.strokeText(t, 0, 0)));
+    }
+    g.fillStyle = p.color;
+    chars.forEach((ch, i) => put(ch, i, (t) => g.fillText(t, 0, 0)));
+    // まわりの余白を切り落とす
+    const W = c.width, H = c.height, px = g.getImageData(0, 0, W, H).data;
+    let x0 = W, y0 = H, x1 = -1, y1 = -1;
+    const prof = new Float64Array(vertical ? H : W);
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const a = px[(y * W + x) * 4 + 3];
+      if (a > 8) {
+        if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+        prof[vertical ? y : x] += a;
+      }
+    }
+    if (x1 < 0) return null;
+    x0 = Math.max(0, x0 - 2); y0 = Math.max(0, y0 - 2); x1 = Math.min(W - 1, x1 + 2); y1 = Math.min(H - 1, y1 + 2);
+    const out = document.createElement('canvas');
+    out.width = x1 - x0 + 1; out.height = y1 - y0 + 1;
+    out.getContext('2d').drawImage(c, x0, y0, out.width, out.height, 0, 0, out.width, out.height);
+    // 1文字ずつの境目: 字と字の間の、いちばん薄い所で切る(ふちがくっついていても字の途中で切れない)
+    const o0 = vertical ? y0 : x0, len = vertical ? out.height : out.width;
+    const cuts = [];
+    for (let i = 1; i < cells.length; i++) {
+      const b = (cells[i - 1][1] + cells[i][0]) / 2, win = adv[i] * 0.28;
+      let best = Math.round(b), bv = Infinity;
+      for (let q = Math.round(b - win); q <= Math.round(b + win); q++) {
+        if (q < 0 || q >= prof.length) continue;
+        const v = prof[q] + Math.abs(q - b) * 0.5;
+        if (v < bv) { bv = v; best = q; }
+      }
+      cuts.push(clamp((best - o0) / len, 0, 1));
+    }
+    const segs = [];
+    let st = 0;
+    cuts.forEach((cu) => { segs.push({ s: st, e: cu }); st = cu; });
+    segs.push({ s: st, e: 1 });
+    typeCache.set(out, { vertical, segs: segs.length > 1 ? segs : [] });
+    return out;
+  }
+  function tmParams() { return Object.assign({}, tm, { text: $('tmText').value.replace(/\s+$/, '') }); }
+  let tmTimer = 0;
+  async function tmPreview() {
+    const p = tmParams();
+    const pv = $('tmPrev'), g = pv.getContext('2d');
+    if (p.text) await tmReady(p);
+    g.clearRect(0, 0, pv.width, pv.height);
+    const img = p.text ? tmRender(p) : null;
+    if (!img) {
+      g.fillStyle = 'rgba(120,110,100,.75)'; g.font = '500 26px ' + 'sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText('文字を入力するとここに出ます', pv.width / 2, pv.height / 2);
+      return;
+    }
+    const k = Math.min((pv.width - 24) / img.width, (pv.height - 24) / img.height, 1.2);
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(img, (pv.width - img.width * k) / 2, (pv.height - img.height * k) / 2, img.width * k, img.height * k);
+  }
+  const tmSoon = () => { clearTimeout(tmTimer); tmTimer = setTimeout(tmPreview, 120); };
+  function tmButtons(boxId, list, key, make) {
+    const box = $(boxId);
+    const btns = list.map((o) => {
+      const b = document.createElement('button');
+      b.type = 'button'; b.className = 'tm-opt';
+      make(b, o);
+      b.addEventListener('click', () => { tm[key] = o.k; tmSync(); tmSoon(); });
+      box.appendChild(b);
+      return [b, o.k];
+    });
+    return btns;
+  }
+  const tmGroups = [];
+  tmGroups.push(['font', tmButtons('tmFont', TM_FONTS, 'font', (b, o) => { b.textContent = o.label; b.style.font = tmCss(o, 16); })]);
+  tmGroups.push(['color', tmButtons('tmColor', TM_COLORS.map((c) => ({ k: c })), 'color', (b, o) => { b.classList.add('tm-sw'); b.setAttribute('aria-label', '文字の色 ' + o.k); b.innerHTML = '<i style="background:' + o.k + '"></i>'; })]);
+  tmGroups.push(['edge', tmButtons('tmEdge', TM_EDGES, 'edge', (b, o) => {
+    b.classList.add('tm-sw'); if (!o.c) b.classList.add('none');
+    b.setAttribute('aria-label', o.c ? 'ふちの色 ' + o.k : 'ふちなし');
+    b.innerHTML = '<i style="background:' + (o.c || 'transparent') + '"></i>';
+  })]);
+  tmGroups.push(['ew', tmButtons('tmEdgeW', TM_WIDTHS, 'ew', (b, o) => { b.textContent = 'ふち ' + o.label; })]);
+  tmGroups.push(['dir', tmButtons('tmDir', [{ k: 'h', label: '横書き' }, { k: 'v', label: '縦書き' }], 'dir', (b, o) => { b.textContent = o.label; })]);
+  function tmSync() {
+    tmGroups.forEach(([key, btns]) => btns.forEach(([b, k]) => {
+      b.setAttribute('aria-pressed', String(k === tm[key]));
+      if (key === 'ew') b.disabled = tm.edge === 'none';
+    }));
+    const p = state.texts[state.tsel];
+    $('tmRedo').disabled = !(p && p.gen);
+  }
+  function tmLoad(piece) {
+    if (!piece || !piece.gen) return;
+    Object.assign(tm, piece.gen);
+    $('tmText').value = piece.gen.text;
+    tmSync(); tmSoon();
+  }
+  $('tmBox').addEventListener('toggle', () => { if ($('tmBox').open) { tmLinkFonts(); tmSync(); tmPreview(); } });
+  $('tmText').addEventListener('input', tmSoon);
+  $('tmText').addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); $('tmAdd').click(); } });
+  $('tmAdd').addEventListener('click', async () => {
+    const p = tmParams();
+    if (!p.text) { $('tmNote').textContent = '先に文字を入力してください。'; $('tmText').focus(); return; }
+    await tmReady(p);
+    const img = tmRender(p);
+    if (!img) { $('tmNote').textContent = 'この文字は画像にできませんでした。別の文字で試してください。'; return; }
+    dropSamples('text');
+    if (state.texts.length >= MAX_ITEMS) { $('tmNote').textContent = MAX_ITEMS + '個に達しているため追加できません。不要な文字画像を削除してください。'; return; }
+    const piece = newPiece(img, { gen: Object.assign({}, p) });
+    state.texts.push(piece);
+    state.tsel = state.texts.length - 1;
+    lastDeletedText = null;
+    renderTexts();
+    tmSync();
+    if (cur()) assignText(piece, null, null);
+    $('tmNote').textContent = '「' + p.text + '」を文字画像に追加しました' + (cur() ? '(選んでいるスタンプに重ねました)。' : '。');
+  });
+  $('tmRedo').addEventListener('click', async () => {
+    const piece = state.texts[state.tsel];
+    if (!piece || !piece.gen) return;
+    const p = tmParams();
+    if (!p.text) { $('tmNote').textContent = '先に文字を入力してください。'; return; }
+    await tmReady(p);
+    const img = tmRender(p);
+    if (!img) return;
+    piece.canvas = img;
+    piece.orig = undefined;
+    piece.thumb = makeThumb(img, 160);
+    piece.gen = Object.assign({}, p);
+    state.ver++;
+    renderTexts();
+    renderStrip();
+    syncPanel();
+    applyChange(false);
+    $('tmNote').textContent = '選んでいる文字画像を「' + p.text + '」に作り直しました。この文字を使っているスタンプもすべて変わります。';
+  });
   $('textAdd').addEventListener('click', () => $('textAddFile').click());
   $('textAddFile').addEventListener('change', (e) => { const fl = Array.from(e.target.files || []); e.target.value = ''; addFiles('text', fl); });
   // 画像ファイルを一覧にドロップして追加
