@@ -282,6 +282,14 @@ details[open] > summary { margin-bottom: 6px; }
 .tgtchips.t4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .tgtchips.t4 .chip span { padding-inline: 2px; font-size: 13px; }
 .tgtchips.t2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.tgtchips.t5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.tgtchips.t5 .chip span { padding-inline: 1px; font-size: 12px; }
+.subhead { margin: 16px 0 8px; font: 700 14px/1.4 var(--font-body); color: var(--ink); }
+.stchips { grid-template-columns: repeat(auto-fill, minmax(76px, 1fr)); }
+.stchips .chip span { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; font-size: 11px; line-height: 1.2; }
+.stchips canvas, .stchips img { width: 48px; height: 48px; display: block; object-fit: contain; }
+.stcols { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
+.stcols i { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 4px; vertical-align: -1px; border: 1px solid rgba(0,0,0,0.25); }
 .win { position: fixed; inset: 0; z-index: 50; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 14, 20, 0.6); }
 .win[hidden] { display: none; }
 .win-card { background: var(--surface); color: var(--ink); border-radius: 16px; width: 100%; max-width: 440px; max-height: 94vh; overflow: auto; padding: 16px; box-sizing: border-box; }
@@ -414,6 +422,7 @@ select, input[type=number] { border-color: var(--line-strong); }
     <p class="lead">メイン画像と文字画像を別々に切り出して重ね、動かして、LINEアニメスタンプ用のAPNGを書き出します。</p>
     <div class="stage-bar topnav">
       <button type="button" class="btn" id="goFx">↓ エフェクトへ</button>
+      <button type="button" class="btn" id="goSt">↓ ステッカーへ</button>
       <button type="button" class="btn" id="goExport">↓ 書き出し・保存へ</button>
     </div>
   </header>
@@ -443,10 +452,11 @@ select, input[type=number] { border-color: var(--line-strong); }
       </div>
       <p class="note" id="oneMsg" role="status" aria-live="polite"></p>
       <a class="btn" id="oneLink" href="#" download="sticker.png" hidden>保存ファイルをダウンロード</a>
-      <div class="chips tgtchips t4" role="radiogroup" aria-label="操作する対象">
+      <div class="chips tgtchips t5" role="radiogroup" aria-label="操作する対象">
         <label class="chip"><input type="radio" name="tgt" id="tgtDog" value="dog" checked><span>メイン</span></label>
         <label class="chip"><input type="radio" name="tgt" id="tgtText" value="text"><span>文字</span></label>
         <label class="chip"><input type="radio" name="tgt" id="tgtFx" value="fx"><span>エフェクト</span></label>
+        <label class="chip"><input type="radio" name="tgt" id="tgtSt" value="st"><span>ステッカー</span></label>
         <label class="chip"><input type="radio" name="tgt" id="tgtErase" value="erase"><span>消しゴム</span></label>
       </div>
       <div id="erasePad" hidden>
@@ -469,7 +479,7 @@ select, input[type=number] { border-color: var(--line-strong); }
         <p class="note">はみ出した部分は、「消す」でなぞって消せます。消しすぎたら「ひとつ戻す」か、「戻す」でなぞると元の絵に戻ります(うすく見えているのが消した部分です)。文字画像は、同じ画像を使っているスタンプすべてに反映されます。消しゴムのあいだは動きが止まります。</p>
       </div>
       <p class="note" id="srcNote"></p>
-      <p class="note">プレビューを直接さわれます。文字の上をドラッグすると文字、それ以外はメイン画像が動きます。「エフェクト」を選ぶと、エフェクトだけが動きます。「消しゴム」を選ぶと、はみ出した部分をなぞって消せます。2本指(パソコンではマウスのホイール)で、さわっているほうの大きさを変えられます。2本指をひねると回転します(パソコンではShiftを押しながらホイール、または「↺ 回す」「↻ 回す」。「メイン」「文字」で対象を切り替えます)。操作中は動きが止まります。</p>
+      <p class="note">プレビューを直接さわれます。文字の上をドラッグすると文字、それ以外はメイン画像が動きます。「エフェクト」を選ぶとエフェクトだけ、「ステッカー」を選ぶとステッカーだけが動きます。「消しゴム」を選ぶと、はみ出した部分をなぞって消せます。2本指(パソコンではマウスのホイール)で、さわっているほうの大きさを変えられます。2本指をひねると回転します(パソコンではShiftを押しながらホイール、または「↺ 回す」「↻ 回す」。「メイン」「文字」で対象を切り替えます)。操作中は動きが止まります。</p>
     </section>
 
     <section class="panel" aria-label="設定">
@@ -623,6 +633,34 @@ select, input[type=number] { border-color: var(--line-strong); }
         <figure class="minisec"><canvas id="miniFx" class="mini" width="320" height="270" role="img" aria-label="ミニプレビュー"></canvas><figcaption>ミニプレビュー</figcaption></figure>
         <button type="button" class="btn mt" id="fxReset">エフェクトの位置・大きさ・回転をもとに戻す</button>
         <p class="note">エフェクトの位置と大きさは、プレビュー上の「エフェクト」を選んで、ドラッグ・2本指で変えます(パソコンでは枠の角をつまんで大きさを変えられます)。</p>
+        <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
+      </div>
+
+      <div id="stSection">
+        <h2>動くステッカー</h2>
+        <p class="note">矢印・ビックリマークなど、点滅したり動いたりする強調マークです。スタンプ1個につき1つ付けられます。メイン画像・文字・エフェクトとは別に、位置・大きさ・回転を変えられます(プレビュー上の「ステッカー」を選んで、ドラッグ・2本指)。</p>
+        <div class="chips stchips" id="stchips" role="radiogroup" aria-label="ステッカー"></div>
+        <p class="subhead">自分のステッカー</p>
+        <div class="chips stchips" id="stmine" role="radiogroup" aria-label="自分のステッカー"></div>
+        <p class="note" id="stMineNone">まだありません。背景が透明な画像(PNGなど)を追加すると、ここに並びます。</p>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="stAdd">＋ 自分のステッカーを追加</button>
+          <button type="button" class="btn" id="stDel" disabled>選んでいる自分のステッカーを削除</button>
+        </div>
+        <input type="file" id="stFile" accept="image/png,image/webp,image/gif,image/jpeg" multiple hidden>
+        <p class="subhead">ステッカーの動き</p>
+        <div class="chips" id="stanims" role="radiogroup" aria-label="ステッカーの動き"></div>
+        <p class="subhead">色(用意したステッカーだけ)</p>
+        <div class="chips stcols" id="stcols" role="radiogroup" aria-label="ステッカーの色"></div>
+        <div class="stage-bar">
+          <button type="button" class="btn" id="stOff">このスタンプのステッカーを外す</button>
+          <button type="button" class="btn" id="stAll">このステッカーを全スタンプに付ける</button>
+          <button type="button" class="btn" id="stOffAll">全スタンプのステッカーを外す</button>
+        </div>
+        <p class="note" id="stMsg" role="status" aria-live="polite"></p>
+        <figure class="minisec"><canvas id="miniSt" class="mini" width="320" height="270" role="img" aria-label="ミニプレビュー"></canvas><figcaption>ミニプレビュー</figcaption></figure>
+        <button type="button" class="btn mt" id="stReset">ステッカーの位置・大きさ・回転をもとに戻す</button>
+        <p class="note">自分のステッカーは、このブラウザに保存され、次に開いたときも使えます(「作業を保存」したファイルにも入ります)。動くGIFは、1コマ目の絵として取り込み、上の「動き」で動かします。「全スタンプに付ける」は、種類・動き・色・位置・大きさ・回転をまとめて写します。</p>
         <div class="stage-bar jump"><button type="button" class="btn jumpBtn">▶ プレビューを見る</button></div>
       </div>
 
@@ -1705,9 +1743,9 @@ function findTextCells(bg, W, H, opt) {
   };
 
   // メイン画像1枚が、そのままスタンプ1個になる。文字画像は文字の一覧から重ねる(位置・大きさ・動きはスタンプごと)。
-  const DEF = { drot: 0, trot: 0, dscale: 100, dx: 50, dy: 50, fx: [], fxpower: 100, fxscale: 100, fxx: 50, fxy: 50, fxrot: 0, motion: ['bounce'], power: 100, tmotion: ['jelly'], tpower: 100, textFront: true, tscale: 100, tx: 50, ty: 80 };
+  const DEF = { drot: 0, trot: 0, dscale: 100, dx: 50, dy: 50, fx: [], fxpower: 100, fxscale: 100, fxx: 50, fxy: 50, fxrot: 0, st: '', stanim: 'auto', stcol: 'auto', stscale: 100, stx: 76, sty: 24, strot: 0, motion: ['bounce'], power: 100, tmotion: ['jelly'], tpower: 100, textFront: true, tscale: 100, tx: 50, ty: 80 };
   const state = {
-    items: [], texts: [], sel: -1, tsel: -1,
+    items: [], texts: [], stickers: [], sel: -1, tsel: -1,
     autoLight: true, frames: 12, duration: 1, delay: 1000 / 12, loops: 2, size: '320x270', playing: true,
     cfg: {
       dog: { mode: 'auto', cols: 3, rows: 4, tol: 30, gap: 8, inner: false, sheet: null },
@@ -2230,6 +2268,180 @@ function findTextCells(bg, W, H, opt) {
     const base = Math.min(W, H) * 0.72 * (item.fxscale / 100);
     return { cx: (W * item.fxx) / 100, cy: (H * item.fxy) / 100, dw: base, dh: base, rot: (item.fxrot * Math.PI) / 180 };
   }
+
+  // ---- 動くステッカー(矢印・ビックリマークなどの強調マーク。スタンプ1個につき1つ。全部コードで描く) ----
+  const ST_COLORS = [['auto', 'おまかせ', null], ['red', '赤', '#e8403a'], ['yellow', '黄', '#ffc61a'], ['blue', '青', '#3f7fd0'], ['pink', 'ピンク', '#ff5f8f'], ['green', '緑', '#2fae66'], ['orange', 'オレンジ', '#ff8a1f'], ['black', '黒', '#2d2d33'], ['white', '白', '#ffffff']];
+  const ST_ANIMS = {
+    auto: { label: 'おまかせ', note: 'マークごと' }, blink: { label: '点滅' }, pulse: { label: 'ドクン', note: '大きく小さく' },
+    bounce: { label: 'ぴょこぴょこ' }, poke: { label: 'つんつん', note: '矢印の向きへ' }, swing: { label: 'ゆらゆら' },
+    shake: { label: 'ぶるぶる' }, pop: { label: 'ポン', note: '飛び出す' }, spin: { label: 'くるくる' }, none: { label: 'とめる' }
+  };
+  const stOutline = (col) => (String(col).toLowerCase() === '#ffffff' ? '#2d2d33' : '#ffffff');
+  function stRR(g, x, y, w, h, r) {
+    g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r);
+    g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r);
+    g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath();
+  }
+  // 塗りの形: うすい影 → 白ふち → 塗り
+  function stFill(g, s, col) {
+    g.lineJoin = 'round';
+    g.lineWidth = 0.12 * s; g.strokeStyle = 'rgba(0,0,0,0.25)'; g.stroke();
+    g.lineWidth = 0.08 * s; g.strokeStyle = stOutline(col); g.stroke();
+    g.fillStyle = col; g.fill();
+  }
+  // 線の形: うすい影 → 白ふち → 線
+  function stLine(g, s, col, w) {
+    g.lineJoin = 'round'; g.lineCap = 'round';
+    g.lineWidth = (w + 0.11) * s; g.strokeStyle = 'rgba(0,0,0,0.25)'; g.stroke();
+    g.lineWidth = (w + 0.07) * s; g.strokeStyle = stOutline(col); g.stroke();
+    g.lineWidth = w * s; g.strokeStyle = col; g.stroke();
+  }
+  function stText(g, str, s, col, size, y, plain) {
+    g.font = '900 ' + size * s + 'px "Zen Maru Gothic", sans-serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+    const yy = (y || 0) * s;
+    if (!plain) {
+      g.lineWidth = size * s * 0.26; g.strokeStyle = 'rgba(0,0,0,0.25)'; g.strokeText(str, 0, yy);
+      g.lineWidth = size * s * 0.18; g.strokeStyle = stOutline(col); g.strokeText(str, 0, yy);
+    }
+    g.fillStyle = col; g.fillText(str, 0, yy);
+  }
+  function stArrow(g, s, col, rot) {
+    g.save(); g.rotate(rot);
+    const P = [[-0.12, -0.42], [0.12, -0.42], [0.12, 0], [0.31, 0], [0, 0.42], [-0.31, 0], [-0.12, 0]];
+    g.beginPath(); P.forEach(([x, y], n) => (n ? g.lineTo(x * s, y * s) : g.moveTo(x * s, y * s))); g.closePath();
+    stFill(g, s, col);
+    g.restore();
+  }
+  function stBurst(g, s, n, R, r, jitter) {
+    g.beginPath();
+    for (let k = 0; k < n * 2; k++) {
+      const a = (k / (n * 2)) * TAU - Math.PI / 2, rr = (k % 2 ? r : R) * (1 - jitter * rnd(k + 3));
+      const x = Math.cos(a) * rr * s, y = Math.sin(a) * rr * s;
+      k ? g.lineTo(x, y) : g.moveTo(x, y);
+    }
+    g.closePath();
+  }
+  const blinkOn = (t) => Math.floor(t * 4) % 2 === 0;
+  // 20種類のテンプレート。d(g, s, 色, t): 中心(0,0)、一辺 s の正方形におさまるように描く
+  const STICKERS = {
+    excl: { label: 'ビックリ', anim: 'blink', col: '#e8403a', d: (g, s, c) => stText(g, '!', s, c, 0.92, 0.03) },
+    exq: { label: '!?', anim: 'swing', col: '#e8403a', d: (g, s, c) => stText(g, '!?', s, c, 0.74, 0.03) },
+    question: { label: 'ハテナ', anim: 'swing', col: '#3f7fd0', d: (g, s, c) => stText(g, '?', s, c, 0.92, 0.03) },
+    arrowDown: { label: '矢印 ↓', anim: 'poke', dir: [0, 1], col: '#e8403a', d: (g, s, c) => stArrow(g, s, c, 0) },
+    arrowUp: { label: '矢印 ↑', anim: 'poke', dir: [0, -1], col: '#e8403a', d: (g, s, c) => stArrow(g, s, c, Math.PI) },
+    arrowLeft: { label: '矢印 ←', anim: 'poke', dir: [-1, 0], col: '#e8403a', d: (g, s, c) => stArrow(g, s, c, Math.PI / 2) },
+    arrowRight: { label: '矢印 →', anim: 'poke', dir: [1, 0], col: '#e8403a', d: (g, s, c) => stArrow(g, s, c, -Math.PI / 2) },
+    koko: { label: 'ここ!', anim: 'bounce', col: '#e8403a', d: (g, s, c) => {
+      g.beginPath(); stRR(g, -0.45 * s, -0.34 * s, 0.9 * s, 0.5 * s, 0.16 * s);
+      g.moveTo(-0.1 * s, 0.14 * s); g.lineTo(0, 0.38 * s); g.lineTo(0.1 * s, 0.14 * s); g.closePath();
+      stFill(g, s, c);
+      stText(g, 'ここ!', s, stOutline(c), 0.27, -0.09, true);
+    } },
+    newb: { label: 'NEW', anim: 'pulse', col: '#e8403a', d: (g, s, c) => {
+      stBurst(g, s, 14, 0.47, 0.37, 0); stFill(g, s, c);
+      g.save(); g.rotate(-0.18); stText(g, 'NEW', s, stOutline(c), 0.25, 0.01, true); g.restore();
+    } },
+    point: { label: 'POINT', anim: 'bounce', col: '#ff8a1f', d: (g, s, c) => {
+      g.beginPath(); stRR(g, -0.46 * s, -0.17 * s, 0.92 * s, 0.34 * s, 0.17 * s); stFill(g, s, c);
+      stText(g, 'POINT', s, stOutline(c), 0.22, 0.01, true);
+    } },
+    ring: { label: 'まる', anim: 'blink', col: '#e8403a', d: (g, s, c) => { g.beginPath(); g.arc(0, 0, 0.38 * s, 0, TAU); stLine(g, s, c, 0.09); } },
+    double: { label: 'にじゅうまる', anim: 'pulse', col: '#e8403a', d: (g, s, c) => {
+      g.beginPath(); g.arc(0, 0, 0.39 * s, 0, TAU); stLine(g, s, c, 0.075);
+      g.beginPath(); g.arc(0, 0, 0.2 * s, 0, TAU); stLine(g, s, c, 0.075);
+    } },
+    check: { label: 'チェック', anim: 'pop', col: '#2fae66', d: (g, s, c) => {
+      g.beginPath(); g.moveTo(-0.32 * s, -0.01 * s); g.lineTo(-0.09 * s, 0.25 * s); g.lineTo(0.35 * s, -0.27 * s); stLine(g, s, c, 0.14);
+    } },
+    cross: { label: 'バツ', anim: 'shake', col: '#3f7fd0', d: (g, s, c) => {
+      g.beginPath(); g.moveTo(-0.29 * s, -0.29 * s); g.lineTo(0.29 * s, 0.29 * s); g.moveTo(0.29 * s, -0.29 * s); g.lineTo(-0.29 * s, 0.29 * s); stLine(g, s, c, 0.15);
+    } },
+    sparkle: { label: 'キラッ', anim: 'pulse', col: '#ffc61a', d: (g, s, c, t) => {
+      starPath(g, -0.04 * s, 0.05 * s, 0.38 * s); stFill(g, s, c);
+      const k = 0.55 + 0.45 * Math.abs(Math.cos(TAU * t * 2));
+      starPath(g, 0.3 * s, -0.3 * s, 0.14 * s * k); stFill(g, s, c);
+    } },
+    heart: { label: 'ドキドキ', anim: 'pulse', col: '#ff5f8f', d: (g, s, c) => {
+      heartPath(g, 0, 0.1 * s, 0.5 * s); stFill(g, s, c);
+      g.beginPath(); g.ellipse(-0.17 * s, -0.12 * s, 0.07 * s, 0.045 * s, -0.7, 0, TAU); g.fillStyle = 'rgba(255,255,255,0.75)'; g.fill();
+    } },
+    idea: { label: 'ひらめき', anim: 'none', col: '#ffc61a', d: (g, s, c, t) => {
+      if (blinkOn(t)) {
+        g.beginPath();
+        [-150, -115, -90, -65, -30].forEach((deg) => { const a = (deg * Math.PI) / 180; g.moveTo(Math.cos(a) * 0.36 * s, -0.08 * s + Math.sin(a) * 0.36 * s); g.lineTo(Math.cos(a) * 0.47 * s, -0.08 * s + Math.sin(a) * 0.47 * s); });
+        stLine(g, s, c, 0.05);
+      }
+      g.beginPath(); stRR(g, -0.11 * s, 0.14 * s, 0.22 * s, 0.2 * s, 0.05 * s); stFill(g, s, '#8a8f99');
+      g.beginPath(); g.arc(0, -0.08 * s, 0.25 * s, 0, TAU); stFill(g, s, c);
+      g.beginPath(); g.ellipse(-0.09 * s, -0.16 * s, 0.06 * s, 0.04 * s, -0.7, 0, TAU); g.fillStyle = 'rgba(255,255,255,0.8)'; g.fill();
+    } },
+    warn: { label: '注意', anim: 'blink', col: '#ffc61a', d: (g, s, c) => {
+      g.beginPath(); g.moveTo(0, -0.4 * s); g.lineTo(0.44 * s, 0.35 * s); g.lineTo(-0.44 * s, 0.35 * s); g.closePath(); stFill(g, s, c);
+      stText(g, '!', s, '#2d2d33', 0.46, 0.08, true);
+    } },
+    burst: { label: 'ドーン', anim: 'pulse', col: '#ff5f2e', d: (g, s, c) => {
+      stBurst(g, s, 11, 0.48, 0.3, 0.18); stFill(g, s, c);
+      stText(g, '!!', s, '#ffffff', 0.42, 0.03);
+    } },
+    pika: { label: 'ピカーン', anim: 'none', col: '#ffc61a', d: (g, s, c, t) => {
+      const L = 0.62 + 0.18 * Math.abs(Math.sin(TAU * t * 2));
+      g.beginPath();
+      [-90, -132, -48].forEach((deg, n) => {
+        const a = (deg * Math.PI) / 180, l = n ? L * 0.82 : L;
+        g.moveTo(Math.cos(a) * 0.12 * s, 0.38 * s + Math.sin(a) * 0.12 * s);
+        g.lineTo(Math.cos(a) * (0.12 + l * 0.7) * s, 0.38 * s + Math.sin(a) * (0.12 + l * 0.7) * s);
+      });
+      stLine(g, s, c, 0.1);
+    } }
+  };
+  // 動き: 1コマ目はかならず見える形にする(LINEで1コマ目が空にならないように)
+  function stAnim(kind, t, i, dir) {
+    const a = { dx: 0, dy: 0, sc: 1, rot: 0, alpha: 1 };
+    if (kind === 'blink') a.alpha = blinkOn(t) ? 1 : 0;
+    else if (kind === 'pulse') a.sc = 1 + 0.2 * Math.max(0, Math.sin(TAU * t * 2));
+    else if (kind === 'bounce') a.dy = -Math.abs(Math.sin(TAU * t * 2)) * 0.18;
+    else if (kind === 'poke') { const m = (0.5 - 0.5 * Math.cos(TAU * t * 2)) * 0.14; a.dx = dir[0] * m; a.dy = dir[1] * m; }
+    else if (kind === 'swing') a.rot = 0.3 * Math.sin(TAU * t);
+    else if (kind === 'shake') a.dx = [0, 1, 0, -1][i % 4] * 0.05;
+    else if (kind === 'spin') a.rot = TAU * t;
+    else if (kind === 'pop') {
+      const u = Math.min(1, t / 0.3), c1 = 1.70158, c3 = c1 + 1;
+      a.sc = u >= 1 ? 1 : 0.35 + 0.65 * (1 + c3 * Math.pow(u - 1, 3) + c1 * Math.pow(u - 1, 2));
+    }
+    return a;
+  }
+  function stDef(key) {
+    if (!key) return null;
+    if (key.indexOf('c:') === 0) {
+      const c = state.stickers.find((x) => 'c:' + x.id === key);
+      return c ? { custom: c, anim: 'pulse' } : null;
+    }
+    return STICKERS[key] || null;
+  }
+  const stColor = (k) => { const f = ST_COLORS.find((x) => x[0] === k); return f ? f[2] : null; };
+  function stPl(W, H, item) {
+    const base = Math.min(W, H) * 0.36 * (item.stscale / 100);
+    return { cx: (W * item.stx) / 100, cy: (H * item.sty) / 100, dw: base, dh: base, rot: (item.strot * Math.PI) / 180 };
+  }
+  function drawSticker(g, W, H, i, N, item, still, alpha) {
+    const d = stDef(item.st);
+    if (!d) return;
+    const pl = stPl(W, H, item), s = pl.dw, t = still || N <= 0 ? 0 : i / N;
+    const kind = !item.stanim || item.stanim === 'auto' ? d.anim || 'pulse' : item.stanim;
+    const a = stAnim(kind, t, still ? 0 : i, d.dir || [0, -1]);
+    if (a.alpha <= 0) return;
+    g.save();
+    g.globalAlpha *= a.alpha * (alpha == null ? 1 : alpha);
+    g.translate(pl.cx, pl.cy); g.rotate(pl.rot);
+    g.translate(a.dx * s, a.dy * s); g.rotate(a.rot); g.scale(a.sc, a.sc);
+    if (d.custom) {
+      const c = d.custom.canvas, k = Math.min(s / c.width, s / c.height);
+      g.drawImage(c, (-c.width * k) / 2, (-c.height * k) / 2, c.width * k, c.height * k);
+    } else d.d(g, s, stColor(item.stcol) || d.col, t);
+    g.restore();
+  }
   function renderFrame(g, W, H, i, N, item, still, ghost) {
     g.clearRect(0, 0, W, H);
     if (!item) return;
@@ -2250,6 +2462,7 @@ function findTextCells(bg, W, H, opt) {
       if (L.kind === ghost && L.orig) drawLayer(g, W, H, i, N, L.orig, [], L.power, L.pl, 0.28);
       drawLayer(g, W, H, i, N, L.src, L.motion, L.power, L.pl, L.kind === ghost ? 1 : 0.3);
     });
+    drawSticker(g, W, H, i, N, item, still, ghost ? 0.3 : 1);
     g.restore();
     const fxKeys = (item.fx || []).filter((k) => FX[k]);
     if (fxKeys.length) {
@@ -2269,7 +2482,7 @@ function findTextCells(bg, W, H, opt) {
     const it = cur();
     const still = state.editing || state.erase;
     renderFrame(ctx, W, H, still ? 0 : idx % state.frames, state.frames, it, still, state.erase ? state.eraseOn : null);
-    ['miniCv', 'miniDog', 'miniText', 'miniFx'].forEach((id) => {
+    ['miniCv', 'miniDog', 'miniText', 'miniFx', 'miniSt'].forEach((id) => {
       const mc = $(id);
       if (!mc) return;
       if (mc.width !== W) mc.width = W;
@@ -2284,7 +2497,7 @@ function findTextCells(bg, W, H, opt) {
     }
     if (it && !state.erase && (state.editing || state.hover)) {
       const pl = state.editing
-        ? ((state.editTarget !== 'text' || it.text) ? (state.editTarget === 'dog' ? dogPl(W, H, it) : state.editTarget === 'fx' ? fxPl(W, H, it) : textPl(W, H, it)) : null)
+        ? ((state.editTarget !== 'text' || it.text) ? KEYS[state.editTarget].pl(W, H, it) : null)
         : targetPl(it);
       if (pl) {
         ctx.save();
@@ -2476,6 +2689,7 @@ function findTextCells(bg, W, H, opt) {
     const d = it || DEF;
     radios.fx.forEach((r) => { r.checked = r.value === 'none' ? !(d.fx || []).length : (d.fx || []).indexOf(r.value) >= 0; });
     $('fxpower').value = d.fxpower;
+    if (typeof syncSt === 'function') syncSt();
     ['motion', 'tmotion'].forEach((key) => radios[key].forEach((r) => { const ks = keysOf(d[key]); r.checked = r.value === 'none' ? ks.length === 0 : ks.indexOf(r.value) >= 0; }));
     $('power').value = d.power;
     $('tpower').value = d.tpower;
@@ -2561,7 +2775,7 @@ function findTextCells(bg, W, H, opt) {
   }
   // ミニプレビューの左右に「前のスタンプ」「次のスタンプ」ボタンを付ける
   const miniCaps = [];
-  ['miniCv', 'miniDog', 'miniText', 'miniFx'].forEach((id) => {
+  ['miniCv', 'miniDog', 'miniText', 'miniFx', 'miniSt'].forEach((id) => {
     const c = $(id);
     if (!c || !c.parentNode) return;
     const fig = c.parentNode;
@@ -2963,6 +3177,193 @@ function findTextCells(bg, W, H, opt) {
   })();
   buildChips('chips', 'motion');
   buildChips('tchips', 'tmotion');
+
+  // ---- 動くステッカーの画面 ----
+  const ST_STORE = 'monchein-stamp-stickers-v1';
+  var stRadios = { st: [], anim: [], col: [] };
+  function stThumb(key) {
+    const c = document.createElement('canvas');
+    c.width = 96; c.height = 96;
+    const g = c.getContext('2d');
+    g.translate(48, 48);
+    STICKERS[key].d(g, 76, STICKERS[key].col, 0);
+    return c;
+  }
+  function stChip(box, value, label, visual, onPick) {
+    const lab = document.createElement('label');
+    lab.className = 'chip';
+    const inp = document.createElement('input');
+    inp.type = 'radio'; inp.name = 'stpick'; inp.value = value;
+    const span = document.createElement('span');
+    if (visual) span.appendChild(visual);
+    const tx = document.createElement('b');
+    tx.style.fontWeight = 'inherit';
+    tx.textContent = label;
+    span.appendChild(tx);
+    inp.addEventListener('change', () => { if (inp.checked) onPick(value); });
+    lab.appendChild(inp); lab.appendChild(span);
+    box.appendChild(lab);
+    stRadios.st.push(inp);
+  }
+  function pickSticker(v) {
+    const it = cur();
+    if (!it) { $('stMsg').textContent = '先にスタンプを用意してください。'; syncPanel(); return; }
+    setItem({ st: v === 'none' ? '' : v }, true);
+    if (v !== 'none') { state.editTarget = 'st'; syncTarget(); }
+    $('stMsg').textContent = v === 'none' ? 'ステッカーを外しました。' : '位置・大きさは、プレビュー上の「ステッカー」を選んで変えられます。';
+    syncPanel();
+  }
+  (function buildStChips() {
+    const box = $('stchips');
+    Object.keys(STICKERS).forEach((k) => stChip(box, k, STICKERS[k].label, stThumb(k), pickSticker));
+    stChip(box, 'none', 'なし', null, pickSticker);
+    const ab = $('stanims');
+    Object.keys(ST_ANIMS).forEach((k) => {
+      const lab = document.createElement('label'); lab.className = 'chip';
+      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'stanim'; inp.value = k;
+      const span = document.createElement('span');
+      span.innerHTML = '<b style="font-weight:inherit">' + ST_ANIMS[k].label + (ST_ANIMS[k].note ? '<small>' + ST_ANIMS[k].note + '</small>' : '') + '</b>';
+      inp.addEventListener('change', () => { if (inp.checked && cur()) setItem({ stanim: k }, true); syncPanel(); });
+      lab.appendChild(inp); lab.appendChild(span); ab.appendChild(lab);
+      stRadios.anim.push(inp);
+    });
+    const cb = $('stcols');
+    ST_COLORS.forEach(([k, label, col]) => {
+      const lab = document.createElement('label'); lab.className = 'chip';
+      const inp = document.createElement('input'); inp.type = 'radio'; inp.name = 'stcol'; inp.value = k;
+      const span = document.createElement('span');
+      span.innerHTML = (col ? '<i style="background:' + col + '"></i>' : '') + label;
+      inp.addEventListener('change', () => { if (inp.checked && cur()) setItem({ stcol: k }, false); syncPanel(); });
+      lab.appendChild(inp); lab.appendChild(span); cb.appendChild(lab);
+      stRadios.col.push(inp);
+    });
+  })();
+  function renderMine() {
+    const box = $('stmine');
+    stRadios.st = stRadios.st.filter((r) => r.value.indexOf('c:') !== 0);
+    box.textContent = '';
+    state.stickers.forEach((c, n) => {
+      const im = document.createElement('img');
+      im.src = c.thumb; im.alt = '';
+      stChip(box, 'c:' + c.id, c.name || ('自分 ' + (n + 1)), im, pickSticker);
+    });
+    $('stMineNone').hidden = state.stickers.length > 0;
+  }
+  function syncSt() {
+    if (!stRadios) return;
+    const d = cur() || DEF;
+    const key = stDef(d.st) ? d.st : 'none';
+    stRadios.st.forEach((r) => { r.checked = r.value === key; });
+    stRadios.anim.forEach((r) => { r.checked = r.value === (d.stanim || 'auto'); });
+    stRadios.col.forEach((r) => { r.checked = r.value === (d.stcol || 'auto'); });
+    $('stDel').disabled = key.indexOf('c:') !== 0;
+  }
+  function storeMine() {
+    try {
+      localStorage.setItem(ST_STORE, JSON.stringify(state.stickers.map((c) => ({ id: c.id, name: c.name, img: c.canvas.toDataURL('image/png') }))));
+      return true;
+    } catch (e) { return false; }
+  }
+  // 透明なふちを切り落とし、長い辺が360pxを超えるときは縮める
+  function stPrep(src) {
+    const w0 = src.width, h0 = src.height;
+    const g0 = src.getContext('2d', { willReadFrequently: true });
+    const px = g0.getImageData(0, 0, w0, h0).data;
+    let x0 = w0, y0 = h0, x1 = -1, y1 = -1;
+    for (let y = 0; y < h0; y++) for (let x = 0; x < w0; x++) {
+      if (px[(y * w0 + x) * 4 + 3] > 8) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (x1 < 0) return null;
+    const w = x1 - x0 + 1, h = y1 - y0 + 1, k = Math.min(1, 360 / Math.max(w, h));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
+    const g = c.getContext('2d');
+    g.imageSmoothingQuality = 'high';
+    g.drawImage(src, x0, y0, w, h, 0, 0, c.width, c.height);
+    return c;
+  }
+  function addMine(canvas, name, id) {
+    const c = { id: id || ('k' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36)), name: name || '', canvas, thumb: makeThumb(canvas, 96) };
+    state.stickers.push(c);
+    return c;
+  }
+  $('stAdd').addEventListener('click', () => $('stFile').click());
+  $('stFile').addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files || []);
+    e.target.value = '';
+    if (!files.length) return;
+    let ok = 0, bad = 0, last = null;
+    for (const f of files) {
+      if (state.stickers.length >= 30) { bad++; continue; }
+      try {
+        const url = URL.createObjectURL(f);
+        const raw = await urlToCanvas(url);
+        URL.revokeObjectURL(url);
+        const c = stPrep(raw);
+        if (!c) { bad++; continue; }
+        last = addMine(c, f.name.replace(/\.[^.]+$/, '').slice(0, 10));
+        ok++;
+      } catch (err) { bad++; }
+    }
+    renderMine();
+    const kept = storeMine();
+    if (last && cur()) pickSticker('c:' + last.id); else syncSt();
+    $('stMsg').textContent = (ok ? ok + '個のステッカーを追加しました。' : '') + (bad ? bad + '個は取り込めませんでした(画像が空、読めない形式、または上限の30個)。' : '') + (ok && !kept ? 'このブラウザには保存しきれませんでした(「作業を保存」したファイルには入ります)。' : '');
+  });
+  twoTap('stDel', '選んでいる自分のステッカーを削除', '本当に削除する(もう一度タップ)', () => {
+    const it = cur();
+    if (!it || !it.st || it.st.indexOf('c:') !== 0) return;
+    const key = it.st;
+    state.stickers = state.stickers.filter((c) => 'c:' + c.id !== key);
+    let n = 0;
+    state.items.forEach((x) => { if (x.st === key) { x.st = ''; n++; } });
+    storeMine();
+    renderMine();
+    state.ver++; renderStrip(); applyChange(false); syncPanel();
+    $('stMsg').textContent = '自分のステッカーを削除しました' + (n ? '(付けていた' + n + '個のスタンプから外しました)' : '') + '。';
+  });
+  $('stOff').addEventListener('click', () => {
+    const it = cur();
+    if (!it || !it.st) { $('stMsg').textContent = 'このスタンプには、ステッカーが付いていません。'; return; }
+    setItem({ st: '' }, false); syncPanel();
+    $('stMsg').textContent = 'スタンプ ' + (state.sel + 1) + ' のステッカーを外しました。';
+  });
+  twoTap('stAll', 'このステッカーを全スタンプに付ける', '本当に全部に付ける(もう一度タップ)', () => {
+    const it = cur();
+    if (!it || !stDef(it.st)) { $('stMsg').textContent = '先に、このスタンプにステッカーを付けてください。'; return; }
+    const keys = ['st', 'stanim', 'stcol', 'stscale', 'stx', 'sty', 'strot'];
+    state.items.forEach((x) => { keys.forEach((k) => { x[k] = it[k]; }); });
+    state.ver++; renderStrip(); applyChange(false); syncPanel();
+    $('stMsg').textContent = state.items.length + '個のスタンプに、同じステッカーを付けました。';
+  });
+  twoTap('stOffAll', '全スタンプのステッカーを外す', '本当に全部外す(もう一度タップ)', () => {
+    let n = 0;
+    state.items.forEach((x) => { if (x.st) { x.st = ''; n++; } });
+    state.ver++; renderStrip(); applyChange(false); syncPanel();
+    $('stMsg').textContent = n ? n + '個のスタンプのステッカーを外しました。' : 'ステッカーが付いているスタンプはありません。';
+  });
+  $('stReset').addEventListener('click', () => {
+    if (!cur()) return;
+    setItem({ stscale: 100, stx: 76, sty: 24, strot: 0 }, false);
+    syncPanel();
+  });
+  $('goSt').addEventListener('click', () => {
+    const t = $('stSection');
+    if (t.scrollIntoView) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+  (async function loadMine() {
+    let arr = null;
+    try { arr = JSON.parse(localStorage.getItem(ST_STORE) || 'null'); } catch (e) { arr = null; }
+    if (Array.isArray(arr)) {
+      for (const o of arr.slice(0, 30)) {
+        if (!o || typeof o.img !== 'string' || o.img.indexOf('data:image/') !== 0 || typeof o.id !== 'string') continue;
+        try { addMine(await urlToCanvas(o.img), typeof o.name === 'string' ? o.name.slice(0, 10) : '', o.id); } catch (e) { /* 壊れた分は飛ばす */ }
+      }
+    }
+    renderMine();
+    syncSt();
+    draw();
+  })();
 
   [['power', 'power'], ['tpower', 'tpower'], ['fxpower', 'fxpower']].forEach(([id, key]) => {
     $(id).addEventListener('input', (e) => setItem({ [key]: Number(e.target.value) }, false));
@@ -3392,11 +3793,12 @@ function findTextCells(bg, W, H, opt) {
   const KEYS = {
     dog: { scale: 'dscale', x: 'dx', y: 'dy', rot: 'drot', lo: 20, hi: 250, pl: (W, H, it) => dogPl(W, H, it) },
     text: { scale: 'tscale', x: 'tx', y: 'ty', rot: 'trot', lo: 30, hi: 300, pl: (W, H, it) => textPl(W, H, it) },
-    fx: { scale: 'fxscale', x: 'fxx', y: 'fxy', rot: 'fxrot', lo: 20, hi: 250, pl: (W, H, it) => fxPl(W, H, it) }
+    fx: { scale: 'fxscale', x: 'fxx', y: 'fxy', rot: 'fxrot', lo: 20, hi: 250, pl: (W, H, it) => fxPl(W, H, it) },
+    st: { scale: 'stscale', x: 'stx', y: 'sty', rot: 'strot', lo: 20, hi: 300, pl: (W, H, it) => stPl(W, H, it) }
   };
   // 「エフェクト」を選んでいるときはエフェクトを、そうでなければ文字の上=文字、それ以外=犬
   function chooseTarget(it, p) {
-    state.editTarget = $('tgtFx').checked ? 'fx' : pickTarget(it, p);
+    state.editTarget = $('tgtFx').checked ? 'fx' : $('tgtSt').checked ? 'st' : pickTarget(it, p);
     syncTarget();
   }
   const ptrs = new Map();
@@ -3454,6 +3856,7 @@ function findTextCells(bg, W, H, opt) {
     const { W, H } = dims();
     if (state.editTarget === 'text' && !it.text) return null;
     if (state.editTarget === 'fx' && !(it.fx || []).length) return null;
+    if (state.editTarget === 'st' && !stDef(it.st)) return null;
     return KEYS[state.editTarget].pl(W, H, it);
   }
   function boxCorners(pl) {
@@ -3571,12 +3974,14 @@ function findTextCells(bg, W, H, opt) {
     $('tgtDog').checked = !state.erase && state.editTarget === 'dog';
     $('tgtText').checked = !state.erase && state.editTarget === 'text';
     $('tgtFx').checked = !state.erase && state.editTarget === 'fx';
+    $('tgtSt').checked = !state.erase && state.editTarget === 'st';
     $('tgtErase').checked = state.erase;
   }
   $('tgtDog').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'dog'; });
   $('tgtText').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'text'; });
   $('tgtFx').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'fx'; });
-  ['tgtDog', 'tgtText', 'tgtFx'].forEach((id) => $(id).addEventListener('change', (e) => { if (e.target.checked) setErase(false); }));
+  $('tgtSt').addEventListener('change', (e) => { if (e.target.checked) state.editTarget = 'st'; });
+  ['tgtDog', 'tgtText', 'tgtFx', 'tgtSt'].forEach((id) => $(id).addEventListener('change', (e) => { if (e.target.checked) setErase(false); }));
   $('tgtErase').addEventListener('change', (e) => { if (e.target.checked) setErase(true); });
 
   // ---- 消しゴム(選んでいるスタンプのメイン画像、または重ねている文字画像を、なぞって消す・戻す) ----
@@ -3720,6 +4125,7 @@ function findTextCells(bg, W, H, opt) {
     const K = KEYS[state.editTarget];
     if (state.editTarget === 'text' && !it.text) { note('文字画像を重ねてから回してください。'); return; }
     if (state.editTarget === 'fx' && !(it.fx || []).length) { note('先にエフェクトを選んでください。'); return; }
+    if (state.editTarget === 'st' && !stDef(it.st)) { note('先にステッカーを選んでください。'); return; }
     setItem({ [K.rot]: normRot(it[K.rot] + deg) }, false);
   }
   $('rotL').addEventListener('click', () => rotBy(-5));
@@ -4069,7 +4475,7 @@ function findTextCells(bg, W, H, opt) {
   frmPreview();
 
   // ---- 作業の保存と読み込み(画像も一緒に、ひとつのJSONファイルにする) ----
-  const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot'];
+  const ITEM_KEYS = ['motion', 'power', 'tmotion', 'tpower', 'textFront', 'tscale', 'tx', 'ty', 'trot', 'dscale', 'dx', 'dy', 'drot', 'fx', 'fxpower', 'fxscale', 'fxx', 'fxy', 'fxrot', 'st', 'stanim', 'stcol', 'stscale', 'stx', 'sty', 'strot'];
   function projectData() {
     const textIdx = (p) => (p ? state.texts.indexOf(p) : -1);
     return {
@@ -4081,6 +4487,7 @@ function findTextCells(bg, W, H, opt) {
         ITEM_KEYS.forEach((k) => { o[k] = it[k]; });
         return o;
       }),
+      stickers: state.stickers.filter((c) => state.items.some((it) => it.st === 'c:' + c.id)).map((c) => ({ id: c.id, name: c.name, img: c.canvas.toDataURL('image/png') })),
       mainIndex: state.items.findIndex((it) => it.id === state.mainId),
       tabIndex: state.items.findIndex((it) => it.id === state.tabId),
       sel: state.sel
@@ -4131,6 +4538,16 @@ function findTextCells(bg, W, H, opt) {
       const data = JSON.parse(await file.text());
       if (!data || data.app !== 'mon-chein-stamp' || !Array.isArray(data.items) || !Array.isArray(data.texts)) { msg.textContent = 'このファイルは、スタンプ工房の保存ファイルではありません。'; return; }
       const num = (v, d, lo, hi) => (typeof v === 'number' && isFinite(v) ? clamp(v, lo, hi) : d);
+      let addedSt = 0;
+      if (Array.isArray(data.stickers)) {
+        for (const o of data.stickers.slice(0, 30)) {
+          if (!o || typeof o.id !== 'string' || typeof o.img !== 'string' || o.img.indexOf('data:image/') !== 0) continue;
+          if (state.stickers.some((c) => c.id === o.id) || state.stickers.length >= 30) continue;
+          addMine(await urlToCanvas(o.img), typeof o.name === 'string' ? o.name.slice(0, 10) : '', o.id);
+          addedSt++;
+        }
+        if (addedSt) { renderMine(); storeMine(); }
+      }
       const pieces = [];
       for (const t of data.texts.slice(0, MAX_ITEMS)) {
         if (typeof t.img !== 'string' || t.img.indexOf('data:image/') !== 0) continue;
@@ -4149,7 +4566,10 @@ function findTextCells(bg, W, H, opt) {
           textFront: o.textFront !== false,
           tscale: num(o.tscale, 100, 30, 300), tx: num(o.tx, 50, 0, 100), ty: num(o.ty, 80, 0, 100), trot: num(o.trot, 0, -360, 360),
           dscale: num(o.dscale, 100, 20, 250), dx: num(o.dx, 50, 0, 100), dy: num(o.dy, 50, 0, 100), drot: num(o.drot, 0, -360, 360),
-          fxscale: num(o.fxscale, 100, 20, 250), fxx: num(o.fxx, 50, 0, 100), fxy: num(o.fxy, 50, 0, 100), fxrot: num(o.fxrot, 0, -360, 360)
+          fxscale: num(o.fxscale, 100, 20, 250), fxx: num(o.fxx, 50, 0, 100), fxy: num(o.fxy, 50, 0, 100), fxrot: num(o.fxrot, 0, -360, 360),
+          st: typeof o.st === 'string' && (STICKERS[o.st] || o.st.indexOf('c:') === 0) ? o.st : '',
+          stanim: ST_ANIMS[o.stanim] ? o.stanim : 'auto', stcol: stColor(o.stcol) || o.stcol === 'auto' ? o.stcol : 'auto',
+          stscale: num(o.stscale, 100, 20, 300), stx: num(o.stx, 76, 0, 100), sty: num(o.sty, 24, 0, 100), strot: num(o.strot, 0, -360, 360)
         };
         if (typeof o.orig === 'string' && o.orig.indexOf('data:image/') === 0) extra.orig = await urlToCanvas(o.orig);
         items.push(newDog(await urlToCanvas(o.img), extra));
