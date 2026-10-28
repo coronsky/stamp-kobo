@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Mon Chein 絵文字変換</title>
+<title>MonChien 絵文字変換</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
@@ -107,7 +107,7 @@ a { color: var(--accent) }
 
 <div class="wrap">
   <header>
-    <div class="brand">Mon Chein</div>
+    <div class="brand">MonChien</div>
     <h1>絵文字変換</h1>
     <p class="lead">LINEアニメスタンプのZIPを読み込むと、アニメーション絵文字用のZIP(180×180・001.png〜)に作り直し、そのままLINEの規定どおりか検証します。1コマ目に絵がないものは自動で直します。</p>
   </header>
@@ -200,7 +200,7 @@ a { color: var(--accent) }
 </div>
 
 <script>
-// ===== Mon Chein 絵文字変換 エンジン(依存ライブラリなし) =====
+// ===== MonChien 絵文字変換 エンジン(依存ライブラリなし) =====
 // LINEアニメスタンプZIP → LINEアニメーション絵文字ZIP 変換と検証
 const LINE_EMOJI = {
   SIZE: 180, TAB_W: 96, TAB_H: 74,
@@ -714,7 +714,7 @@ async function verifyEmojiZip(buf) {
 function reportText(R, convLog, srcName) {
   const L = [];
   const now = new Date();
-  L.push('Mon Chein 絵文字変換 検証結果');
+  L.push('MonChien 絵文字変換 検証結果');
   L.push(`日時: ${now.toLocaleString('ja-JP')}`);
   if (srcName) L.push(`元ファイル: ${srcName}`);
   L.push(`判定: ${R.ok ? '合格(LINEの規定チェックをすべて通過)' : `不合格(エラー ${R.errorCount}件)`} / 注意 ${R.warnCount}件`);

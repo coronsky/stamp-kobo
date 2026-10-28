@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#f07fa6">
 <style>body{margin:0}[hidden]{display:none!important}img{max-width:100%}</style>
-<title>Mon Chein デコ文字工房</title>
+<title>MonChien デコ文字工房</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -101,7 +101,7 @@ body:not(.anim) .cell b{display:none}
 </style>
 
 <header>
-  <h1>Mon Chein デコ文字工房</h1>
+  <h1>MonChien デコ文字工房</h1>
   <p class="sub"><span id="subTitle">LINEのデコ文字を、180×180の透過PNGで番号どおりに書き出します</span> <span style="opacity:.7">／ 版 2026.10.26-2(動きを軽く)</span></p>
 </header>
 
@@ -2548,7 +2548,7 @@ async function saveFile(blob, name){
 }
 $("projSaveBtn").addEventListener("click", async ()=>{
   const f = fontList[S.font] || fontList[0];
-  const data = {app:"Mon Chein デコ文字工房", version:1, savedAt:new Date().toISOString(), fontLabel:f.label, userFont: S.font >= FONTS.length, state:S};
+  const data = {app:"MonChien デコ文字工房", version:1, savedAt:new Date().toISOString(), fontLabel:f.label, userFont: S.font >= FONTS.length, state:S};
   const d = new Date(), stamp = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,"0")}${String(d.getDate()).padStart(2,"0")}_${String(d.getHours()).padStart(2,"0")}${String(d.getMinutes()).padStart(2,"0")}`;
   $("report").innerHTML = "";
   const ok = await downloadBlob(new Blob([JSON.stringify(data)], {type:"application/json"}), `decomoji_work_${stamp}.json`);
@@ -2561,7 +2561,7 @@ $("projFile").addEventListener("change", async e=>{
   const file = e.target.files[0]; e.target.value = ""; if (!file) return;
   try{
     const data = JSON.parse(await file.text());
-    if (!data || !data.state || data.app!=="Mon Chein デコ文字工房") throw new Error("デコ文字工房の作業ファイルではありません");
+    if (!data || !data.state || (data.app!=="MonChien デコ文字工房"&&data.app!=="Mon Chein デコ文字工房")) throw new Error("デコ文字工房の作業ファイルではありません");
     const st = Object.assign({}, DEF, data.state);
     if (data.userFont){ st.font = 0; }
     S = st;
