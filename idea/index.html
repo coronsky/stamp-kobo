@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="スタンプ案メーカー">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#fff8ef">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<title>MonChien スタンプ案メーカー</title>
+<style>
+:root{--bg:#fff8ef;--card:#fff;--ink:#4a3526;--sub:#8a7360;--accent:#c8743a;--accent2:#f3d9c0;--line:#ecd9c4;--ok:#4f9a6a;--warn:#d0623a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Yu Gothic",sans-serif;line-height:1.6;padding-left:env(safe-area-inset-left);padding-right:env(safe-area-inset-right)}
+button,select,input,textarea{touch-action:manipulation}
+.wrap{max-width:720px;margin:0 auto;padding:0 14px calc(90px + env(safe-area-inset-bottom))}
+header{padding:calc(14px + env(safe-area-inset-top)) 0 8px}
+h1{font-size:20px;margin:0}
+h1 small{font-size:12px;color:var(--sub);font-weight:400;margin-left:6px}
+.sticky{position:sticky;top:0;z-index:5;background:var(--bg);padding:8px 0 6px;border-bottom:1px solid var(--line)}
+.tabs{display:flex;gap:6px}
+.tab{flex:1;min-height:46px;padding:6px 4px;border:1px solid var(--line);background:#fff;border-radius:10px;font-size:13px;line-height:1.3;color:var(--ink);cursor:pointer}
+.tab.on{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:700}
+.stat{font-size:12px;color:var(--sub);margin-top:6px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:14px 0}
+.card h2{font-size:15px;margin:0 0 8px}
+.hint{font-size:12px;color:var(--sub);margin:4px 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}
+.chip{min-height:40px;padding:6px 14px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:14px;cursor:pointer;color:var(--ink)}
+.chip.on{background:var(--accent2);border-color:var(--accent);font-weight:700}
+button.btn{min-height:44px;padding:10px 16px;border:0;border-radius:10px;background:var(--accent);color:#fff;font-size:14px;font-weight:700;cursor:pointer}
+button.btn.sub{background:#fff;color:var(--accent);border:1px solid var(--accent)}
+button.btn.sm{min-height:40px;padding:6px 12px;font-size:13px}
+button.btn.big{width:100%;padding:13px;font-size:15px}
+button:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+input[type=text],select,textarea{width:100%;min-height:44px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-size:16px;background:#fff;color:var(--ink);font-family:inherit}
+textarea{min-height:150px;font-size:14px;resize:vertical}
+label{font-size:12px;color:var(--sub);display:block;margin:8px 0 3px}
+.theme,.sit{padding:10px;border:1px solid var(--line);border-radius:10px;margin:8px 0;display:flex;gap:8px;align-items:center;background:#fffdfa}
+.sit.on{border-color:var(--accent);background:#fff3e6}
+.theme .t,.sit .t{flex:1;min-width:0}
+.theme .t b,.sit .t b{display:block;font-size:15px}
+.theme .t span,.sit .t span{display:block;font-size:12px;color:var(--sub)}
+.sit .t small{display:block;font-size:11px;color:#a89580;margin-top:2px}
+.sheet h2 span{font-size:12px;font-weight:400;color:var(--sub);margin-left:6px}
+.item{border:1px solid var(--line);border-radius:12px;padding:8px;margin:8px 0;background:#fffdfa}
+.item .top{display:flex;gap:6px;align-items:center}
+.item .no{width:26px;text-align:center;font-weight:700;color:var(--accent);font-size:13px;flex:none}
+.item .top input{min-width:0}
+.item .pose{margin-top:6px;font-size:16px}
+.tag{font-size:11px;padding:1px 7px;border-radius:999px;background:#fde8df;color:var(--warn);margin-left:34px;display:inline-block;margin-top:4px;margin-right:4px}
+.ib{border:1px solid var(--line);background:#fff;border-radius:8px;width:40px;height:44px;cursor:pointer;font-size:15px;color:var(--ink);flex:none;padding:0}
+.toast{position:fixed;left:50%;bottom:calc(28px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#4a3526;color:#fff;padding:9px 16px;border-radius:999px;font-size:13px;opacity:0;pointer-events:none;transition:opacity .2s;z-index:20;max-width:90vw;text-align:center}
+.toast.show{opacity:.95}
+.empty{color:var(--sub);font-size:13px;text-align:center;padding:16px 0}
+.steps{font-size:13px;margin:0;padding-left:20px}
+.steps li{margin:3px 0}
+.done{display:flex;align-items:center;gap:6px;font-size:14px;min-height:44px}
+.done input{width:22px;height:22px}
+@media (max-width:380px){.tab{font-size:12px}.ib{width:36px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header><h1>MonChien スタンプ案メーカー<small>v1.1</small></h1></header>
+  <div class="sticky">
+    <div class="tabs">
+      <button class="tab" data-tab="sit">① 場面えらび</button>
+      <button class="tab" data-tab="items">② 48個の文言</button>
+      <button class="tab" data-tab="prompt">③ プロンプト</button>
+    </div>
+    <div class="stat" id="statTxt"></div>
+  </div>
+
+  <!-- ① -->
+  <section id="tab-sit">
+    <div class="card">
+      <h2>使い方</h2>
+      <ol class="steps">
+        <li>よく使う場面(シチュエーション)を6つ選ぶ(おすすめセットからも選べます)</li>
+        <li>1つの場面につき8個、合計48個の文言が、使いやすい並び順で出ます</li>
+        <li>ChatGPTに渡すプロンプトが6個(8枚ずつ)できます</li>
+      </ol>
+    </div>
+    <div class="card">
+      <h2>おすすめセット</h2>
+      <div class="hint">場面の組み合わせに、合いそうなキャラと画風も一緒に提案します。あとから変えられます。</div>
+      <div id="sets"></div>
+    </div>
+    <div class="card">
+      <h2>場面を自分で選ぶ <span id="pickInfo" style="font-size:12px;color:var(--accent);margin-left:6px"></span></h2>
+      <div class="hint">シートの順番は、よく使われる場面から自動で並びます。</div>
+      <div id="sitList"></div>
+      <button class="btn big" id="btnDecide" style="margin-top:10px">この6つで決定 → 48個を見る</button>
+    </div>
+  </section>
+
+  <!-- ② -->
+  <section id="tab-items" hidden>
+    <div class="card">
+      <div id="sumInfo" class="hint" style="margin:0 0 8px"></div>
+      <div class="hint">各シートは「あいさつ・返事 → 気持ち → しめ」の流れで並べています。1番はメイン画像にしやすい文言です。⇄で別案に切り替え、ポーズも書き換えできます。</div>
+      <div class="row"><button class="btn sub sm" id="btnTidy">全部の文言を整える(！？〜に統一)</button></div>
+    </div>
+    <div id="sheets"></div>
+  </section>
+
+  <!-- ③ -->
+  <section id="tab-prompt" hidden>
+    <div class="card">
+      <h2>キャラと画風</h2>
+      <label>キャラクター</label>
+      <div class="chips" id="charChips"></div>
+      <input type="text" id="charCustom" placeholder="自由に書く場合はここ(入れると上のキャラより優先)">
+      <label>画風(AIっぽさが出にくい手描き系を用意しています)</label>
+      <div class="chips" id="styleChips"></div>
+      <label>作るもの</label>
+      <select id="mode">
+        <option value="none">絵だけ(文字はスタンプ工房で入れる・誤字が出ない)</option>
+        <option value="with">絵+文字を一緒に描かせる</option>
+      </select>
+    </div>
+
+    <div class="card">
+      <h2>進め方</h2>
+      <ol class="steps">
+        <li>(おすすめ)まず「キャラ基準シート」を作って、気に入った絵を決める</li>
+        <li>下の「テンプレ画像」と、シート1の指示文をChatGPTに送る</li>
+        <li>2枚目以降は、1枚目の完成画像も一緒に添付して送る(キャラがそろいます)</li>
+        <li>できた画像をスタンプ工房に取り込む</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>テンプレ画像(全シート共通)</h2>
+      <div class="hint">4列×2行の8マス。番号と枠線つきで、ChatGPTに添付すると絵がマスにそろいます。</div>
+      <img id="tplImg" alt="テンプレ画像" style="width:100%;max-width:420px;border:1px solid var(--line);border-radius:8px;display:block">
+      <div class="row" style="margin-top:6px"><button class="btn sub sm" id="btnTplCopy">画像をコピー</button><span class="hint" style="margin:0">スマホは画像を長押しで保存</span></div>
+    </div>
+
+    <div class="card">
+      <h2>(おすすめ)キャラ基準シート</h2>
+      <textarea id="basePrompt" readonly></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn sm" data-copy="basePrompt">コピー</button></div>
+    </div>
+
+    <div id="prompts"></div>
+
+    <div class="card">
+      <h2>スタンプ工房への連携ファイル</h2>
+      <div class="hint">番号・シート・文字・ポーズをまとめた内容です。工房で読み込めるようにする予定です(次の段階)。</div>
+      <textarea id="plan" readonly></textarea>
+      <div class="row" style="margin-top:6px"><button class="btn sm" data-copy="plan">コピー</button></div>
+    </div>
+    <div class="card">
+      <h2>バックアップ・引き継ぎ</h2>
+      <div class="hint">データはこのブラウザに保存されます。別の端末へ移すときは、コピーして向こうで貼り付け→復元してください。</div>
+      <textarea id="bk"></textarea>
+      <div class="row" style="margin-top:6px">
+        <button class="btn sm" data-copy="bk">コピー</button>
+        <button class="btn sub sm" id="bkRestore">貼り付けた内容で復元</button>
+      </div>
+    </div>
+  </section>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= データ ================= */
+// msgs: [文言, ポーズ・表情, 別案]  並びは「あいさつ・返事 → 気持ち → しめ」
+var SIT=[
+ {id:'reply',name:'一言返事',rank:1,desc:'いちばん使う基本の返事。迷ったらまずここ',msgs:[
+  ['OK！','前足でマルをつくる','いいよ！'],
+  ['りょうかい！','おでこに前足をあてて敬礼','わかった！'],
+  ['ありがとう！','ぺこりとお辞儀','助かる〜！'],
+  ['ごめんね','しょんぼりして耳が下がる','ごめん！'],
+  ['ちょっと待ってね','片手を前に出して「待って」','まってね〜'],
+  ['たぶんね〜','首をかしげて斜め上を見る','どうかな〜'],
+  ['むり〜','前足でバツをつくる','ごめん、むり…'],
+  ['まかせて！','胸をはってドヤ顔','やっとく！']]},
+ {id:'daily',name:'毎日のあいさつ',rank:2,desc:'朝から夜まで、1日の流れで使える',msgs:[
+  ['おはよう！','伸びをして朝日をあびる','おはよ〜'],
+  ['いってきます！','小さなリュックを背負って手をふる','いってくるね！'],
+  ['いってらっしゃい！','見送りながら両手をふる','がんばってね！'],
+  ['ただいま！','帰ってきて飛びつく','ただいま〜'],
+  ['おかえり！','玄関で出迎えてしっぽをふる','おかえりなさい！'],
+  ['おつかれさま！','ぐったりしつつ笑顔','おつかれ〜'],
+  ['おやすみ〜','丸くなって眠る(ZZZ)','おやすみなさい'],
+  ['また明日ね！','手をふりながら歩いていく','あしたね！']]},
+ {id:'friends',name:'友だちトーク',rank:3,desc:'待ち合わせ・ごはん・ノリのいい返事',msgs:[
+  ['今どこ？','きょろきょろ探す','どこにいる？'],
+  ['着いたよ！','手をふって到着','ついた〜！'],
+  ['ちょっと遅れる〜','走りながら汗をかく','遅れてごめん！'],
+  ['ごはん行こう！','フォークとナイフを持つ','ごはんいく？'],
+  ['いいね〜！','前足で親指を立てる','ナイス！'],
+  ['うそでしょ！？','目を丸くして固まる','まじで！？'],
+  ['それな〜','大きくうなずく','わかる〜'],
+  ['また遊ぼうね！','ボールを抱えて手をふる','またね〜！']]},
+ {id:'family',name:'家族LINE',rank:4,desc:'帰る連絡・ごはん・お願いごと',msgs:[
+  ['ごはんできたよ！','お皿を持って呼ぶ','ごはんだよ〜'],
+  ['何時に帰る？','時計を見て首をかしげる','今日は遅い？'],
+  ['いま帰るね','急いで走る','もうすぐ着くよ'],
+  ['お風呂入った？','タオルを頭にのせる','お風呂どうぞ〜'],
+  ['買い物たのむ！','買い物かごをくわえる','牛乳おねがい！'],
+  ['電話できる？','スマホを耳にあてる','あとで電話するね'],
+  ['だいじょうぶ？','心配そうにのぞきこむ','無理しないでね'],
+  ['助かる〜！','ハートを抱えてにっこり','ありがとう！']]},
+ {id:'moms',name:'ママ友・ご近所(ていねい)',rank:5,desc:'やわらかい敬語で、年上の方にも使える',msgs:[
+  ['こんにちは','軽く会釈','おはようございます'],
+  ['ありがとうございます','ぺこりと頭を下げる','助かりました'],
+  ['お願いします','両手を合わせる','よろしくお願いします'],
+  ['了解です','小さくマルをつくる','承知しました'],
+  ['すみません','申し訳なさそうに頭を下げる','ごめんなさい'],
+  ['少し遅れます','走りながら汗をかく','ちょっと遅れます'],
+  ['お先に失礼します','手をふって退場','また明日'],
+  ['また今度ぜひ！','にっこり手をふる','またご一緒に！']]},
+ {id:'work',name:'仕事の返事(敬語)',rank:6,desc:'丁寧だけど堅すぎない、仕事のやりとり',msgs:[
+  ['お疲れさまです','軽く会釈','お疲れさまです！'],
+  ['確認します','虫めがねでのぞく','確認しますね'],
+  ['承知しました','姿勢を正してうなずく','了解です'],
+  ['ありがとうございます','深くお辞儀','助かります'],
+  ['少々お待ちください','砂時計を持つ','少しお待ちを'],
+  ['申し訳ありません','深く頭を下げる','失礼しました'],
+  ['あとで連絡します','スマホを持って指さす','後ほど連絡します'],
+  ['よろしくお願いします','両手を合わせてお辞儀','お願いします']]},
+ {id:'love',name:'恋人・パートナー',rank:7,desc:'甘えたい・気づかう・おやすみ',msgs:[
+  ['おはよう♡','朝日とハートを抱える','おはよ♡'],
+  ['すきだよ♡','ハートを抱えて照れる','だいすき♡'],
+  ['会いたいな…','窓の外を見上げる','さみしい…'],
+  ['今電話できる？','スマホを耳にあててそわそわ','電話したい！'],
+  ['ごめんね…','うるうるの目で見上げる','ごめんなさい…'],
+  ['今日もありがとう','花を一輪さしだす','ありがとう♡'],
+  ['気をつけてね','手をふって見送る','きをつけて帰ってね'],
+  ['おやすみ、だいすき','丸くなって眠りハートが浮かぶ','おやすみ♡']]},
+ {id:'praise',name:'ほめる・ねぎらう・応援',rank:8,desc:'相手の気持ちが上がる一言',msgs:[
+  ['えらい！','なでなでされて照れる','えらいね！'],
+  ['すごーい！','目をキラキラさせて拍手','すごい！'],
+  ['ナイス！','前足で親指を立てる','ナイスです！'],
+  ['がんばれ！','ガッツポーズ','ファイト！'],
+  ['おめでとう！','クラッカーを鳴らす','おめでとう♪'],
+  ['よくやった！','金メダルをかける','さすが！'],
+  ['無理しないでね','毛布をかけてあげる','ゆっくりね'],
+  ['ゆっくり休んでね','お茶をさしだす','お大事に']]},
+ {id:'mood',name:'ひとこと本音・気持ち',rank:9,desc:'今の気分をひとことで',msgs:[
+  ['うれしい！','ぴょんぴょんはねる','やったー！'],
+  ['たのしい！','くるくる回る','わーい！'],
+  ['つかれた〜','ぐでっと伸びる','ぐったり…'],
+  ['おなかすいた','お皿をくわえてうったえる','ごはんまだ〜？'],
+  ['ねむい…','うとうとして頭が落ちる','ねむねむ…'],
+  ['さみしい…','すみっこで小さくなる','かなしい…'],
+  ['やる気でない…','床にべったり','きょうは無理…'],
+  ['しあわせ〜','ほおに手をあててとろける','ほっこり〜']]},
+ {id:'kansai',name:'ゆるゆる関西弁',rank:10,desc:'ツッコミも感謝も関西のノリで',msgs:[
+  ['おおきに！','ぺこりと笑顔','ありがとさん！'],
+  ['ええで！','前足で親指を立てる','ええよ〜！'],
+  ['ほんま？','目を丸くしてのぞきこむ','ほんまに？'],
+  ['なんでやねん！','前足でツッコミ','なんでやの！'],
+  ['ちょっと待ってや','片手を前に出す','まってや〜'],
+  ['ごめんやで','手を合わせて片目をつぶる','堪忍な！'],
+  ['まいど！','手をあげてあいさつ','おはようさん！'],
+  ['ほな、またね！','手をふって去る','ほな！']]},
+ {id:'dogvoice',name:'ワンコの気持ち',rank:11,desc:'ワンコ目線のおねだり・うれしい',msgs:[
+  ['おさんぽいく？','リードをくわえて見上げる','おさんぽ！'],
+  ['おやつちょうだい！','おすわりして上目づかい','おやつは？'],
+  ['だっこして！','両手をひろげる','だっこ〜！'],
+  ['まってたよ！','玄関でしっぽ全開','おかえり〜！'],
+  ['ボールなげて！','ボールをくわえてさしだす','あそぼ！'],
+  ['ごはんまだ〜？','空のお皿の前でおすわり','ごはん！'],
+  ['だいすき！','ぎゅっと飛びつく','すきすき！'],
+  ['ねむいワン…','ふせて目がとろんとする','おやすみワン']]},
+ {id:'dogowner',name:'飼い主さん同士',rank:12,desc:'ワンコ友だちとのやりとり',msgs:[
+  ['お散歩いこう！','リードを持って手招き','散歩いく？'],
+  ['今日もかわいい♡','ほおをよせてにっこり','かわいい〜！'],
+  ['ドッグランいく？','ボールと一緒に走る','ランいこう！'],
+  ['うちの子ぐったり…','ごろんと寝そべる','おつかれ犬…'],
+  ['雨でお散歩むり〜','傘の下でしょんぼり','雨ふってる…'],
+  ['ごはん完食！','空のお皿を誇らしげに見せる','ぺろり！'],
+  ['なでなでしたい♡','手を伸ばして目を細める','もふもふ♡'],
+  ['また会おうね！','手をふって別れる','またね〜！']]},
+ {id:'newyear',name:'新年・冬のあいさつ',rank:13,desc:'1月前後だけ使える。出す時期に注意',msgs:[
+  ['あけましておめでとう！','おせちと初日の出','あけおめ！'],
+  ['今年もよろしくね！','ぺこりと新年のごあいさつ','ことしもよろしく！'],
+  ['おめでとう！','はしゃいで両手をあげる','ハッピーニューイヤー！'],
+  ['初詣いこう！','はっぴを着て鳥居の前','はつもうで！'],
+  ['お年玉ちょうだい！','ポチ袋を前にワクワク','おとしだま〜！'],
+  ['おもち食べすぎた…','おもちとお腹をおさえる','おもち最高！'],
+  ['寒いね〜','マフラーでぷるぷる','さむい〜！'],
+  ['良いお年を！','手をふって年越しそば','よいお年を！']]}
+];
+var SETS=[
+ {name:'迷ったらこれ(基本セット)',desc:'友だち・家族に毎日使える万能セット',sits:['reply','daily','friends','family','praise','mood'],char:'shiba',style:'pencil'},
+ {name:'ていねい・大人向け',desc:'ママ友・ご近所・仕事でも使いやすい',sits:['reply','daily','moms','work','praise','mood'],char:'poodle',style:'pencil'},
+ {name:'ワンコ全開',desc:'ワンコ好きに刺さるセット',sits:['reply','daily','family','mood','dogvoice','dogowner'],char:'shiba',style:'crayon'},
+ {name:'恋も友だちも',desc:'恋人・友だちとのトーク向け',sits:['reply','daily','friends','love','praise','mood'],char:'pom',style:'cutout'},
+ {name:'冬・新年入り',desc:'新年のあいさつを1シート含む(年内〜1月に出すと◎)',sits:['reply','daily','friends','family','mood','newyear'],char:'poodle',style:'print'}
+];
+var CHARS=[
+ {id:'shiba',name:'柴犬',desc:'赤茶色の短い毛の柴犬。三角の立ち耳、くるんと巻いた尻尾、白い胸元とほおの毛、小さな点の眉'},
+ {id:'poodle',name:'トイプードル',desc:'クリーム色のトイプードル。もこもこの丸い毛、たれ耳、つぶらな黒い目と小さな鼻'},
+ {id:'dachs',name:'ダックス',desc:'茶色のミニチュアダックス。長い胴体と短い足、長いたれ耳、細長い鼻先'},
+ {id:'chi',name:'チワワ',desc:'ベージュのチワワ。大きな立ち耳、まん丸の大きな目、小さな体'},
+ {id:'pom',name:'ポメラニアン',desc:'オレンジ色のポメラニアン。ふわふわの丸い毛玉のような体、小さな立ち耳、ふさふさの尻尾'},
+ {id:'mix',name:'白いふわふわ犬',desc:'白くてふわふわの小型犬。小さなたれ耳、黒いまるい目と鼻'}
+];
+var STYLES=[
+ {id:'pencil',name:'えんぴつ+水彩',text:'鉛筆の下書き線が少し残る手描きタッチに、水彩のにじみとムラのある塗り。紙のざらつきを感じる質感。色は5色以内で、彩度をおさえた温かいトーン。'},
+ {id:'crayon',name:'クレヨン・色えんぴつ',text:'クレヨンと色鉛筆で描いたようなタッチ。塗り残しや少しのはみ出しがある。ざらっとした画用紙の質感。色は5色以内。'},
+ {id:'flat',name:'ゆるい線画+ベタ塗り',text:'太さが少しゆれる黒ペンの輪郭線に、平らなベタ塗り。影やグラデーションは使わない。色は4色以内。シンプルな形で描く。'},
+ {id:'cutout',name:'切り絵・紙コラージュ',text:'色紙をハサミで切って貼ったような、少し不揃いな輪郭の切り絵風。パーツを重ねて作り、影は入れない。色は5色以内。'},
+ {id:'print',name:'消しゴムはんこ・版画',text:'消しゴムはんこ・リノカット風。インクのかすれと、少しずれた2〜3色刷り。輪郭は太く、ざっくりした彫り跡を残す。'}
+];
+var RULES=[
+ '【仕上がりのルール】',
+ '・3Dレンダリング風、光沢、グラデーション、キラキラ、ぼかし、強い陰影は使わない',
+ '・完璧に均一な線や完全な左右対称にせず、手で描いた小さなゆがみ、線の強弱、塗りのムラを残す',
+ '・毛並みは描き込みすぎず、面と数本の線で表す',
+ '・小物や背景は、ポーズを伝える最小限だけにする',
+ '・背景は白一色。色数は5色程度におさえる',
+ '・全マスで、キャラの毛色・顔立ち・首輪・頭身(2〜3頭身)を同じにそろえる',
+ '・「AIが作ったようなツルッとしたイラスト」にならないよう、素朴であたたかい手作りの雰囲気にする'
+].join('\n');
+
+/* ================= 状態 ================= */
+var KEY='monchien-stamp-idea-v2';
+var S={tab:'sit',pick:[],sel:[],items:[],char:'shiba',charCustom:'',style:'pencil',mode:'none',done:[false,false,false,false,false,false]};
+try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);for(var k in o){if(k in S)S[k]=o[k];}}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ================= 共通 ================= */
+function $(id){return document.getElementById(id);}
+function el(tag,attrs){
+  var e=document.createElement(tag);
+  attrs=attrs||{};
+  for(var k in attrs){
+    if(k==='class')e.className=attrs[k];
+    else if(k.indexOf('on')===0)e.addEventListener(k.slice(2),attrs[k]);
+    else e.setAttribute(k,attrs[k]);
+  }
+  for(var i=2;i<arguments.length;i++){
+    var c=arguments[i];
+    if(c==null||c===false)continue;
+    e.appendChild(typeof c==='object'?c:document.createTextNode(String(c)));
+  }
+  return e;
+}
+function toast(msg){var t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('show');},1700);}
+function copyText(text){
+  function fb(){
+    var ta=document.createElement('textarea');ta.value=text;ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);ta.select();
+    try{document.execCommand('copy');toast('コピーしました');}catch(e){toast('コピーできませんでした。長押しでコピーしてください');}
+    document.body.removeChild(ta);
+  }
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(text).then(function(){toast('コピーしました');},fb);}
+    else fb();
+  }catch(e){fb();}
+}
+function byId(list,id){for(var i=0;i<list.length;i++)if(list[i].id===id)return list[i];return list[0];}
+function sitById(id){return byId(SIT,id);}
+function tidy(t){return String(t).replace(/!/g,'！').replace(/\?/g,'？').replace(/~/g,'〜').replace(/\.\.\./g,'…').replace(/\s+/g,'');}
+function buildSlots(id){return sitById(id).msgs.map(function(m){return {s:id,t:m[0],pose:m[1],alt:m[2]};});}
+function ready(){return S.sel.length===6&&S.items.length===48;}
+
+/* ================= ① シチュエーション ================= */
+function renderSit(){
+  var sb=$('sets');sb.innerHTML='';
+  SETS.forEach(function(st){
+    sb.appendChild(el('div',{class:'theme'},
+      el('div',{class:'t'},el('b',{},st.name),el('span',{},st.desc),el('span',{},'キャラ: '+byId(CHARS,st.char).name+' / 画風: '+byId(STYLES,st.style).name)),
+      el('button',{class:'btn sm',onclick:function(){S.pick=st.sits.slice();S.char=st.char;S.style=st.style;S.charCustom='';save();renderSit();toast('選びました。下の「決定」で進みます');}},'これにする')));
+  });
+  var lb=$('sitList');lb.innerHTML='';
+  SIT.slice().sort(function(a,b){return a.rank-b.rank;}).forEach(function(sit){
+    var on=S.pick.indexOf(sit.id)>=0;
+    lb.appendChild(el('div',{class:'sit'+(on?' on':'')},
+      el('div',{class:'t'},el('b',{},sit.name),el('span',{},sit.desc),el('small',{},sit.msgs.slice(0,4).map(function(m){return m[0];}).join(' / ')+' …')),
+      el('button',{class:'btn sm'+(on?'':' sub'),onclick:function(){
+        var i=S.pick.indexOf(sit.id);
+        if(i>=0)S.pick.splice(i,1);
+        else if(S.pick.length>=6){toast('6つまでです。外したい場面をタップしてください');return;}
+        else S.pick.push(sit.id);
+        save();renderSit();}},on?'✓ 選択中':'選ぶ')));
+  });
+  $('pickInfo').textContent='選択 '+S.pick.length+' / 6';
+  $('btnDecide').disabled=S.pick.length!==6;
+}
+function decide(){
+  if(S.pick.length!==6){toast('6つ選んでください');return;}
+  var ids=S.pick.slice().sort(function(a,b){return sitById(a).rank-sitById(b).rank;});
+  var old={};
+  if(S.items.length===S.sel.length*8){for(var i=0;i<S.sel.length;i++)old[S.sel[i]]=S.items.slice(i*8,i*8+8);}
+  var items=[];
+  ids.forEach(function(id){items=items.concat(old[id]||buildSlots(id));});
+  S.sel=ids;S.items=items;S.done=[false,false,false,false,false,false];
+  save();updateStat();showTab('items');
+}
+
+/* ================= ② 48個 ================= */
+function renderItems(){
+  var box=$('sheets');box.innerHTML='';
+  if(!ready()){
+    $('sumInfo').textContent='';
+    box.appendChild(el('div',{class:'empty'},'まだ決まっていません。「① シチュエーション」で6つ選んでください'));
+    return;
+  }
+  var cnt={};S.items.forEach(function(it){cnt[it.t]=(cnt[it.t]||0)+1;});
+  var dup=0,longc=0;
+  S.items.forEach(function(it){if(cnt[it.t]>1)dup++;if(it.t.length>10)longc++;});
+  $('sumInfo').textContent='全48個 ・ 重複 '+dup+' ・ 長め(11文字以上) '+longc;
+  S.sel.forEach(function(sid,si){
+    var sit=sitById(sid);
+    var sel=el('select',{style:'width:auto;max-width:100%;font-size:16px;padding:5px 6px'});
+    sel.appendChild(el('option',{value:''},'場面を入れ替える…'));
+    SIT.forEach(function(x){if(S.sel.indexOf(x.id)<0)sel.appendChild(el('option',{value:x.id},x.name));});
+    sel.addEventListener('change',function(){
+      if(!sel.value)return;
+      S.sel[si]=sel.value;
+      S.items=S.items.slice(0,si*8).concat(buildSlots(sel.value),S.items.slice(si*8+8));
+      S.pick=S.sel.slice();save();renderItems();toast('場面を入れ替えました');
+    });
+    var card=el('div',{class:'card sheet'},
+      el('h2',{},'シート'+(si+1)+':'+sit.name,el('span',{},sit.desc)),
+      el('div',{class:'row',style:'margin-bottom:4px'},sel));
+    for(var k=0;k<8;k++)(function(k){
+      var gi=si*8+k,it=S.items[gi];
+      var inp=el('input',{type:'text'});inp.value=it.t;
+      inp.addEventListener('input',function(){it.t=inp.value;save();});
+      inp.addEventListener('change',function(){it.t=tidy(inp.value);save();renderItems();});
+      var pose=el('input',{type:'text',class:'pose',placeholder:'ポーズ・表情'});pose.value=it.pose||'';
+      pose.addEventListener('input',function(){it.pose=pose.value;save();});
+      var row=el('div',{class:'item'},
+        el('div',{class:'top'},
+          el('div',{class:'no'},String(gi+1)),
+          inp,
+          el('button',{class:'ib',title:'別案に切り替え:'+it.alt,onclick:function(){var t=it.t;it.t=it.alt;it.alt=t;save();renderItems();}},'⇄'),
+          el('button',{class:'ib',title:'上へ',onclick:function(){mv(si,k,-1);}},'↑'),
+          el('button',{class:'ib',title:'下へ',onclick:function(){mv(si,k,1);}},'↓')),
+        pose);
+      if(cnt[it.t]>1)row.appendChild(el('span',{class:'tag'},'重複'));
+      if(it.t.length>10)row.appendChild(el('span',{class:'tag'},'長め('+it.t.length+'文字)'));
+      card.appendChild(row);
+    })(k);
+    box.appendChild(card);
+  });
+}
+function mv(si,k,d){
+  var j=k+d;if(j<0||j>7)return;
+  var a=si*8+k,b=si*8+j,t=S.items[a];S.items[a]=S.items[b];S.items[b]=t;save();renderItems();
+}
+
+/* ================= ③ プロンプト ================= */
+function charText(){return (S.charCustom||'').trim()||byId(CHARS,S.char).desc;}
+function styleText(){return byId(STYLES,S.style).text;}
+function textRule(){
+  return S.mode==='with'
+   ?'セリフを、手書き風の太めの丸文字で、白いふち取りつきでマスの下側に大きく入れる。指定の文字を一字一句そのまま、誤字・脱字なく書く。'
+   :'文字・吹き出し・記号は一切入れず、絵だけを描く(文字はあとで別に重ねます)。';
+}
+function sheetPrompt(i){
+  var sit=sitById(S.sel[i]),L=[];
+  L.push('LINEスタンプ用のイラストシート(シート'+(i+1)+'/6・8個)を作ってください。');
+  L.push('添付した「テンプレ画像」の枠線と番号どおり、4列×2行のマスに1つずつ描いてください。完成画像に枠線・番号・点線は残さず、各マスの絵は内側の点線の範囲に収めてください。');
+  L.push('');L.push('【キャラクター】');L.push(charText());
+  L.push('');L.push('【画風】');L.push(styleText());
+  L.push('');L.push('【場面】');L.push(sit.name+'('+sit.desc+')');
+  L.push('');L.push('【各マスの内容】(左上から右へ、上から下へ)');
+  for(var k=0;k<8;k++){
+    var it=S.items[i*8+k];
+    L.push(S.mode==='with'?((k+1)+'. セリフ「'+it.t+'」/ ポーズ:'+it.pose):((k+1)+'. ポーズ:'+it.pose+'(セリフのイメージ:'+it.t+')'));
+  }
+  L.push('');L.push('【文字】');L.push(textRule());
+  L.push('');L.push(RULES);
+  if(i>0){L.push('');L.push('【キャラの統一】');L.push('添付した1枚目の完成シートと、同じキャラクター・画風・線の太さ・色で描いてください。');}
+  return L.join('\n');
+}
+function basePrompt(){
+  return ['LINEスタンプ用の「キャラクター基準シート」を作ってください(このキャラを、このあと作る全シートで使います)。',
+   '白い背景に、同じキャラクターを横3×縦2のマスで、次の6パターンで描いてください:正面で立つ/横向き/うれしい顔/しょんぼり顔/びっくり顔/後ろ姿。',
+   '','【キャラクター】',charText(),'','【画風】',styleText(),'',RULES].join('\n');
+}
+function makeTemplate(cols,rows){
+  var cell=400,cv=document.createElement('canvas');
+  cv.width=cols*cell;cv.height=rows*cell;
+  var g=cv.getContext('2d');
+  if(!g)return cv;
+  g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);
+  for(var i=0;i<cols*rows;i++){
+    var x=(i%cols)*cell,y=Math.floor(i/cols)*cell;
+    g.strokeStyle='#b5b5b5';g.lineWidth=3;g.setLineDash([]);g.strokeRect(x+1.5,y+1.5,cell-3,cell-3);
+    g.strokeStyle='#d0d0d0';g.lineWidth=2;g.setLineDash([10,8]);g.strokeRect(x+36,y+36,cell-72,cell-72);g.setLineDash([]);
+    g.fillStyle='#9a9a9a';g.font='bold 26px sans-serif';g.fillText('No.'+(i+1),x+12,y+30);
+  }
+  return cv;
+}
+var tplCv=null;
+function renderTemplate(){
+  tplCv=makeTemplate(4,2);
+  try{$('tplImg').src=tplCv.toDataURL('image/png');}catch(e){}
+}
+function copyTemplate(){
+  var msg='コピーできません。画像を長押しで保存してください';
+  if(!tplCv){toast(msg);return;}
+  try{
+    tplCv.toBlob(function(b){
+      try{navigator.clipboard.write([new ClipboardItem({'image/png':b})]).then(function(){toast('画像をコピーしました');},function(){toast(msg);});}
+      catch(e){toast(msg);}
+    },'image/png');
+  }catch(e){toast(msg);}
+}
+function renderChips(){
+  var cc=$('charChips');cc.innerHTML='';
+  CHARS.forEach(function(c){cc.appendChild(el('button',{class:'chip'+(S.char===c.id?' on':''),onclick:function(){S.char=c.id;S.charCustom='';$('charCustom').value='';save();renderChips();renderPrompts();}},c.name));});
+  var sc=$('styleChips');sc.innerHTML='';
+  STYLES.forEach(function(c){sc.appendChild(el('button',{class:'chip'+(S.style===c.id?' on':''),onclick:function(){S.style=c.id;save();renderChips();renderPrompts();}},c.name));});
+}
+function renderPrompts(){
+  $('basePrompt').value=basePrompt();
+  var box=$('prompts');box.innerHTML='';
+  if(!ready()){box.appendChild(el('div',{class:'empty'},'「① シチュエーション」で6つ決めると、ここに6個のプロンプトが出ます'));$('plan').value='';$('bk').value=JSON.stringify(S);return;}
+  for(var i=0;i<6;i++)(function(i){
+    var text=sheetPrompt(i),ta=el('textarea',{readonly:'readonly'});ta.value=text;
+    var chk=el('input',{type:'checkbox'});chk.checked=!!S.done[i];
+    chk.addEventListener('change',function(){S.done[i]=chk.checked;save();updateStat();});
+    box.appendChild(el('div',{class:'card'},
+      el('h2',{},'プロンプト'+(i+1)+'/6:'+sitById(S.sel[i]).name),
+      ta,
+      el('div',{class:'row',style:'margin-top:6px;justify-content:space-between'},
+        el('button',{class:'btn',onclick:function(){copyText(text);}},'指示文をコピー'),
+        el('label',{class:'done',style:'margin:0'},chk,'作成済み'))));
+  })(i);
+  $('plan').value=JSON.stringify({v:1,app:'stamp-idea-maker',mode:S.mode,style:byId(STYLES,S.style).name,char:charText(),cols:4,rows:2,per:8,
+    items:S.items.map(function(it,k){return {n:k+1,sheet:Math.floor(k/8)+1,cell:k%8+1,text:it.t,pose:it.pose||'',situation:sitById(it.s).name};})});
+  $('bk').value=JSON.stringify(S);
+}
+function restore(){
+  var o;
+  try{o=JSON.parse($('bk').value);}catch(e){toast('読み取れませんでした');return;}
+  if(!o||!Array.isArray(o.items)||!Array.isArray(o.sel)){toast('バックアップの形式が違います');return;}
+  for(var k in o){if(k in S&&k!=='tab')S[k]=o[k];}
+  save();syncInputs();renderAll();toast('復元しました');
+}
+
+/* ================= 共通UI ================= */
+function updateStat(){
+  var done=S.done.filter(Boolean).length;
+  $('statTxt').textContent=ready()?('決定済み:6シチュエーション・48個 ／ プロンプト作成済み '+done+'/6'):('シチュエーション '+S.pick.length+'/6 を選択中');
+}
+function showTab(t){
+  S.tab=t;save();
+  ['sit','items','prompt'].forEach(function(n){$('tab-'+n).hidden=(n!==t);});
+  var bs=document.querySelectorAll('.tab');
+  for(var i=0;i<bs.length;i++)bs[i].classList.toggle('on',bs[i].getAttribute('data-tab')===t);
+  if(t==='items')renderItems();
+  if(t==='prompt'){renderChips();renderTemplate();renderPrompts();}
+  window.scrollTo(0,0);
+}
+function syncInputs(){$('charCustom').value=S.charCustom;$('mode').value=S.mode;}
+function renderAll(){renderSit();renderItems();renderChips();renderPrompts();updateStat();}
+function init(){
+  var bs=document.querySelectorAll('.tab');
+  for(var i=0;i<bs.length;i++)(function(b){b.addEventListener('click',function(){showTab(b.getAttribute('data-tab'));});})(bs[i]);
+  syncInputs();
+  $('charCustom').addEventListener('input',function(){S.charCustom=$('charCustom').value;save();renderPrompts();});
+  $('mode').addEventListener('change',function(){S.mode=$('mode').value;save();renderPrompts();});
+  $('btnDecide').addEventListener('click',decide);
+  $('btnTidy').addEventListener('click',function(){S.items.forEach(function(it){it.t=tidy(it.t);});save();renderItems();toast('整えました');});
+  $('btnTplCopy').addEventListener('click',copyTemplate);
+  $('bkRestore').addEventListener('click',restore);
+  var cb=document.querySelectorAll('[data-copy]');
+  for(var j=0;j<cb.length;j++)(function(b){b.addEventListener('click',function(){copyText($(b.getAttribute('data-copy')).value);});})(cb[j]);
+  renderAll();
+  showTab(S.tab);
+}
+init();
+})();
+</script>
+</body>
+</html>
